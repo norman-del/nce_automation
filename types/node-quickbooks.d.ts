@@ -37,6 +37,7 @@ declare module 'node-quickbooks' {
     CustomerRef: { value: string }
     TotalAmt: number
     PrivateNote?: string
+    DepositToAccountRef?: { value: string }
     Line: PaymentLine[]
   }
 
@@ -68,6 +69,8 @@ declare module 'node-quickbooks' {
 
     createJournalEntry(entry: JournalEntryInput, callback: Callback<JournalEntry>): void
     createPayment(payment: PaymentInput, callback: Callback<Payment>): void
+    findAccounts(criteria: Record<string, unknown>, callback: Callback<QueryResponse<unknown>>): void
+    getInvoice(id: string, callback: Callback<unknown>): void
     findInvoices(
       criteria: Array<{ field: string; value: string }>,
       callback: Callback<QueryResponse<unknown>>

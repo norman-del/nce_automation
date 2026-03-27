@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { findInvoiceByDocNumber } from '@/lib/qbo/invoices'
 import { createPayment } from '@/lib/qbo/payments'
 import { createServiceClient } from '@/lib/supabase/client'
+import { getQboConnection } from '@/lib/qbo/client'
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,13 +37,18 @@ export async function POST(req: NextRequest) {
       .update({ qbo_invoice_id: invoice.Id, payment_status: 'invoice_found' })
       .eq('id', transactionId)
 
+    const connection = await getQboConnection()
+    if (!connection?.bank_account_id) {
+      return NextResponse.json({ error: 'Bank account not mapped in Settings' }, { status: 400 })
+    }
     const payoutDate = (txn.payouts as { payout_date: string }).payout_date
     const paymentId = await createPayment({
       customerRef: invoice.CustomerRef.value,
-      totalAmt: Number(txn.net),
+      totalAmt: Number(txn.amount),
       invoiceId: invoice.Id,
       paymentDate: payoutDate,
       orderNumber: txn.order_number ?? '',
+      depositToAccountId: connection.bank_account_id,
     })
 
     await db

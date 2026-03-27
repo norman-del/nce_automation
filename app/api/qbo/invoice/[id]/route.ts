@@ -9,16 +9,14 @@ export async function GET(
   const { id } = await params
   try {
     const { client } = await getQboClient()
-    return new Promise((resolve) => {
+    const invoice = await new Promise<unknown>((resolve, reject) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      client.getInvoice(id, (err: any, invoice: any) => {
-        if (err) {
-          resolve(NextResponse.json({ error: err.message ?? JSON.stringify(err) }, { status: 500 }))
-          return
-        }
-        resolve(NextResponse.json(invoice))
+      client.getInvoice(id, (err: any, result: any) => {
+        if (err) reject(err)
+        else resolve(result)
       })
     })
+    return NextResponse.json(invoice)
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     return NextResponse.json({ error: msg }, { status: 500 })
