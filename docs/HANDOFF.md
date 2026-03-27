@@ -4,95 +4,95 @@
 
 ### What's built and working
 - Next.js app at `http://localhost:3000`
+- Project root: `C:\Users\norma\nce_automation\` (moved from subfolder today)
 - Supabase database, all tables, all env vars set
 - Shopify sync — pulls payout summaries (Sync Payouts button on /payouts)
-- QBO OAuth connected, tokens auto-refresh
-- Account mappings set: `shopify_fees_account_id = 133`, `bank_account_id = 1150040008`
+- QBO OAuth connected, tokens auto-refresh, disconnect button on /settings
+- Account mappings: `shopify_fees_account_id = 133`, `bank_account_id = 1150040008`
 - Invoice matching — 3-strategy auto-discovery (PONumber → date+amount → CustomerMemo)
-- Payment creation — deposits to correct account (Shopify Receipt Account, id 1150040008)
-- Full sync button on payout detail page with nice result summary UI
+- Payment creation — gross amount deposited to Shopify Receipt Account (id 1150040008)
+- Journal entry creation — Debit Shopify Charges, Credit Shopify Receipt Account
+- Full sync button on payout detail page with result summary UI
 - Search by order number on /payouts page
-- View QBO accounts list button on /settings page
+- Build passes clean, pushed to GitHub
 
-### Test payout: NCE1580 (27 March 2026, £36.80 gross, £0.99 fee, £35.81 net)
-- **Payment**: Created correctly — £36.80 applied to QBO invoice, deposited to Shopify Receipt Account ✓
-- **Journal entry**: NOT in QBO — was deleted manually during testing. DB still has stale `journal_entry_id = '34284'` pointing to a deleted journal. This is why the sync keeps skipping journal creation.
-
----
-
-## Immediate Fix Needed (do this first next session)
-
-### Step 1 — Reset the stale journal reference in Supabase SQL editor:
-```sql
-UPDATE payouts
-SET journal_entry_id = null,
-    journal_synced_at = null
-WHERE payout_date = '2026-03-27';
-```
-
-### Step 2 — Run Full Sync on the 27 March payout
-- Go to /payouts → View on 2026-03-27 → Run Full Sync
-- Payment already exists so will be skipped (shows "Already paid")
-- Journal entry will be created fresh: Debit Shopify Charges £0.99, Credit Shopify Receipt Account £0.99
-- Expected result: "Sync complete — Journal created £0.99 — NCE1580 Already paid"
-
----
-
-## How the Accounting Should Work
-
+### How the accounting works
 For each payout:
-1. **Journal entry** (one per payout, covers all orders):
-   - Debit: Shopify Charges (id 133) — the fee amount per order
-   - Credit: Shopify Receipt Account (id 1150040008) — total fees out of bank
-2. **Payment** (one per order):
-   - Applied to the customer's QBO invoice for the full gross amount
-   - Deposited to: Shopify Receipt Account (id 1150040008)
+1. **Payment** (one per order): gross amount applied to QBO invoice → deposited to Shopify Receipt Account
+2. **Journal entry** (one per payout): Debit Shopify Charges (fee) / Credit Shopify Receipt Account (fee)
 
-Net effect: invoice cleared in full, fees expensed, bank balance correct.
+Net result: invoice cleared in full, fee expensed, Shopify Receipt Account balance = net bank deposit.
 
----
-
-## Known Issue to Watch
-
-**Stale journal_entry_id in DB**: If a journal entry is deleted from QBO manually, the DB doesn't know. The sync sees `journal_entry_id` is not null and skips recreation. Fix is always the SQL reset above. In production, don't delete journals manually — just re-run the sync.
+### Daily workflow
+1. `npm run dev` from `C:\Users\norma\nce_automation\`
+2. Go to http://localhost:3000/payouts
+3. Click Sync Payouts (pulls any new payouts from Shopify)
+4. Click View on latest payout → Run Full Sync
+5. Done — journal + payments created, already-done items skipped safely
 
 ---
 
-## Daily Workflow (once NCE1580 fix is done)
+## Next Task: UI Polish
 
-1. Go to /payouts
-2. Click View on the latest payout
-3. Click Run Full Sync
-4. Done — journal entry + payments created for all orders in that payout
+See full plan below. Start a fresh session and hand it this file.
 
-Re-running is safe — already-paid orders are skipped, existing journals are skipped.
+**Prompt for next session:**
+> "Read docs/HANDOFF.md. Execute the UI Polish Plan phases A–D in order. Dark mode Dynatrace-style as default. Use recharts for charts. Be thorough — every page should feel consistent and polished."
 
 ---
 
-## Bugs Fixed This Session
-1. Invoice matching — was searching by DocNumber (QBO's own number). Replaced with 3-strategy matcher: PONumber → date+amount → CustomerMemo.
-2. Payment amount — was using net (£35.81) leaving £0.99 still due. Fixed to use gross (£36.80).
-3. Deposit account — payments were going to Undeposited Funds. Fixed by adding `DepositToAccountRef` pointing to Shopify Receipt Account.
-4. Account mappings — were null in DB. Set: fees account = 133, bank = 1150040008.
-5. Sync result UI — replaced raw JSON with result panel showing journal status + per-order results.
+## UI Polish Plan
+
+### Phase A — Design System Foundation
+- Install `recharts`
+- `tailwind.config.ts`: add `darkMode: 'class'`, define colour tokens
+- `app/globals.css`: dark background `#0d1117`, surface `#161b22`, border `#30363d`
+- `app/layout.tsx`:
+  - Force dark mode class on `<html>`
+  - Restyle sidebar: dark bg, accent colours for active nav item
+  - Remove the two quicklink buttons from dashboard (View Payouts / Settings) — redundant with sidebar nav
+
+### Phase B — Dashboard Rebuild (`app/page.tsx`)
+Pull these metrics from Supabase:
+1. **Payouts this month** — count from `payouts` where `payout_date >= first of month`
+2. **Fees recorded this month** — sum of `total_fees` where synced this month
+3. **Payments applied this month** — sum of `amount` from `payout_transactions` where `payment_status = payment_created` this month
+4. **Needs attention** — count of payouts where `sync_status = pending or error`
+
+Charts:
+- **Bar chart** (recharts): fees recorded per payout, last 30 days — spot unusually high fee days
+- **Recent payouts table**: last 5 payouts, date / gross / fee / status badge / View link
+
+Design: Dynatrace-style dark cards, glowing accent numbers, subtle grid lines on charts.
+
+### Phase C — Button & Response Polish
+Every action should return a styled result, never raw JSON:
+- **Sync Payouts** (`/payouts` page): currently returns raw API response — replace with banner: "X payouts pulled, Y new" or "Already up to date"
+- **Connect QBO** (`/settings`): after OAuth redirect, show green "Connected successfully" confirmation
+- **Disconnect QBO**: currently silent refresh — show inline "Disconnected" confirmation before reload
+- **View QBO accounts list**: currently opens raw JSON in new tab — replace with a modal/drawer showing a searchable accounts table
+- **Run Full Sync**: already polished ✓
+
+### Phase D — Page Polish
+- `/payouts`: status badge colours (synced=green, pending=amber, error=red), currency formatting consistent
+- `/payouts/[id]`: cleaner order table, journal status pill, better empty states
+- `/settings`: token expiry shown as "expires in X days" not raw datetime, connection health at a glance
+- `/sync-log`: currently scaffold only — build it out with filterable history table from `sync_log` table
 
 ---
 
-## Files Changed This Session
-- `lib/qbo/invoices.ts` — replaced `findInvoiceByDocNumber` with smart `findInvoiceForOrder`
-- `lib/qbo/payments.ts` — added `depositToAccountId` param + `DepositToAccountRef` in QBO call
-- `lib/sync/orchestrator.ts` — richer return type, per-transaction results, passes deposit account
-- `app/payouts/[id]/page.tsx` — uses SyncButton component
-- `app/payouts/[id]/SyncButton.tsx` — new client component, shows sync result inline
-- `app/payouts/page.tsx` — added order number search
-- `app/settings/page.tsx` — added View QBO Accounts link
-- `app/api/sync/[id]/route.ts` — new route, triggers orchestrator for a single payout
-- `app/api/qbo/accounts/route.ts` — new route, returns chart of accounts (read-only)
-- `app/api/qbo/invoice/[id]/route.ts` — diagnostic route
+## Known Gotchas
+
+- **Stale journal_entry_id**: if a journal is deleted from QBO manually, DB won't know. Fix: `UPDATE payouts SET journal_entry_id = null, journal_synced_at = null WHERE payout_date = 'YYYY-MM-DD'` in Supabase SQL editor. Don't delete journals from QBO in production.
+- **QBO refresh token rotation**: never use the refresh token outside the app without saving the new one back to Supabase. See CLAUDE.md ngrok section.
+- **Account mappings**: stored in `qbo_connections` table. If QBO is disconnected and reconnected, mappings persist — tokens update but account IDs stay.
+- **Shopify order name**: includes `#` prefix (e.g. `#NCE1580`) — stripped before storing as `NCE1580`
+- **Payment amount**: always use gross (`txn.amount`), not net. Journal handles the fee split.
+- **Intuit Production keys**: development keys connect to sandbox only. Production keys are set in `.env.local`.
 
 ---
 
-## Env Vars (all set in shopify-qbo-sync/.env.local)
+## Env Vars (all set in `C:\Users\norma\nce_automation\.env.local`)
 | Var | Status |
 |-----|--------|
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ |
@@ -102,26 +102,7 @@ Re-running is safe — already-paid orders are skipped, existing journals are sk
 | `SHOPIFY_ACCESS_TOKEN` | ✅ |
 | `QBO_CLIENT_ID` | ✅ Production |
 | `QBO_CLIENT_SECRET` | ✅ Production |
-| `QBO_REDIRECT_URI` | ✅ ngrok URL (only needed if re-doing OAuth) |
+| `QBO_REDIRECT_URI` | ✅ https://tameka-beholden-alexia.ngrok-free.app/api/qbo/auth |
 | `QBO_ENVIRONMENT` | ✅ production |
 | `TOKEN_ENCRYPTION_KEY` | ✅ |
 | `CRON_SECRET` | ✅ |
-
-## How to Start a Session
-```bash
-cd shopify-qbo-sync
-npm run dev
-```
-Then open `http://localhost:3000`.
-ngrok only needed if re-doing QBO OAuth (tokens last 100 days).
-
----
-
-## Gotchas
-- Intuit Production keys only — Development keys connect to sandbox only
-- Intuit requires HTTPS redirect URI — use ngrok for local dev OAuth
-- `intuit-oauth` token response does not include `realmId` — extract from URL query params
-- Next.js `req.url` resolves to internal URL behind ngrok — always use `process.env.QBO_REDIRECT_URI`
-- Shopify order name includes `#` prefix (e.g. `#NCE1580`) — stripped to `NCE1580` before storing
-- QBO invoice numbers are QBO's own sequence (e.g. 6899), not Shopify order numbers
-- Shopify-QBO connector stores order ref — strategy 2 (date+amount) matched NCE1580 successfully

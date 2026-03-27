@@ -41,3 +41,40 @@ app/payouts/    — Payout list + detail pages
 app/settings/   — Connection management + account mapping
 app/sync-log/   — Sync history + error log
 ```
+
+## ngrok (QBO OAuth only)
+ngrok is only needed when re-doing the QBO OAuth flow (tokens last 100 days, so this is rare).
+The redirect URI must be HTTPS — ngrok provides this tunnel for local dev.
+
+### Current fixed domain
+```
+https://tameka-beholden-alexia.ngrok-free.dev → http://localhost:3000
+```
+This is a reserved free-tier domain (doesn't change on restart).
+
+### Start ngrok
+```bash
+ngrok http 3000
+```
+Auth token (already configured on this machine):
+```
+ngrok config add-authtoken 3BWi7Po675XO8cq0oLXWqdaN3ro_3uxLpZeiPVRz7EW3nBcuP
+```
+
+### If the URL ever changes
+1. Update `QBO_REDIRECT_URI` in `.env.local`
+2. Go to https://developer.intuit.com → your app → Keys & credentials → Redirect URIs → update to the new URL
+3. Re-do QBO OAuth via /settings → Disconnect → Connect QuickBooks
+
+### QBO OAuth re-auth steps
+1. Start dev server: `npm run dev`
+2. Start ngrok: `ngrok http 3000`
+3. Confirm ngrok URL matches `QBO_REDIRECT_URI` in `.env.local`
+4. Go to http://localhost:3000/settings → Disconnect QBO → Connect QuickBooks
+5. Log in to Intuit and authorise
+6. Tokens are saved to Supabase automatically (account mappings persist — no need to re-map)
+
+### Warning
+Never use the QBO refresh token outside the app (e.g. in a test script) without saving
+the new refresh token back to Supabase. Intuit rotates refresh tokens on every use —
+consuming one without saving the replacement invalidates the chain and forces re-auth.
