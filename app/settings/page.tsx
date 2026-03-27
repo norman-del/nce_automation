@@ -1,59 +1,81 @@
 export const dynamic = 'force-dynamic'
 
-import { createServiceClient } from "@/lib/supabase/client";
-import DisconnectButton from "./DisconnectButton";
+import { createServiceClient } from '@/lib/supabase/client'
+import DisconnectButton from './DisconnectButton'
+import AccountsModal from './AccountsModal'
+import { Suspense } from 'react'
+import ConnectedBanner from './ConnectedBanner'
 
 async function getConnections() {
   try {
-    const db = createServiceClient();
+    const db = createServiceClient()
     const [shopifyRes, qboRes] = await Promise.all([
-      db.from("shopify_connections").select("store_domain, created_at").limit(1).single(),
-      db.from("qbo_connections").select("company_name, token_expires_at, shopify_fees_account_id, bank_account_id").limit(1).single(),
-    ]);
+      db.from('shopify_connections').select('store_domain, created_at').limit(1).single(),
+      db.from('qbo_connections').select('company_name, token_expires_at, shopify_fees_account_id, bank_account_id').limit(1).single(),
+    ])
     return {
       shopify: shopifyRes.data,
       qbo: qboRes.data,
-    };
+    }
   } catch {
-    return { shopify: null, qbo: null };
+    return { shopify: null, qbo: null }
   }
 }
 
+function formatExpiry(isoDate: string): { text: string; urgent: boolean } {
+  const days = Math.floor(
+    (new Date(isoDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+  )
+  if (days < 0)  return { text: 'Expired',          urgent: true  }
+  if (days === 0) return { text: 'Expires today',    urgent: true  }
+  if (days === 1) return { text: 'Expires tomorrow', urgent: true  }
+  if (days <= 7)  return { text: `Expires in ${days} days`, urgent: true  }
+  return             { text: `Expires in ${days} days`, urgent: false }
+}
+
 export default async function SettingsPage() {
-  const { shopify, qbo } = await getConnections();
+  const { shopify, qbo } = await getConnections()
 
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900">Settings</h2>
-        <p className="mt-1 text-sm text-gray-500">Manage your Shopify and QBO connections</p>
+        <h2 className="text-2xl font-semibold text-primary">Settings</h2>
+        <p className="mt-1 text-sm text-secondary">Manage your Shopify and QBO connections</p>
       </div>
 
-      <div className="space-y-6 max-w-2xl">
+      {/* QBO connected/error banner (shown after OAuth redirect) */}
+      <Suspense>
+        <ConnectedBanner />
+      </Suspense>
+
+      <div className="space-y-5 max-w-2xl">
         {/* Shopify Connection */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="bg-surface border border-edge rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Shopify</h3>
+            <h3 className="font-semibold text-primary">Shopify</h3>
             <span
-              className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+              className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 shopify
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-500"
+                  ? 'bg-ok/10 text-ok border border-ok/25'
+                  : 'bg-overlay text-secondary border border-edge'
               }`}
             >
-              {shopify ? "Connected" : "Not connected"}
+              {shopify ? '● Connected' : '○ Not connected'}
             </span>
           </div>
           {shopify ? (
-            <p className="text-sm text-gray-600">
-              Store: <span className="font-mono">{shopify.store_domain}</span>
+            <p className="text-sm text-secondary">
+              Store:{' '}
+              <span className="font-mono text-primary">{shopify.store_domain}</span>
             </p>
           ) : (
-            <div className="text-sm text-gray-500 space-y-2">
+            <div className="text-sm text-secondary space-y-2">
               <p>
-                Set <code className="font-mono bg-gray-100 px-1 rounded">SHOPIFY_STORE_DOMAIN</code> and{" "}
-                <code className="font-mono bg-gray-100 px-1 rounded">SHOPIFY_ACCESS_TOKEN</code> in your{" "}
-                <code className="font-mono bg-gray-100 px-1 rounded">.env.local</code>.
+                Set{' '}
+                <code className="font-mono bg-overlay px-1.5 py-0.5 rounded text-primary text-xs">SHOPIFY_STORE_DOMAIN</code>
+                {' '}and{' '}
+                <code className="font-mono bg-overlay px-1.5 py-0.5 rounded text-primary text-xs">SHOPIFY_ACCESS_TOKEN</code>
+                {' '}in your <code className="font-mono bg-overlay px-1.5 py-0.5 rounded text-primary text-xs">.env.local</code>.
               </p>
               <p>Shopify uses a Custom App access token — no OAuth required.</p>
             </div>
@@ -61,56 +83,70 @@ export default async function SettingsPage() {
         </div>
 
         {/* QBO Connection */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="bg-surface border border-edge rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">QuickBooks Online</h3>
+            <h3 className="font-semibold text-primary">QuickBooks Online</h3>
             <span
-              className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+              className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 qbo
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-500"
+                  ? 'bg-ok/10 text-ok border border-ok/25'
+                  : 'bg-overlay text-secondary border border-edge'
               }`}
             >
-              {qbo ? "Connected" : "Not connected"}
+              {qbo ? '● Connected' : '○ Not connected'}
             </span>
           </div>
+
           {qbo ? (
-            <div className="text-sm text-gray-600 space-y-1">
-              {qbo.company_name && <p>Company: {qbo.company_name}</p>}
-              <p>
-                Token expires:{" "}
-                {new Date(qbo.token_expires_at).toLocaleString("en-GB")}
-              </p>
-              <p>
-                Shopify Fees account:{" "}
-                {qbo.shopify_fees_account_id ?? (
-                  <span className="text-yellow-600">Not mapped</span>
-                )}
-              </p>
-              <p>
-                Bank account:{" "}
-                {qbo.bank_account_id ?? (
-                  <span className="text-yellow-600">Not mapped</span>
-                )}
-              </p>
-              <div className="pt-2 flex gap-2">
-                <a
-                  href="/api/qbo/accounts"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-md hover:bg-gray-200 transition-colors"
-                >
-                  View QBO accounts list →
-                </a>
+            <div className="text-sm text-secondary space-y-2">
+              {qbo.company_name && (
+                <p>
+                  Company: <span className="text-primary">{qbo.company_name}</span>
+                </p>
+              )}
+
+              {(() => {
+                const expiry = formatExpiry(qbo.token_expires_at)
+                return (
+                  <p className="flex items-center gap-2">
+                    <span>Token:</span>
+                    <span className={`font-medium ${expiry.urgent ? 'text-warn' : 'text-ok'}`}>
+                      {expiry.urgent && '⚠ '}{expiry.text}
+                    </span>
+                  </p>
+                )
+              })()}
+
+              <div className="pt-1 space-y-1.5">
+                <p className="flex items-center gap-2">
+                  <span className="text-xs text-secondary w-36">Shopify Fees account</span>
+                  {qbo.shopify_fees_account_id ? (
+                    <span className="font-mono text-primary text-xs">{qbo.shopify_fees_account_id}</span>
+                  ) : (
+                    <span className="text-warn text-xs">Not mapped</span>
+                  )}
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-xs text-secondary w-36">Bank / Receipt account</span>
+                  {qbo.bank_account_id ? (
+                    <span className="font-mono text-primary text-xs">{qbo.bank_account_id}</span>
+                  ) : (
+                    <span className="text-warn text-xs">Not mapped</span>
+                  )}
+                </p>
+              </div>
+
+              <div className="pt-3 flex gap-2 flex-wrap">
+                <AccountsModal />
                 <DisconnectButton />
               </div>
             </div>
           ) : (
-            <div className="text-sm text-gray-500 space-y-2">
+            <div className="text-sm text-secondary space-y-3">
               <p>Connect your QuickBooks Online account to start syncing.</p>
               <a
                 href="/api/qbo/auth"
-                className="inline-block px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                className="inline-block px-4 py-2 bg-accent text-white text-sm rounded-md hover:bg-accent-hi transition-colors"
               >
                 Connect QuickBooks
               </a>
@@ -119,5 +155,5 @@ export default async function SettingsPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
