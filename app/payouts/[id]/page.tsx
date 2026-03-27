@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createServiceClient } from "@/lib/supabase/client";
 import { notFound } from "next/navigation";
+import SyncButton from "./SyncButton";
 
 async function getPayout(id: string) {
   const db = createServiceClient();
@@ -45,17 +46,20 @@ export default async function PayoutDetailPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900">
-          Payout — {payout.payout_date}
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Net: £{Number(payout.amount).toFixed(2)} &middot; Fees: £
-          {Number(payout.total_fees ?? 0).toFixed(2)} &middot;{" "}
-          {payout.journal_entry_id
-            ? `Journal entry: ${payout.journal_entry_id}`
-            : "No journal entry yet"}
-        </p>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            Payout — {payout.payout_date}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Net: £{Number(payout.amount).toFixed(2)} &middot; Fees: £
+            {Number(payout.total_fees ?? 0).toFixed(2)} &middot;{" "}
+            {payout.journal_entry_id
+              ? `Journal entry: ${payout.journal_entry_id}`
+              : "No journal entry yet"}
+          </p>
+        </div>
+        <SyncButton payoutId={id} />
       </div>
 
       {transactions.length === 0 ? (

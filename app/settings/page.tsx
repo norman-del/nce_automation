@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createServiceClient } from "@/lib/supabase/client";
+import DisconnectButton from "./DisconnectButton";
 
 async function getConnections() {
   try {
@@ -92,6 +93,17 @@ export default async function SettingsPage() {
                   <span className="text-yellow-600">Not mapped</span>
                 )}
               </p>
+              <div className="pt-2 flex gap-2">
+                <a
+                  href="/api/qbo/accounts"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  View QBO accounts list →
+                </a>
+                <DisconnectButton />
+              </div>
             </div>
           ) : (
             <div className="text-sm text-gray-500 space-y-2">

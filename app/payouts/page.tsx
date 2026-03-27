@@ -3,9 +3,26 @@ export const dynamic = 'force-dynamic'
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/client";
 
-async function getPayouts() {
+async function getPayouts(search?: string) {
   try {
     const db = createServiceClient();
+
+    if (search) {
+      // Find which payouts contain this order number
+      const { data: txns } = await db
+        .from("payout_transactions")
+        .select("payout_id")
+        .ilike("order_number", `%${search}%`);
+      const payoutIds = (txns ?? []).map((t: { payout_id: string }) => t.payout_id);
+      if (payoutIds.length === 0) return [];
+      const { data } = await db
+        .from("payouts")
+        .select("*")
+        .in("id", payoutIds)
+        .order("payout_date", { ascending: false });
+      return data ?? [];
+    }
+
     const { data } = await db
       .from("payouts")
       .select("*")
@@ -24,8 +41,13 @@ const statusColors: Record<string, string> = {
   skipped: "bg-gray-100 text-gray-500",
 };
 
-export default async function PayoutsPage() {
-  const payouts = await getPayouts();
+export default async function PayoutsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string }>;
+}) {
+  const { search } = await searchParams;
+  const payouts = await getPayouts(search);
 
   return (
     <div>
@@ -43,6 +65,30 @@ export default async function PayoutsPage() {
           </button>
         </form>
       </div>
+
+      <form method="GET" className="mb-4 flex gap-2">
+        <input
+          type="text"
+          name="search"
+          defaultValue={search ?? ""}
+          placeholder="Search by order number e.g. NCE1580"
+          className="flex-1 max-w-xs px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+        />
+        <button
+          type="submit"
+          className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors"
+        >
+          Search
+        </button>
+        {search && (
+          <a
+            href="/payouts"
+            className="px-4 py-2 text-gray-500 text-sm rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Clear
+          </a>
+        )}
+      </form>
 
       {payouts.length === 0 ? (
         <div className="text-center py-16 text-gray-400">

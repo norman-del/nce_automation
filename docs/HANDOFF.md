@@ -1,137 +1,127 @@
-# Project Handoff — Shopify-QBO Fee Sync
+# Handoff — Shopify-QBO Fee Sync
 
-> Give this file to Claude Code at the start of a new session to resume work instantly.
+## Current State (2026-03-27)
 
----
+### What's built and working
+- Next.js app at `http://localhost:3000`
+- Supabase database, all tables, all env vars set
+- Shopify sync — pulls payout summaries (Sync Payouts button on /payouts)
+- QBO OAuth connected, tokens auto-refresh
+- Account mappings set: `shopify_fees_account_id = 133`, `bank_account_id = 1150040008`
+- Invoice matching — 3-strategy auto-discovery (PONumber → date+amount → CustomerMemo)
+- Payment creation — deposits to correct account (Shopify Receipt Account, id 1150040008)
+- Full sync button on payout detail page with nice result summary UI
+- Search by order number on /payouts page
+- View QBO accounts list button on /settings page
 
-## What This Project Is
-
-Automates Shopify payout fee reconciliation with QuickBooks Online for a UK e-commerce business (Gus).
-- Pulls Shopify payouts via API
-- Creates QBO journal entries for Shopify fees (debit Shopify Fees, credit Bank)
-- Finds matching QBO invoices by order number (DocNumber)
-- Applies payments (net amount) to each invoice
-
-Saves ~30 min/day of manual bookkeeping.
-
----
-
-## Environment
-
-- **Machine:** Windows 11, `C:\Users\norma\nce_automation\shopify-qbo-sync\`
-- **GitHub:** https://github.com/norman-del/nce_automation (branch: `main`)
-- **Supabase:** https://daesvkeogxuqlrskuwpg.supabase.co (project ref: `daesvkeogxuqlrskuwpg`)
-- **Supabase CLI:** was downloaded to `C:\Users\norma\nce_automation\supabase.exe` — re-download if needed from https://github.com/supabase/cli/releases
-- **Node.js:** v24 installed, npm works
-- **Git:** installed
+### Test payout: NCE1580 (27 March 2026, £36.80 gross, £0.99 fee, £35.81 net)
+- **Payment**: Created correctly — £36.80 applied to QBO invoice, deposited to Shopify Receipt Account ✓
+- **Journal entry**: NOT in QBO — was deleted manually during testing. DB still has stale `journal_entry_id = '34284'` pointing to a deleted journal. This is why the sync keeps skipping journal creation.
 
 ---
 
-## Current Status (as of 2026-03-27)
+## Immediate Fix Needed (do this first next session)
 
-### Completed — Phase 1: Foundation
-- [x] Next.js 15 app scaffolded (App Router, TypeScript strict, Tailwind)
-- [x] All deps installed: `@shopify/shopify-api`, `node-quickbooks`, `intuit-oauth`, `@supabase/supabase-js`
-- [x] Full project structure created (lib/, app/api/, components/, supabase/migrations/)
-- [x] CLAUDE.md written with project rules
-- [x] `lib/crypto.ts` — AES-256-GCM encrypt/decrypt for token storage
-- [x] `lib/shopify/client.ts` — REST client with access token auth
-- [x] `lib/shopify/payouts.ts` — fetch payouts + balance transactions
-- [x] `lib/shopify/orders.ts` — fetch order details (customer/company name)
-- [x] `lib/qbo/auth.ts` — OAuth 2.0 authorize URL + token exchange + refresh
-- [x] `lib/qbo/client.ts` — QBO client with auto-refresh (checks expiry, refreshes, saves new tokens)
-- [x] `lib/qbo/journal.ts` — create journal entries (debit per order, single credit)
-- [x] `lib/qbo/invoices.ts` — find invoice by DocNumber
-- [x] `lib/qbo/payments.ts` — create payment with LinkedTxn to invoice
-- [x] `lib/sync/orchestrator.ts` — full idempotent pipeline: fetch → journal → match → pay
-- [x] `app/api/shopify/sync/route.ts` — pull payouts from Shopify, upsert to DB
-- [x] `app/api/qbo/auth/route.ts` — OAuth callback, store encrypted tokens
-- [x] `app/api/qbo/journal/route.ts` — create journal entry for a payout
-- [x] `app/api/qbo/payment/route.ts` — create payment for a transaction
-- [x] `app/api/cron/sync/route.ts` — daily cron (secured with CRON_SECRET)
-- [x] `app/page.tsx` — Dashboard with KPI cards
-- [x] `app/payouts/page.tsx` — Payout list table
-- [x] `app/payouts/[id]/page.tsx` — Payout detail with transactions table
-- [x] `app/settings/page.tsx` — Connection status + QBO connect button
-- [x] `app/sync-log/page.tsx` — Audit log table
-- [x] `supabase/migrations/001_initial_schema.sql` — all 5 tables + indexes
-- [x] `vercel.json` — daily cron at 7am UTC
-- [x] TypeScript type declarations for `intuit-oauth` and `node-quickbooks` (in `types/`)
-- [x] Build passes clean (`npm run build`)
-- [x] Git repo initialised, initial commit, pushed to GitHub
-- [x] Supabase project linked, migration pushed — all 5 tables live
+### Step 1 — Reset the stale journal reference in Supabase SQL editor:
+```sql
+UPDATE payouts
+SET journal_entry_id = null,
+    journal_synced_at = null
+WHERE payout_date = '2026-03-27';
+```
 
-### .env.local Status
-File exists at `shopify-qbo-sync/.env.local`. Already filled in:
-- `NEXT_PUBLIC_SUPABASE_URL` ✓
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` ✓
-- `SUPABASE_SERVICE_ROLE_KEY` ✓
-- `TOKEN_ENCRYPTION_KEY` ✓ (generated, do not change)
-- `CRON_SECRET` ✓ (generated)
-
-Still needed:
-- `SHOPIFY_STORE_DOMAIN` — e.g. `my-store.myshopify.com`
-- `SHOPIFY_ACCESS_TOKEN` — from Shopify Admin → Settings → Apps → Custom app
-- `QBO_CLIENT_ID` / `QBO_CLIENT_SECRET` — from developer.intuit.com (Phase 3)
+### Step 2 — Run Full Sync on the 27 March payout
+- Go to /payouts → View on 2026-03-27 → Run Full Sync
+- Payment already exists so will be skipped (shows "Already paid")
+- Journal entry will be created fresh: Debit Shopify Charges £0.99, Credit Shopify Receipt Account £0.99
+- Expected result: "Sync complete — Journal created £0.99 — NCE1580 Already paid"
 
 ---
 
-## Next Steps — Phase 2: Shopify Integration
+## How the Accounting Should Work
 
-1. User creates Shopify Custom App:
-   - Shopify Admin → Settings → Apps and sales channels → Develop apps → Create app
-   - Admin API scopes: `read_shopify_payments_payouts`, `read_orders`
-   - Install app → copy `shpat_...` token
-   - Fill in `.env.local`: `SHOPIFY_STORE_DOMAIN` and `SHOPIFY_ACCESS_TOKEN`
+For each payout:
+1. **Journal entry** (one per payout, covers all orders):
+   - Debit: Shopify Charges (id 133) — the fee amount per order
+   - Credit: Shopify Receipt Account (id 1150040008) — total fees out of bank
+2. **Payment** (one per order):
+   - Applied to the customer's QBO invoice for the full gross amount
+   - Deposited to: Shopify Receipt Account (id 1150040008)
 
-2. Test Shopify sync:
-   - `npm run dev`
-   - POST to `http://localhost:3000/api/shopify/sync` (with date range)
-   - Check `/payouts` page shows data
-
-3. Verify payout detail page shows order breakdown (may need to test with real payout IDs)
+Net effect: invoice cleared in full, fees expensed, bank balance correct.
 
 ---
 
-## Phase 3: QBO OAuth + Journal Entries
+## Known Issue to Watch
 
-1. Go to https://developer.intuit.com → create app → QuickBooks Online and Payments
-2. Copy Client ID + Client Secret → fill in `.env.local`
-3. Add redirect URI: `http://localhost:3000/api/qbo/auth`
-4. Click "Connect QuickBooks" on `/settings` page
-5. Test journal entry creation on a payout
+**Stale journal_entry_id in DB**: If a journal entry is deleted from QBO manually, the DB doesn't know. The sync sees `journal_entry_id` is not null and skips recreation. Fix is always the SQL reset above. In production, don't delete journals manually — just re-run the sync.
 
 ---
 
-## Key Architecture Decisions
+## Daily Workflow (once NCE1580 fix is done)
 
-- **Shopify:** Custom App (not OAuth) — single store, access token is permanent
-- **QBO:** OAuth 2.0 — access token expires in 1hr, refresh token in 100 days
-- **Idempotency:** Always checks `journal_entry_id` / `qbo_payment_id` before creating
-- **Error isolation:** One failed payment doesn't block others
-- **Token storage:** AES-256-GCM encrypted in Supabase, key in env var
-- **Currency:** GBP, amounts stored as NUMERIC(12,2), never integers
+1. Go to /payouts
+2. Click View on the latest payout
+3. Click Run Full Sync
+4. Done — journal entry + payments created for all orders in that payout
 
----
-
-## Database Tables
-
-All in Supabase Postgres (project: `daesvkeogxuqlrskuwpg`):
-
-| Table | Purpose |
-|-------|---------|
-| `shopify_connections` | Shopify store + encrypted access token |
-| `qbo_connections` | QBO company + encrypted OAuth tokens + account mappings |
-| `payouts` | Shopify payouts (one row per payout period) |
-| `payout_transactions` | Individual orders within a payout |
-| `sync_log` | Audit trail of all sync actions |
+Re-running is safe — already-paid orders are skipped, existing journals are skipped.
 
 ---
 
-## Known Gotchas
+## Bugs Fixed This Session
+1. Invoice matching — was searching by DocNumber (QBO's own number). Replaced with 3-strategy matcher: PONumber → date+amount → CustomerMemo.
+2. Payment amount — was using net (£35.81) leaving £0.99 still due. Fixed to use gross (£36.80).
+3. Deposit account — payments were going to Undeposited Funds. Fixed by adding `DepositToAccountRef` pointing to Shopify Receipt Account.
+4. Account mappings — were null in DB. Set: fees account = 133, bank = 1150040008.
+5. Sync result UI — replaced raw JSON with result panel showing journal status + per-order results.
 
-- `QBO_REDIRECT_URI` in `.env.local` must exactly match what's registered in developer.intuit.com
-- QBO sandbox and production use different base URLs — controlled by `QBO_ENVIRONMENT`
-- Shopify order number in QBO appears as `DocNumber` (e.g. `NCE1573`, not `#NCE1573`)
-- Journal entries require balanced debits/credits — credit line = sum of all debit lines
-- `node-quickbooks` and `intuit-oauth` have no TypeScript types — custom `.d.ts` files in `types/`
+---
+
+## Files Changed This Session
+- `lib/qbo/invoices.ts` — replaced `findInvoiceByDocNumber` with smart `findInvoiceForOrder`
+- `lib/qbo/payments.ts` — added `depositToAccountId` param + `DepositToAccountRef` in QBO call
+- `lib/sync/orchestrator.ts` — richer return type, per-transaction results, passes deposit account
+- `app/payouts/[id]/page.tsx` — uses SyncButton component
+- `app/payouts/[id]/SyncButton.tsx` — new client component, shows sync result inline
+- `app/payouts/page.tsx` — added order number search
+- `app/settings/page.tsx` — added View QBO Accounts link
+- `app/api/sync/[id]/route.ts` — new route, triggers orchestrator for a single payout
+- `app/api/qbo/accounts/route.ts` — new route, returns chart of accounts (read-only)
+- `app/api/qbo/invoice/[id]/route.ts` — diagnostic route
+
+---
+
+## Env Vars (all set in shopify-qbo-sync/.env.local)
+| Var | Status |
+|-----|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ |
+| `SHOPIFY_STORE_DOMAIN` | ✅ ncequipment.myshopify.com |
+| `SHOPIFY_ACCESS_TOKEN` | ✅ |
+| `QBO_CLIENT_ID` | ✅ Production |
+| `QBO_CLIENT_SECRET` | ✅ Production |
+| `QBO_REDIRECT_URI` | ✅ ngrok URL (only needed if re-doing OAuth) |
+| `QBO_ENVIRONMENT` | ✅ production |
+| `TOKEN_ENCRYPTION_KEY` | ✅ |
+| `CRON_SECRET` | ✅ |
+
+## How to Start a Session
+```bash
+cd shopify-qbo-sync
+npm run dev
+```
+Then open `http://localhost:3000`.
+ngrok only needed if re-doing QBO OAuth (tokens last 100 days).
+
+---
+
+## Gotchas
+- Intuit Production keys only — Development keys connect to sandbox only
+- Intuit requires HTTPS redirect URI — use ngrok for local dev OAuth
+- `intuit-oauth` token response does not include `realmId` — extract from URL query params
+- Next.js `req.url` resolves to internal URL behind ngrok — always use `process.env.QBO_REDIRECT_URI`
+- Shopify order name includes `#` prefix (e.g. `#NCE1580`) — stripped to `NCE1580` before storing
+- QBO invoice numbers are QBO's own sequence (e.g. 6899), not Shopify order numbers
+- Shopify-QBO connector stores order ref — strategy 2 (date+amount) matched NCE1580 successfully

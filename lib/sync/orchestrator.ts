@@ -1,21 +1,35 @@
 import { fetchBalanceTransactions } from '../shopify/payouts'
 import { fetchOrder, extractOrderDetails } from '../shopify/orders'
 import { createJournalEntry } from '../qbo/journal'
-import { findInvoiceByDocNumber } from '../qbo/invoices'
+import { findInvoiceForOrder } from '../qbo/invoices'
 import { createPayment } from '../qbo/payments'
 import { createServiceClient } from '../supabase/client'
 import { getQboConnection } from '../qbo/client'
 
-export async function syncPayout(shopifyPayoutId: number): Promise<{
+export interface PaymentResult {
+  orderNumber: string
+  customerName: string | null
+  amount: number
+  status: 'paid' | 'already_paid' | 'no_invoice' | 'error'
+  error?: string
+}
+
+export interface SyncResult {
   success: boolean
   journalEntryId: string | null
-  paymentsCreated: number
+  journalCreated: boolean
+  totalFees: number
+  payments: PaymentResult[]
   errors: string[]
-}> {
+}
+
+export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
   const db = createServiceClient()
   const errors: string[] = []
   let journalEntryId: string | null = null
-  let paymentsCreated = 0
+  let journalCreated = false
+  let totalFees = 0
+  const payments: PaymentResult[] = []
 
   // 1. Find our DB payout record
   const { data: payout } = await db
@@ -92,7 +106,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<{
   // 4. Create QBO journal entry (idempotent)
   if (!payout.journal_entry_id && allTxns && allTxns.length > 0) {
     try {
-      const totalFees = allTxns.reduce((sum, t) => sum + Number(t.fee), 0)
+      totalFees = allTxns.reduce((sum, t) => sum + Number(t.fee), 0)
       const lineItems = allTxns.map((t) => ({
         orderNumber: t.order_number ?? String(t.shopify_transaction_id),
         companyName: t.company_name ?? t.customer_name ?? 'Unknown',
@@ -106,6 +120,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<{
         bankAccountId: qboConnection.bank_account_id!,
         lineItems,
       })
+      journalCreated = true
 
       await db
         .from('payouts')
@@ -133,20 +148,39 @@ export async function syncPayout(shopifyPayoutId: number): Promise<{
     }
   } else {
     journalEntryId = payout.journal_entry_id
+    if (allTxns) totalFees = allTxns.reduce((sum, t) => sum + Number(t.fee), 0)
   }
 
   // 5. Match invoices + create payments (per transaction, isolated)
   if (allTxns) {
     for (const txn of allTxns) {
-      if (txn.qbo_payment_id) continue // already done
+      if (txn.qbo_payment_id) {
+        payments.push({
+          orderNumber: txn.order_number ?? String(txn.shopify_transaction_id),
+          customerName: txn.company_name ?? txn.customer_name,
+          amount: Number(txn.amount),
+          status: 'already_paid',
+        })
+        continue
+      }
 
       try {
-        const invoice = await findInvoiceByDocNumber(txn.order_number)
+        const invoice = await findInvoiceForOrder({
+          orderNumber: txn.order_number ?? '',
+          grossAmount: Number(txn.amount),
+          payoutDate: payout.payout_date,
+        })
         if (!invoice) {
           await db
             .from('payout_transactions')
             .update({ payment_status: 'no_invoice' })
             .eq('id', txn.id)
+          payments.push({
+            orderNumber: txn.order_number ?? String(txn.shopify_transaction_id),
+            customerName: txn.company_name ?? txn.customer_name,
+            amount: Number(txn.amount),
+            status: 'no_invoice',
+          })
           continue
         }
 
@@ -157,10 +191,11 @@ export async function syncPayout(shopifyPayoutId: number): Promise<{
 
         const paymentId = await createPayment({
           customerRef: invoice.CustomerRef.value,
-          totalAmt: Number(txn.net),
+          totalAmt: Number(txn.amount), // gross amount — clears the full invoice; journal entry handles the fee separately
           invoiceId: invoice.Id,
           paymentDate: payout.payout_date,
           orderNumber: txn.order_number ?? '',
+          depositToAccountId: qboConnection.bank_account_id!,
         })
 
         await db
@@ -179,7 +214,12 @@ export async function syncPayout(shopifyPayoutId: number): Promise<{
           details: { order_number: txn.order_number, payment_id: paymentId },
         })
 
-        paymentsCreated++
+        payments.push({
+          orderNumber: txn.order_number ?? String(txn.shopify_transaction_id),
+          customerName: txn.company_name ?? txn.customer_name,
+          amount: Number(txn.amount),
+          status: 'paid',
+        })
       } catch (e) {
         const msg = `Payment for ${txn.order_number} failed: ${e}`
         errors.push(msg)
@@ -192,6 +232,13 @@ export async function syncPayout(shopifyPayoutId: number): Promise<{
           payout_id: payout.id,
           status: 'error',
           details: { order_number: txn.order_number, error: msg },
+        })
+        payments.push({
+          orderNumber: txn.order_number ?? String(txn.shopify_transaction_id),
+          customerName: txn.company_name ?? txn.customer_name,
+          amount: Number(txn.amount),
+          status: 'error',
+          error: msg,
         })
       }
     }
@@ -210,7 +257,9 @@ export async function syncPayout(shopifyPayoutId: number): Promise<{
   return {
     success: errors.length === 0,
     journalEntryId,
-    paymentsCreated,
+    journalCreated,
+    totalFees,
+    payments,
     errors,
   }
 }

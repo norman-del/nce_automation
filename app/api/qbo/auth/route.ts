@@ -3,25 +3,26 @@ import { exchangeCodeForTokens, getAuthorizationUrl } from '@/lib/qbo/auth'
 import { createServiceClient } from '@/lib/supabase/client'
 import { encrypt } from '@/lib/crypto'
 
-// GET /api/qbo/auth — redirect to Intuit authorization page
-export async function GET() {
-  const url = getAuthorizationUrl()
-  return NextResponse.redirect(url)
-}
+// GET /api/qbo/auth — redirect to Intuit, or handle OAuth callback
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const code = searchParams.get('code')
 
-// GET with code param — OAuth callback from Intuit
-export async function POST(req: NextRequest) {
+  // No code = initiate OAuth flow
+  if (!code) {
+    const url = getAuthorizationUrl()
+    return NextResponse.redirect(url)
+  }
+
+  // Has code = callback from Intuit
+  // Reconstruct the full callback URL using the configured redirect URI as base
+  // (req.url may resolve to localhost internally, but Intuit needs the registered ngrok URL)
+  const callbackUrl = `${process.env.QBO_REDIRECT_URI}?${searchParams.toString()}`
+
   try {
-    const { searchParams } = new URL(req.url)
-    const code = searchParams.get('code')
-    if (!code) {
-      return NextResponse.json({ error: 'Missing code parameter' }, { status: 400 })
-    }
-
-    const tokens = await exchangeCodeForTokens(req.url)
+    const tokens = await exchangeCodeForTokens(callbackUrl)
     const db = createServiceClient()
 
-    // Upsert — only one QBO connection supported
     const { error } = await db.from('qbo_connections').upsert(
       {
         realm_id: tokens.realmId,
@@ -35,11 +36,12 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
 
-    return NextResponse.redirect(new URL('/settings?qbo=connected', req.url))
+    return NextResponse.redirect('http://localhost:3000/settings?qbo=connected')
   } catch (e) {
     console.error('QBO auth error:', e)
+    const msg = e instanceof Error ? e.message : JSON.stringify(e)
     return NextResponse.redirect(
-      new URL(`/settings?qbo=error&message=${encodeURIComponent(String(e))}`, req.url)
+      `http://localhost:3000/settings?qbo=error&message=${encodeURIComponent(msg)}`
     )
   }
 }

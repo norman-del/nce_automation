@@ -27,10 +27,13 @@ export async function exchangeCodeForTokens(url: string): Promise<{
   const authResponse = await client.createToken(url)
   const token = authResponse.getJson()
 
+  // realmId comes from the callback URL query param, not the token body
+  const realmId = token.realmId ?? new URL(url).searchParams.get('realmId') ?? ''
+
   return {
     accessToken: token.access_token,
     refreshToken: token.refresh_token,
-    realmId: token.realmId,
+    realmId,
     expiresAt: new Date(Date.now() + token.expires_in * 1000),
   }
 }
