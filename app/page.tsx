@@ -76,14 +76,16 @@ export default async function DashboardPage() {
     await getDashboardData()
 
   const stats = [
-    { label: 'Payouts this month', value: payoutsThisMonth.toString(),   color: 'text-accent', glow: 'drop-shadow-[0_0_8px_rgba(56,139,253,0.45)]' },
-    { label: 'Fees recorded',      value: `£${feesThisMonth.toFixed(2)}`, color: 'text-fail',   glow: 'drop-shadow-[0_0_8px_rgba(248,81,73,0.35)]'  },
-    { label: 'Payments applied',   value: `£${paymentsApplied.toFixed(2)}`, color: 'text-ok',  glow: 'drop-shadow-[0_0_8px_rgba(63,185,80,0.35)]'   },
+    { label: 'Payouts this month', value: payoutsThisMonth.toString(),      color: 'text-accent', glow: 'drop-shadow-[0_0_8px_rgba(56,139,253,0.45)]',  href: '/payouts',                 hint: 'View all payouts this month'    },
+    { label: 'Fees recorded',      value: `£${feesThisMonth.toFixed(2)}`,   color: 'text-fail',   glow: 'drop-shadow-[0_0_8px_rgba(248,81,73,0.35)]',   href: '/payouts',                 hint: 'Shopify processing fees'        },
+    { label: 'Payments applied',   value: `£${paymentsApplied.toFixed(2)}`, color: 'text-ok',     glow: 'drop-shadow-[0_0_8px_rgba(63,185,80,0.35)]',   href: '/payouts',                 hint: 'Gross amounts posted to QBO'    },
     {
       label: 'Needs attention',
       value: needsAttention.toString(),
       color: needsAttention > 0 ? 'text-warn' : 'text-secondary',
       glow:  needsAttention > 0 ? 'drop-shadow-[0_0_8px_rgba(210,153,34,0.45)]' : '',
+      href:  '/payouts?filter=attention',
+      hint:  needsAttention > 0 ? 'Pending + error payouts — click to view' : 'All payouts synced',
     },
   ]
 
@@ -97,10 +99,15 @@ export default async function DashboardPage() {
       {/* Metric cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-8">
         {stats.map((s) => (
-          <div key={s.label} className="bg-surface rounded-lg border border-edge p-5">
+          <Link
+            key={s.label}
+            href={s.href}
+            className="bg-surface rounded-lg border border-edge p-5 hover:border-secondary transition-colors group block"
+          >
             <p className="text-xs text-secondary uppercase tracking-wide mb-2">{s.label}</p>
             <p className={`text-3xl font-semibold font-mono ${s.color} ${s.glow}`}>{s.value}</p>
-          </div>
+            <p className="text-xs text-secondary mt-2 opacity-0 group-hover:opacity-100 transition-opacity">{s.hint}</p>
+          </Link>
         ))}
       </div>
 

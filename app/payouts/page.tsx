@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { createServiceClient } from '@/lib/supabase/client'
 import SyncPayoutsButton from './SyncPayoutsButton'
 
-async function getPayouts(search?: string) {
+async function getPayouts(search?: string, filter?: string) {
   try {
     const db = createServiceClient()
 
@@ -23,11 +23,15 @@ async function getPayouts(search?: string) {
       return data ?? []
     }
 
-    const { data } = await db
-      .from('payouts')
-      .select('*')
-      .order('payout_date', { ascending: false })
-      .limit(50)
+    let query = db.from('payouts').select('*').order('payout_date', { ascending: false })
+
+    if (filter === 'attention') {
+      query = query.in('sync_status', ['pending', 'error'])
+    } else {
+      query = query.limit(50)
+    }
+
+    const { data } = await query
     return data ?? []
   } catch {
     return []
@@ -44,10 +48,11 @@ const statusStyles: Record<string, { pill: string; label: string }> = {
 export default async function PayoutsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string }>
+  searchParams: Promise<{ search?: string; filter?: string }>
 }) {
-  const { search } = await searchParams
-  const payouts = await getPayouts(search)
+  const { search, filter } = await searchParams
+  const payouts = await getPayouts(search, filter)
+  const isAttentionFilter = filter === 'attention'
 
   return (
     <div>
@@ -58,6 +63,16 @@ export default async function PayoutsPage({
         </div>
         <SyncPayoutsButton />
       </div>
+
+      {/* Active filter banner */}
+      {isAttentionFilter && (
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-warn/30 bg-warn/10 px-4 py-2.5 text-sm">
+          <span className="text-warn font-medium">⚠ Showing payouts that need attention (pending + errors)</span>
+          <Link href="/payouts" className="ml-auto text-xs text-secondary hover:text-primary transition-colors">
+            Clear filter ×
+          </Link>
+        </div>
+      )}
 
       {/* Search */}
       <form method="GET" className="mb-5 flex gap-2">
@@ -88,6 +103,8 @@ export default async function PayoutsPage({
         <div className="text-center py-16 text-secondary">
           {search
             ? `No payouts contain order "${search}".`
+            : isAttentionFilter
+            ? 'No payouts need attention — all synced.'
             : 'No payouts yet. Click "Sync Payouts" to pull from Shopify.'}
         </div>
       ) : (

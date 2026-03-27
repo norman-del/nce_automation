@@ -4,7 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SyncResult } from '@/lib/sync/orchestrator'
 
-export default function SyncButton({ payoutId }: { payoutId: string }) {
+interface Props {
+  payoutId: string
+  alreadyPosted: boolean
+}
+
+export default function SyncButton({ payoutId, alreadyPosted }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<SyncResult | null>(null)
@@ -17,7 +22,7 @@ export default function SyncButton({ payoutId }: { payoutId: string }) {
     try {
       const res = await fetch(`/api/sync/${payoutId}`, { method: 'POST' })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Sync failed')
+      if (!res.ok) throw new Error(data.error ?? 'Post failed')
       setResult(data)
       router.refresh()
     } catch (e) {
@@ -28,18 +33,29 @@ export default function SyncButton({ payoutId }: { payoutId: string }) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-3">
+    <div className="flex flex-col items-end gap-2">
       <button
         onClick={handleSync}
         disabled={loading}
-        className="px-4 py-2 bg-accent text-white text-sm rounded-md hover:bg-accent-hi transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`px-4 py-2 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          alreadyPosted
+            ? 'bg-warn/15 text-warn border border-warn/30 hover:bg-warn/25'
+            : 'bg-accent text-white hover:bg-accent-hi'
+        }`}
       >
-        {loading ? 'Posting…' : 'Post to QuickBooks'}
+        {loading ? 'Posting…' : alreadyPosted ? 'Re-post to QuickBooks' : 'Post to QuickBooks'}
       </button>
+
+      {/* Guard rail: shown when payout is already posted */}
+      {alreadyPosted && !result && !error && (
+        <p className="text-xs text-secondary max-w-56 text-right leading-relaxed">
+          Already posted. Re-running is safe — items already in QBO will be skipped.
+        </p>
+      )}
 
       {error && (
         <div className="w-80 rounded-lg border border-fail/30 bg-fail/10 p-4 text-sm text-fail">
-          <p className="font-semibold mb-1">Sync failed</p>
+          <p className="font-semibold mb-1">Post failed</p>
           <p>{error}</p>
         </div>
       )}
@@ -52,11 +68,7 @@ export default function SyncButton({ payoutId }: { payoutId: string }) {
               : 'border-warn/30 bg-warn/10'
           }`}
         >
-          <p
-            className={`font-semibold mb-3 ${
-              result.success ? 'text-ok' : 'text-warn'
-            }`}
-          >
+          <p className={`font-semibold mb-3 ${result.success ? 'text-ok' : 'text-warn'}`}>
             {result.success ? 'Posted to QuickBooks' : 'Posted with issues'}
           </p>
 
@@ -84,18 +96,10 @@ export default function SyncButton({ payoutId }: { payoutId: string }) {
                 <li key={i} className="flex items-start justify-between gap-2 text-xs">
                   <span className="font-mono text-primary">{p.orderNumber}</span>
                   <span className="text-right">
-                    {p.status === 'paid' && (
-                      <span className="text-ok">Paid £{p.amount.toFixed(2)}</span>
-                    )}
-                    {p.status === 'already_paid' && (
-                      <span className="text-secondary">Already paid</span>
-                    )}
-                    {p.status === 'no_invoice' && (
-                      <span className="text-warn">No invoice in QBO</span>
-                    )}
-                    {p.status === 'error' && (
-                      <span className="text-fail">Error</span>
-                    )}
+                    {p.status === 'paid' && <span className="text-ok">Paid £{p.amount.toFixed(2)}</span>}
+                    {p.status === 'already_paid' && <span className="text-secondary">Already paid</span>}
+                    {p.status === 'no_invoice' && <span className="text-warn">No invoice in QBO</span>}
+                    {p.status === 'error' && <span className="text-fail">Error</span>}
                   </span>
                 </li>
               ))}

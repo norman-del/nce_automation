@@ -72,7 +72,7 @@ export default async function PayoutDetailPage({
             </span>
           </div>
         </div>
-        <SyncButton payoutId={id} />
+        <SyncButton payoutId={id} alreadyPosted={payout.sync_status === 'synced'} />
       </div>
 
       {/* Journal status pill */}
