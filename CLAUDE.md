@@ -72,9 +72,29 @@ ngrok config add-authtoken 3BWi7Po675XO8cq0oLXWqdaN3ro_3uxLpZeiPVRz7EW3nBcuP
 3. Confirm ngrok URL matches `QBO_REDIRECT_URI` in `.env.local`
 4. Go to http://localhost:3000/settings → Disconnect QBO → Connect QuickBooks
 5. Log in to Intuit and authorise
-6. Tokens are saved to Supabase automatically (account mappings persist — no need to re-map)
+6. Tokens are saved to Supabase automatically
+7. **Re-map accounts after re-auth** — mappings are tied to the QBO connection and reset on reconnect (see QBO Account Mappings below)
 
 ### Warning
 Never use the QBO refresh token outside the app (e.g. in a test script) without saving
 the new refresh token back to Supabase. Intuit rotates refresh tokens on every use —
 consuming one without saving the replacement invalidates the chain and forces re-auth.
+
+## QBO Account Mappings
+These are hardcoded into the OAuth callback (`app/api/qbo/auth/route.ts`) and set automatically on every connect/reconnect. No manual mapping needed.
+
+| Field | Account Name | Account ID | Type |
+|---|---|---|---|
+| Shopify Fees account | Shopify Charges | 133 | Cost of Goods Sold |
+| Bank / Receipt account | Shopify Receipt Account | 1150040008 | Bank |
+
+## Invoice Matching — Known Behaviours
+- **Strategies 1 (PONumber) and 3 (CustomerMemo)** always return HTTP 400 from QBO — these fields are not queryable via node-quickbooks criteria. They can be removed in future.
+- **Strategy 2 (date+amount)** works when the QBO invoice date is within ±3 days of the payout date.
+- **Strategy 4 (customer name)** is the main fallback. It uses a two-step lookup: `findCustomers` by DisplayName → `findInvoices` by customer ID. It tries company name first, then personal name — this is necessary because Shopify sometimes has the company name only in the shipping address, not the customer record, so QBO may have the person's name instead.
+- `client.query()` does NOT exist in node-quickbooks. Use `findCustomers` / `findInvoices` with criteria instead.
+
+## Next Steps
+- **Vercel deployment** — move off local machine so sync runs without the PC being on
+- **Authentication** — add login/auth before deploying (currently no auth on any route)
+- ngrok will no longer be needed once deployed to Vercel (use the Vercel URL as QBO_REDIRECT_URI)

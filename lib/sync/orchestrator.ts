@@ -169,6 +169,8 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
           orderNumber: txn.order_number ?? '',
           grossAmount: Number(txn.amount),
           payoutDate: payout.payout_date,
+          companyName: txn.company_name,
+          customerName: txn.customer_name,
         })
         if (!invoice) {
           await db

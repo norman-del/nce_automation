@@ -38,10 +38,14 @@ export async function findInvoiceForOrder({
   orderNumber,
   grossAmount,
   payoutDate,
+  companyName,
+  customerName,
 }: {
   orderNumber: string
   grossAmount: number
   payoutDate: string // YYYY-MM-DD
+  companyName?: string | null
+  customerName?: string | null
 }): Promise<QboInvoice | null> {
   const { client } = await getQboClient()
 
@@ -94,6 +98,46 @@ export async function findInvoiceForOrder({
     }
   } catch (e) {
     console.warn(`[invoice-match] Strategy 3 (CustomerMemo) failed or unsupported: ${e}`)
+  }
+
+  // Strategy 4: Find customer by name, then find their unpaid invoices by customer ID
+  // Tries company name first, then falls back to personal name — handles cases where
+  // the company name is only in the Shopify shipping address and QBO has the person's name
+  const namesToTry = [companyName, customerName].filter(Boolean) as string[]
+  for (const nameToSearch of namesToTry) {
+    try {
+      const { client: client4 } = await getQboClient()
+
+      type CustomerResponse = { QueryResponse: { Customer?: Array<{ Id: string; DisplayName: string }> } }
+      const customers = await new Promise<Array<{ Id: string; DisplayName: string }>>((resolve, reject) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(client4 as any).findCustomers(
+          [{ field: 'DisplayName', value: nameToSearch, operator: 'LIKE' }],
+          (err: unknown, data: CustomerResponse) => {
+            if (err) return reject(err)
+            resolve(data?.QueryResponse?.Customer ?? [])
+          }
+        )
+      })
+
+      if (customers.length > 0) {
+        const customerId = customers[0].Id
+        const invoices = await searchInvoices(client4, [
+          { field: 'CustomerRef', value: customerId },
+        ])
+        const unpaid = invoices.filter((inv) => Number(inv.Balance) > 0)
+        const amountMatch = unpaid.find(
+          (inv) => Math.abs(Number(inv.TotalAmt) - grossAmount) < 0.02
+        )
+        const match = amountMatch ?? (unpaid.length === 1 ? unpaid[0] : null)
+        if (match) {
+          console.log(`[invoice-match] Strategy 4 (customer name) matched ${orderNumber} → QBO invoice ${match.Id} via "${nameToSearch}"`)
+          return match
+        }
+      }
+    } catch (e) {
+      console.warn(`[invoice-match] Strategy 4 (customer name) failed for "${nameToSearch}": ${e}`)
+    }
   }
 
   console.warn(`[invoice-match] No match found for order ${orderNumber} (£${grossAmount} on ${payoutDate})`)

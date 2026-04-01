@@ -92,8 +92,8 @@ export default async function PayoutDetailPage({
       {/* Transactions */}
       {transactions.length === 0 ? (
         <div className="bg-surface border border-edge rounded-lg px-6 py-16 text-center">
-          <p className="text-secondary text-sm">No transactions loaded.</p>
-          <p className="text-secondary text-xs mt-1">Run Full Sync to pull order details.</p>
+          <p className="text-secondary text-sm">No transactions yet.</p>
+          <p className="text-secondary text-xs mt-1">Click "Post to QuickBooks" to fetch orders and post this payout.</p>
         </div>
       ) : (
         <div className="bg-surface border border-edge rounded-lg overflow-hidden">

@@ -30,6 +30,9 @@ export async function GET(req: NextRequest) {
         refresh_token_encrypted: encrypt(tokens.refreshToken),
         token_expires_at: tokens.expiresAt.toISOString(),
         updated_at: new Date().toISOString(),
+        // Fixed account mappings — Shopify Charges (133) and Shopify Receipt Account (1150040008)
+        shopify_fees_account_id: '133',
+        bank_account_id: '1150040008',
       },
       { onConflict: 'realm_id' }
     )
