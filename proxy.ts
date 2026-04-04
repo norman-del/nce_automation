@@ -29,6 +29,7 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
   const isPublic =
     path === '/login' ||
+    path.startsWith('/api/auth') ||
     path.startsWith('/api/qbo/auth') ||
     path.startsWith('/api/cron')
 

@@ -33,8 +33,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-base flex items-center justify-center">
-      <div className="w-full max-w-sm bg-surface border border-border rounded-lg p-8 shadow-lg">
+    <div className="fixed inset-0 bg-canvas flex items-center justify-center">
+      <div className="w-full max-w-sm bg-surface border border-edge rounded-lg p-8 shadow-lg">
         <h1 className="text-xl font-semibold text-primary mb-6">Sign in</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -49,7 +49,7 @@ export default function LoginPage() {
               autoComplete="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full px-3 py-2 bg-overlay border border-border rounded-md text-primary text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full px-3 py-2 bg-overlay border border-edge rounded-md text-primary text-sm focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 
@@ -64,7 +64,7 @@ export default function LoginPage() {
               autoComplete="current-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full px-3 py-2 bg-overlay border border-border rounded-md text-primary text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full px-3 py-2 bg-overlay border border-edge rounded-md text-primary text-sm focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 
