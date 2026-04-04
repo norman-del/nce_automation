@@ -31,7 +31,8 @@ export async function proxy(request: NextRequest) {
     path === '/login' ||
     path.startsWith('/api/auth') ||
     path.startsWith('/api/qbo/auth') ||
-    path.startsWith('/api/cron')
+    path.startsWith('/api/cron') ||
+    path.startsWith('/api/setup')
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()
