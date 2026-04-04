@@ -54,7 +54,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (pathname === '/login') return <>{children}</>
 
   return (
-    <>
+    <div className="flex flex-col sm:flex-row flex-1 w-full">
       {/* Mobile top header */}
       <header className="sticky top-0 z-40 flex h-12 items-center border-b border-edge bg-surface px-4 sm:hidden">
         <h1 className="text-sm font-semibold text-primary">Fee Sync</h1>
@@ -98,6 +98,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           )
         })}
       </nav>
-    </>
+    </div>
   )
 }

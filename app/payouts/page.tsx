@@ -208,7 +208,9 @@ export default async function PayoutsPage({
                     </div>
                     <div>
                       <p className="text-[10px] text-secondary uppercase tracking-wide mb-0.5">Fees</p>
-                      <p className="text-base font-medium text-fail leading-none">£{Number(payout.total_fees ?? 0).toFixed(2)}</p>
+                      <p className="text-base font-medium text-fail leading-none">
+                        {payout.total_fees != null ? `£${Number(payout.total_fees).toFixed(2)}` : '—'}
+                      </p>
                     </div>
                     {payout.gross_amount != null && (
                       <div>

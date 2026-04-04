@@ -72,9 +72,7 @@ export default async function PayoutDetailPage({
             </span>
           </div>
         </div>
-        <div className="hidden sm:block">
-          <SyncButton payoutId={id} alreadyPosted={payout.sync_status === 'synced'} />
-        </div>
+        <SyncButton payoutId={id} alreadyPosted={payout.sync_status === 'synced'} />
       </div>
 
       {/* Journal status pill */}
@@ -89,11 +87,6 @@ export default async function PayoutDetailPage({
             Not created — run Full Sync
           </span>
         )}
-      </div>
-
-      {/* Mobile: sticky sync button (renders the fixed bar) */}
-      <div className="sm:hidden">
-        <SyncButton payoutId={id} alreadyPosted={payout.sync_status === 'synced'} />
       </div>
 
       {/* Transactions */}
@@ -192,7 +185,7 @@ export default async function PayoutDetailPage({
       )}
 
       {/* Spacer so sticky sync button doesn't overlap transactions on mobile */}
-      <div className="sm:hidden h-32" />
+      <div className="sm:hidden h-44" />
     </div>
   )
 }
