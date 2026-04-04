@@ -180,6 +180,13 @@ export default function ProductForm({ productTypes, vendors, collections }: Prop
         >
           Save & Add Another
         </button>
+        <button
+          onClick={() => router.push('/products')}
+          disabled={saving}
+          className="px-5 py-2.5 text-secondary text-sm rounded-md hover:text-primary hover:bg-overlay disabled:opacity-50 transition-colors"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   )

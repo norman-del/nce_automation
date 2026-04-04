@@ -1,24 +1,32 @@
-# Shopify-QBO Fee Sync
+# NCE Automation
 
 ## What This Is
-Standalone tool that automates Shopify payout fee reconciliation with QuickBooks Online.
-Pulls Shopify payouts → creates QBO journal entries for fees → matches invoices → applies payments.
+Automation tool for Nationwide Catering Equipment with two main pipelines:
+1. **Payout Fee Sync** — Shopify payout fee reconciliation with QuickBooks Online
+2. **Product Ingestion** — Single-form entry that pushes to Supabase, Shopify (draft), and QBO simultaneously
 
 ## Tech Stack
-Next.js 15 (App Router), Supabase, Tailwind, @shopify/shopify-api, node-quickbooks, intuit-oauth
+Next.js 16 (App Router), React 19, Supabase, Tailwind 4, node-quickbooks, intuit-oauth
+
+## Deployment
+- **Production**: https://nce-automation.vercel.app (auto-deploys from `main` branch)
+- **Vercel CLI** installed globally — use for env vars, logs, deployments
+- **Vercel project**: `prj_8zIpLhyV521wE3vzKAAmvTUnS0eV` / org `team_8W8KmJZHBpZtLVAOJAcWPNoC`
 
 ## Hard Rules
 - NEVER store tokens in plaintext — always encrypt with AES-256-GCM
 - NEVER create duplicate journal entries — always check payout.journal_entry_id first
 - NEVER create duplicate payments — always check payout_transaction.qbo_payment_id first
+- NEVER create duplicate QBO items — always check products.qbo_item_id first
 - ALL QBO API calls must check token expiry and refresh if needed
-- TypeScript strict mode. No `any`.
+- TypeScript strict mode. No `any` (except `node-quickbooks` client which has incomplete types — use `QboAny` cast pattern from `lib/qbo/items.ts`).
 
 ## Key Patterns
 - Shopify auth: Custom App access token (stored in env), not OAuth
 - QBO auth: OAuth 2.0 (access token 1hr, refresh token 100 days)
-- Sync is idempotent: re-running for the same payout is safe
-- Errors are isolated: one failed payment doesn't block the rest
+- Sync is idempotent: re-running for the same payout/product is safe
+- Errors are isolated: one failed item doesn't block the rest
+- Product ingestion: Supabase is source of truth → pushes to Shopify + QBO
 
 ## Commands
 ```
@@ -29,18 +37,75 @@ npm run lint       # ESLint
 
 ## Database
 Supabase Postgres. Migrations in supabase/migrations/.
-Tables: shopify_connections, qbo_connections, payouts, payout_transactions, sync_log
+
+### Tables
+**Payout sync:**
+- `shopify_connections` — single store connection
+- `qbo_connections` — QBO OAuth tokens + account mappings
+- `payouts` — synced Shopify payouts
+- `payout_transactions` — individual orders within payouts
+- `sync_log` — audit trail
+
+**Product ingestion (new):**
+- `suppliers` — supplier directory (name, contact, address, qbo_vendor_id)
+- `products` — core product table (replaces the Google Sheet)
+- `product_images` — photo tracking for Shopify uploads
+- `product_sku_seq` — sequence for auto-generating SKU numbers (starts at NCE5200)
 
 ## Folder Guide
 ```
-lib/shopify/    — Shopify API client + data fetchers
-lib/qbo/        — QBO OAuth, journal entries, invoice queries, payments
-lib/sync/       — Orchestrator that ties Shopify → QBO
-app/api/        — API routes (shopify sync, qbo auth, qbo journal, qbo payment, cron)
-app/payouts/    — Payout list + detail pages
-app/settings/   — Connection management + account mapping
-app/sync-log/   — Sync history + error log
+lib/shopify/       — Shopify API client, payouts, orders, products
+lib/qbo/           — QBO OAuth, journal entries, invoices, payments, items
+lib/sync/          — Orchestrator that ties Shopify → QBO (payouts)
+lib/products/      — Shipping tier calculation
+app/api/           — API routes
+  api/products/    — Product CRUD, batch create, image upload
+  api/suppliers/   — Supplier CRUD + typeahead search
+  api/shopify/     — Shopify sync + OAuth auth flow
+  api/qbo/         — QBO auth, journal, payment, accounts
+  api/cron/        — Automated sync
+app/products/      — Product list, detail, ingestion form
+app/payouts/       — Payout list + detail pages
+app/settings/      — Connection management + account mapping
+app/sync-log/      — Sync history + error log
 ```
+
+## Shopify Apps (two apps exist)
+1. **QuickBooks Integration** (Dev Dashboard) — the third-party sync app. Has a setting "When a Product is created in Shopify, create a new item in QuickBooks Online" which should be **unticked** once our product ingestion goes live (to prevent duplicates).
+2. **NCE Automation API** (Custom App) — our app. Managed via Shopify CLI (`shopify.app.toml` in project root).
+   - Client ID: `5f1c7aa2f0559a3fc7ff2cac0e77b659`
+   - Scopes: `read_orders, read_products, write_products, read_shopify_payments_payouts`
+   - Versions managed via `npx shopify app deploy` + `npx shopify app release`
+
+### Shopify OAuth gotchas
+- Shopify's new Dev Dashboard uses internal store IDs (e.g. `80a273-f0.myshopify.com`) that DON'T work with the OAuth token exchange endpoint. Always use `ncequipment.myshopify.com` (the `SHOPIFY_STORE_DOMAIN` env var) for token exchange.
+- The OAuth callback is at `/api/shopify/auth/callback`
+- The auth initiation (redirects to Shopify authorize URL) is at `/api/shopify/auth`
+- Access tokens are permanent (no expiry). Only change if app is reinstalled.
+
+## Product Ingestion Pipeline
+
+### How it works
+1. User fills in structured form at `/products/new`
+2. On save: Supabase record created with auto-generated SKU + auto-calculated shipping tier
+3. Shopify draft product created (title, price, type, vendor, tags, collections, metafields)
+4. QBO Item created with full fields (cost, selling price, VAT, purchase tax, preferred supplier)
+5. Later: user uploads photos → pushed to Shopify → product auto-activates (draft → active)
+
+### Shipping tier auto-calculation
+- **Parcel (0)**: fits 120x55x50cm AND ≤30kg (or 60x60x60 cube AND ≤30kg)
+- **Single Pallet (1)**: exceeds parcel but footprint ≤100x120cm
+- **Double Pallet (2)**: exceeds 100x120cm footprint
+
+### VAT logic
+- `vat_applicable = true` → 20% standard rate (both sales and purchase tax in QBO)
+- `vat_applicable = false` → Margin scheme (exempt/no VAT in QBO)
+- This is independent of new/used condition
+
+### Supplier management
+- Suppliers stored in `suppliers` table with typeahead search
+- When a product is created, if the supplier doesn't exist in QBO, a Vendor is created automatically
+- QBO Vendor ID cached in `suppliers.qbo_vendor_id` for reuse
 
 ## ngrok (QBO OAuth only)
 ngrok is only needed when re-doing the QBO OAuth flow (tokens last 100 days, so this is rare).
@@ -128,6 +193,8 @@ approvalPolicy: options.approvalPolicy ?? (sandbox === "workspace-write" || sand
 The root cause: `approvalPolicy: "never"` means the app server declines all tool calls. `on-request` + `danger-full-access` sandbox matches what `codex exec --dangerously-bypass-approvals-and-sandbox` does internally.
 
 ## Next Steps
-- **Vercel deployment** — move off local machine so sync runs without the PC being on
-- **Authentication** — Supabase Auth, email/password, single user (not a SaaS product)
-- ngrok will no longer be needed once deployed to Vercel (use the Vercel URL as QBO_REDIRECT_URI)
+- **Test product ingestion end-to-end** — form → Supabase → Shopify draft → QBO item → photo upload → active
+- **Existing product migration** — strategy needed to import 5000+ existing products from spreadsheet into Supabase (not into Shopify/QBO — they already exist there)
+- **QBO sync app deactivation** — untick "create new item in QBO" in the QuickBooks Online Global app once our pipeline is validated
+- **Mobile frontend** — being rebuilt in a parallel session
+- **Logging** — being added in a parallel session
