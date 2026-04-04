@@ -29,8 +29,12 @@ export async function GET(req: NextRequest) {
       return new NextResponse('SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET must be set', { status: 500 })
     }
 
+    // Use the known store domain — Shopify's new internal IDs (80a273-f0) don't work for token exchange
+    const storeDomain = process.env.SHOPIFY_STORE_DOMAIN || shop
+    console.log('[shopify-auth] Using store domain for token exchange:', storeDomain)
+
     // Exchange code for permanent access token
-    const tokenRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
+    const tokenRes = await fetch(`https://${storeDomain}/admin/oauth/access_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
