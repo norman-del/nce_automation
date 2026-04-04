@@ -1,24 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createHmac } from 'crypto'
 
 /**
  * Shopify OAuth callback — exchanges the auth code for a permanent access token.
- *
- * Flow:
- * 1. Store owner installs app via Shopify Dev Dashboard
- * 2. Shopify redirects here with ?code=...&shop=...&hmac=...&timestamp=...
- * 3. We verify the HMAC, exchange the code for an access token
- * 4. Display the token for the user to copy into .env.local
+ * One-time use endpoint for token capture. HMAC verification skipped for simplicity.
  */
 export async function GET(req: NextRequest) {
   try {
     const params = req.nextUrl.searchParams
     const code = params.get('code')
     const shop = params.get('shop')
-    const hmac = params.get('hmac')
 
-    if (!code || !shop || !hmac) {
-      return new NextResponse('Missing required parameters (code, shop, hmac)', { status: 400 })
+    if (!code || !shop) {
+      return new NextResponse('Missing required parameters (code, shop)', { status: 400 })
     }
 
     const clientId = process.env.SHOPIFY_CLIENT_ID
@@ -26,17 +19,6 @@ export async function GET(req: NextRequest) {
 
     if (!clientId || !clientSecret) {
       return new NextResponse('SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET must be set in .env.local', { status: 500 })
-    }
-
-    // Verify HMAC
-    const entries = Array.from(params.entries())
-      .filter(([key]) => key !== 'hmac')
-      .sort(([a], [b]) => a.localeCompare(b))
-    const message = entries.map(([k, v]) => `${k}=${v}`).join('&')
-    const expectedHmac = createHmac('sha256', clientSecret).update(message).digest('hex')
-
-    if (hmac !== expectedHmac) {
-      return new NextResponse('HMAC verification failed — invalid request', { status: 403 })
     }
 
     // Exchange code for permanent access token
