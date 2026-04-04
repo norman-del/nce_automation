@@ -10,15 +10,23 @@ export async function GET(req: NextRequest) {
     const code = params.get('code')
     const shop = params.get('shop')
 
+    // Log all params for debugging
+    console.log('[shopify-auth] Callback hit with params:', Object.fromEntries(params.entries()))
+
     if (!code || !shop) {
-      return new NextResponse('Missing required parameters (code, shop)', { status: 400 })
+      return new NextResponse(
+        `Missing required parameters. Got: code=${code ? 'yes' : 'no'}, shop=${shop || 'none'}. All params: ${req.nextUrl.search}`,
+        { status: 400 }
+      )
     }
 
     const clientId = process.env.SHOPIFY_CLIENT_ID
     const clientSecret = process.env.SHOPIFY_CLIENT_SECRET
 
+    console.log('[shopify-auth] Client ID present:', !!clientId, 'Secret present:', !!clientSecret)
+
     if (!clientId || !clientSecret) {
-      return new NextResponse('SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET must be set in .env.local', { status: 500 })
+      return new NextResponse('SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET must be set', { status: 500 })
     }
 
     // Exchange code for permanent access token
