@@ -75,10 +75,10 @@ export async function getQboClient(): Promise<{
     }
   }
 
-  const isSandbox = process.env.QBO_ENVIRONMENT !== 'production'
+  const isSandbox = process.env.QBO_ENVIRONMENT?.trim() !== 'production'
   const qbo = new QuickBooks(
-    process.env.QBO_CLIENT_ID!,
-    process.env.QBO_CLIENT_SECRET!,
+    process.env.QBO_CLIENT_ID!.trim(),
+    process.env.QBO_CLIENT_SECRET!.trim(),
     accessToken,
     false, // no OAuth token secret (OAuth 2)
     conn.realm_id,
