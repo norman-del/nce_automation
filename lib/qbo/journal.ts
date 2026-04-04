@@ -17,7 +17,8 @@ export interface CreateJournalEntryParams {
 export async function createJournalEntry(
   params: CreateJournalEntryParams
 ): Promise<string> {
-  const { client } = await getQboClient()
+  const { client, connection } = await getQboClient()
+  console.log('[qbo-journal] Token expires at:', connection.token_expires_at)
 
   const DETAIL_TYPE = 'JournalEntryLineDetail' as const
 
@@ -47,16 +48,26 @@ export async function createJournalEntry(
     },
   })
 
+  const journalData = {
+    TxnDate: params.payoutDate,
+    PrivateNote: `Shopify fees payout ${params.payoutDate} — created by QBO Fee Sync`,
+    Line: journalLines,
+  }
+
+  console.log('[qbo-journal] Creating journal entry for', params.payoutDate, 'with', journalLines.length, 'lines')
+  console.log('[qbo-journal] Realm ID:', connection.realm_id, 'Sandbox:', process.env.QBO_ENVIRONMENT !== 'production')
+
   return new Promise((resolve, reject) => {
     client.createJournalEntry(
-      {
-        TxnDate: params.payoutDate,
-        PrivateNote: `Shopify fees payout ${params.payoutDate} — created by QBO Fee Sync`,
-        Line: journalLines,
-      },
+      journalData,
       (err: unknown, entry: { Id: string }) => {
-        if (err) reject(err)
-        else resolve(entry.Id)
+        if (err) {
+          console.error('[qbo-journal] Error creating journal entry:', JSON.stringify(err, null, 2))
+          reject(err)
+        } else {
+          console.log('[qbo-journal] Created journal entry:', entry.Id)
+          resolve(entry.Id)
+        }
       }
     )
   })

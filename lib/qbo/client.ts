@@ -40,9 +40,14 @@ export async function getQboClient(): Promise<{
   // Refresh if token expires within 5 minutes
   const expiresAt = new Date(connection.token_expires_at)
   const fiveMinutes = 5 * 60 * 1000
-  if (expiresAt.getTime() - Date.now() < fiveMinutes) {
+  const timeLeft = expiresAt.getTime() - Date.now()
+  console.log('[qbo-client] Token expires at:', expiresAt.toISOString(), '— time left:', Math.round(timeLeft / 1000), 'seconds')
+
+  if (timeLeft < fiveMinutes) {
+    console.log('[qbo-client] Token expired or expiring soon, refreshing...')
     const refreshToken = decrypt(connection.refresh_token_encrypted)
     const refreshed = await refreshAccessToken(refreshToken)
+    console.log('[qbo-client] Token refreshed successfully, new expiry:', refreshed.expiresAt.toISOString())
 
     const db = createServiceClient()
     await db
