@@ -4,10 +4,11 @@ const ALGORITHM = 'aes-256-gcm'
 const KEY_HEX = process.env.TOKEN_ENCRYPTION_KEY!
 
 function getKey(): Buffer {
-  if (!KEY_HEX || KEY_HEX.length !== 64) {
+  const key = KEY_HEX?.trim()
+  if (!key || key.length !== 64) {
     throw new Error('TOKEN_ENCRYPTION_KEY must be a 32-byte hex string (64 hex chars)')
   }
-  return Buffer.from(KEY_HEX, 'hex')
+  return Buffer.from(key, 'hex')
 }
 
 export function encrypt(plaintext: string): string {
