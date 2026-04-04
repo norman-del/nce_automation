@@ -50,7 +50,7 @@ export default async function PayoutDetailPage({
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
         <div>
           <div className="mb-2">
             <Link href="/payouts" className="text-secondary hover:text-primary text-sm transition-colors">
@@ -72,7 +72,9 @@ export default async function PayoutDetailPage({
             </span>
           </div>
         </div>
-        <SyncButton payoutId={id} alreadyPosted={payout.sync_status === 'synced'} />
+        <div className="hidden sm:block">
+          <SyncButton payoutId={id} alreadyPosted={payout.sync_status === 'synced'} />
+        </div>
       </div>
 
       {/* Journal status pill */}
@@ -89,6 +91,11 @@ export default async function PayoutDetailPage({
         )}
       </div>
 
+      {/* Mobile: sticky sync button (renders the fixed bar) */}
+      <div className="sm:hidden">
+        <SyncButton payoutId={id} alreadyPosted={payout.sync_status === 'synced'} />
+      </div>
+
       {/* Transactions */}
       {transactions.length === 0 ? (
         <div className="bg-surface border border-edge rounded-lg px-6 py-16 text-center">
@@ -96,54 +103,96 @@ export default async function PayoutDetailPage({
           <p className="text-secondary text-xs mt-1">Click "Post to QuickBooks" to fetch orders and post this payout.</p>
         </div>
       ) : (
-        <div className="bg-surface border border-edge rounded-lg overflow-hidden">
-          <div className="px-5 py-3 border-b border-edge flex items-center justify-between">
-            <p className="text-xs text-secondary">{transactions.length} orders in this payout</p>
-            <p className="text-xs text-secondary">{paidCount} of {transactions.length} paid in QBO</p>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-overlay border-b border-edge">
-                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Order</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Customer</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Company</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Gross</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Fee</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Net</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">QBO Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-edge">
-              {transactions.map((txn) => {
-                const s = paymentStatusStyles[txn.payment_status] ?? paymentStatusStyles.no_invoice
-                return (
-                  <tr key={txn.id} className="hover:bg-overlay transition-colors">
-                    <td className="px-4 py-3 font-mono text-primary text-xs">
-                      {txn.order_number ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-secondary">{txn.customer_name ?? '—'}</td>
-                    <td className="px-4 py-3 text-secondary">{txn.company_name ?? '—'}</td>
-                    <td className="px-4 py-3 text-right text-secondary">
-                      £{Number(txn.amount).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-fail">
-                      £{Number(txn.fee).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-primary">
-                      £{Number(txn.net).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${s.pill}`}>
-                        {s.label}
-                      </span>
-                    </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden sm:block">
+            <div className="bg-surface border border-edge rounded-lg overflow-hidden">
+              <div className="px-5 py-3 border-b border-edge flex items-center justify-between">
+                <p className="text-xs text-secondary">{transactions.length} orders in this payout</p>
+                <p className="text-xs text-secondary">{paidCount} of {transactions.length} paid in QBO</p>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-overlay border-b border-edge">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Order</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Customer</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Company</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Gross</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Fee</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Net</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">QBO Status</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-edge">
+                  {transactions.map((txn) => {
+                    const s = paymentStatusStyles[txn.payment_status] ?? paymentStatusStyles.no_invoice
+                    return (
+                      <tr key={txn.id} className="hover:bg-overlay transition-colors">
+                        <td className="px-4 py-3 font-mono text-primary text-xs">
+                          {txn.order_number ?? '—'}
+                        </td>
+                        <td className="px-4 py-3 text-secondary">{txn.customer_name ?? '—'}</td>
+                        <td className="px-4 py-3 text-secondary">{txn.company_name ?? '—'}</td>
+                        <td className="px-4 py-3 text-right text-secondary">
+                          £{Number(txn.amount).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-fail">
+                          £{Number(txn.fee).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium text-primary">
+                          £{Number(txn.net).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${s.pill}`}>
+                            {s.label}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile transaction cards */}
+          <div className="sm:hidden space-y-2.5">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-secondary">{transactions.length} orders in this payout</p>
+              <p className="text-xs text-secondary">{paidCount} of {transactions.length} paid in QBO</p>
+            </div>
+            {transactions.map((txn) => {
+              const s = paymentStatusStyles[txn.payment_status] ?? paymentStatusStyles.no_invoice
+              return (
+                <div key={txn.id} className="bg-surface border border-edge rounded-xl p-4">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="font-mono text-primary text-sm font-medium">{txn.order_number ?? '—'}</span>
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${s.pill}`}>{s.label}</span>
+                  </div>
+                  <p className="text-sm text-secondary mb-3 truncate">{txn.customer_name ?? txn.company_name ?? '—'}</p>
+                  <div className="flex gap-5 text-xs">
+                    <div>
+                      <p className="text-[10px] text-secondary uppercase tracking-wide mb-0.5">Net</p>
+                      <p className="text-primary font-semibold">£{Number(txn.net).toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-secondary uppercase tracking-wide mb-0.5">Fee</p>
+                      <p className="text-fail">£{Number(txn.fee).toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-secondary uppercase tracking-wide mb-0.5">Gross</p>
+                      <p className="text-secondary">£{Number(txn.amount).toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
       )}
+
+      {/* Spacer so sticky sync button doesn't overlap transactions on mobile */}
+      <div className="sm:hidden h-32" />
     </div>
   )
 }

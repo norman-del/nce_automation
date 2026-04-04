@@ -43,14 +43,14 @@ export default function SyncPayoutsButton() {
       </button>
 
       {error && (
-        <div className="rounded-lg border border-fail/30 bg-fail/10 px-4 py-2.5 text-sm text-fail max-w-xs">
+        <div className="rounded-lg border border-fail/30 bg-fail/10 px-4 py-2.5 text-sm text-fail w-full sm:max-w-xs">
           {error}
         </div>
       )}
 
       {result && (
         <div
-          className={`rounded-lg border px-4 py-2.5 text-sm max-w-xs ${
+          className={`rounded-lg border px-4 py-2.5 text-sm w-full sm:max-w-xs ${
             result.synced > 0
               ? 'border-ok/30 bg-ok/10 text-ok'
               : 'border-edge bg-overlay text-secondary'

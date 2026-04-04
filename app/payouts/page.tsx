@@ -56,7 +56,7 @@ export default async function PayoutsPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h2 className="text-2xl font-semibold text-primary">Payouts</h2>
           <p className="mt-1 text-sm text-secondary">Shopify payouts pulled from the API</p>
@@ -64,15 +64,29 @@ export default async function PayoutsPage({
         <SyncPayoutsButton />
       </div>
 
-      {/* Active filter banner */}
-      {isAttentionFilter && (
-        <div className="mb-4 flex items-center gap-3 rounded-lg border border-warn/30 bg-warn/10 px-4 py-2.5 text-sm">
-          <span className="text-warn font-medium">⚠ Showing payouts that need attention (pending + errors)</span>
-          <Link href="/payouts" className="ml-auto text-xs text-secondary hover:text-primary transition-colors">
-            Clear filter ×
-          </Link>
-        </div>
-      )}
+      {/* Filter pills */}
+      <div className="flex gap-2 mb-4">
+        <Link
+          href="/payouts"
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            !isAttentionFilter
+              ? 'bg-accent/15 text-accent border border-accent/30'
+              : 'bg-overlay text-secondary border border-edge hover:text-primary'
+          }`}
+        >
+          All
+        </Link>
+        <Link
+          href="/payouts?filter=attention"
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            isAttentionFilter
+              ? 'bg-warn/15 text-warn border border-warn/30'
+              : 'bg-overlay text-secondary border border-edge hover:text-primary'
+          }`}
+        >
+          ⚠ Needs attention
+        </Link>
+      </div>
 
       {/* Search */}
       <form method="GET" className="mb-5 flex gap-2">
@@ -108,64 +122,106 @@ export default async function PayoutsPage({
             : 'No payouts yet. Click "Sync Payouts" to pull from Shopify.'}
         </div>
       ) : (
-        <div className="bg-surface border border-edge rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-overlay border-b border-edge">
-                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Date</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Gross</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Fees</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Net</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-edge">
-              {payouts.map((payout: {
-                id: string
-                payout_date: string
-                gross_amount: number | null
-                total_fees: number | null
-                amount: number
-                currency: string
-                sync_status: string
-              }) => {
-                const s = statusStyles[payout.sync_status] ?? statusStyles.skipped
-                return (
-                  <tr key={payout.id} className="hover:bg-overlay transition-colors">
-                    <td className="px-4 py-3 text-primary font-mono text-xs">{payout.payout_date}</td>
-                    <td className="px-4 py-3 text-right text-secondary">
-                      {payout.gross_amount != null
-                        ? `£${Number(payout.gross_amount).toFixed(2)}`
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right text-fail">
-                      {payout.total_fees != null
-                        ? `£${Number(payout.total_fees).toFixed(2)}`
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-primary">
-                      £{Number(payout.amount).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${s.pill}`}>
-                        {s.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/payouts/${payout.id}`}
-                        className="text-accent hover:text-accent-hi text-xs transition-colors"
-                      >
-                        View →
-                      </Link>
-                    </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden sm:block">
+            <div className="bg-surface border border-edge rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-overlay border-b border-edge">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Date</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Gross</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Fees</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Net</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Status</th>
+                    <th className="px-4 py-3" />
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-edge">
+                  {payouts.map((payout: {
+                    id: string
+                    payout_date: string
+                    gross_amount: number | null
+                    total_fees: number | null
+                    amount: number
+                    currency: string
+                    sync_status: string
+                  }) => {
+                    const s = statusStyles[payout.sync_status] ?? statusStyles.skipped
+                    return (
+                      <tr key={payout.id} className="hover:bg-overlay transition-colors">
+                        <td className="px-4 py-3 text-primary font-mono text-xs">{payout.payout_date}</td>
+                        <td className="px-4 py-3 text-right text-secondary">
+                          {payout.gross_amount != null
+                            ? `£${Number(payout.gross_amount).toFixed(2)}`
+                            : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-right text-fail">
+                          {payout.total_fees != null
+                            ? `£${Number(payout.total_fees).toFixed(2)}`
+                            : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium text-primary">
+                          £{Number(payout.amount).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${s.pill}`}>
+                            {s.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Link
+                            href={`/payouts/${payout.id}`}
+                            className="text-accent hover:text-accent-hi text-xs transition-colors"
+                          >
+                            View →
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-2.5">
+            {payouts.map((payout: { id: string; payout_date: string; gross_amount: number | null; total_fees: number | null; amount: number; currency: string; sync_status: string }) => {
+              const s = statusStyles[payout.sync_status] ?? statusStyles.skipped
+              return (
+                <Link
+                  key={payout.id}
+                  href={`/payouts/${payout.id}`}
+                  className="block bg-surface border border-edge rounded-xl p-4 active:bg-overlay transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="font-mono text-primary text-sm">{payout.payout_date}</span>
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${s.pill}`}>
+                      {s.label}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-5">
+                    <div>
+                      <p className="text-[10px] text-secondary uppercase tracking-wide mb-0.5">Net</p>
+                      <p className="text-lg font-semibold text-primary leading-none">£{Number(payout.amount).toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-secondary uppercase tracking-wide mb-0.5">Fees</p>
+                      <p className="text-base font-medium text-fail leading-none">£{Number(payout.total_fees ?? 0).toFixed(2)}</p>
+                    </div>
+                    {payout.gross_amount != null && (
+                      <div>
+                        <p className="text-[10px] text-secondary uppercase tracking-wide mb-0.5">Gross</p>
+                        <p className="text-sm text-secondary leading-none">£{Number(payout.gross_amount).toFixed(2)}</p>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )

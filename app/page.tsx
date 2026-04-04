@@ -119,7 +119,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent payouts */}
-      <div className="bg-surface border border-edge rounded-lg overflow-hidden">
+      <div className="bg-surface border border-edge rounded-lg overflow-x-auto">
         <div className="px-5 py-4 border-b border-edge flex items-center justify-between">
           <p className="text-sm font-medium text-primary">Recent payouts</p>
           <Link href="/payouts" className="text-xs text-accent hover:text-accent-hi transition-colors">
