@@ -7,6 +7,7 @@ import { getQboConnection } from '@/lib/qbo/client'
 export async function POST(req: NextRequest) {
   try {
     const { transactionId } = await req.json() as { transactionId: string }
+    console.log('[payment] Request for transaction:', transactionId)
     const db = createServiceClient()
 
     const { data: txn } = await db
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (txn.qbo_payment_id) {
+      console.log('[payment] Already exists:', txn.qbo_payment_id)
       return NextResponse.json({ paymentId: txn.qbo_payment_id, alreadyExists: true })
     }
 
@@ -51,6 +53,7 @@ export async function POST(req: NextRequest) {
       depositToAccountId: connection.bank_account_id,
     })
 
+    console.log('[payment] Created:', paymentId, 'for order:', txn.order_number)
     await db
       .from('payout_transactions')
       .update({

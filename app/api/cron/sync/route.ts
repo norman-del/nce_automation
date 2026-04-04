@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  console.log('[cron] Starting scheduled sync')
 
   try {
     const db = createServiceClient()
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
       date_min: dateMin.toISOString().split('T')[0],
       status: 'paid',
     })
+    console.log('[cron] Processing', payouts.length, 'payouts')
 
     const results = []
     for (const payout of payouts) {
@@ -40,6 +42,7 @@ export async function GET(req: NextRequest) {
       results.push({ payoutId: payout.id, ...result })
     }
 
+    console.log('[cron] Done — processed:', results.length)
     return NextResponse.json({ processed: results.length, results })
   } catch (e) {
     console.error('Cron sync error:', e)

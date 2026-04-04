@@ -8,6 +8,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+  console.log('[full-sync] Triggered for payout DB id:', id)
 
   try {
     const db = createServiceClient()
@@ -22,6 +23,7 @@ export async function POST(
     }
 
     const result = await syncPayout(payout.shopify_payout_id)
+    console.log('[full-sync] Result for', id, ':', result)
     return NextResponse.json(result)
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)

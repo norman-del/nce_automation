@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
     const { date_min, date_max } = body as { date_min?: string; date_max?: string }
 
     const payouts = await fetchPayouts({ date_min, date_max, status: 'paid' })
+    console.log('[shopify-sync] Fetched', payouts.length, 'payouts from Shopify')
     const db = createServiceClient()
 
     let inserted = 0
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    console.log('[shopify-sync] Done — inserted:', inserted, 'skipped:', skipped)
     return NextResponse.json({ synced: inserted, skipped, total: payouts.length })
   } catch (e) {
     console.error('Shopify sync error:', e)

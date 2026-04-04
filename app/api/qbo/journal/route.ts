@@ -6,6 +6,7 @@ import { getQboConnection } from '@/lib/qbo/client'
 export async function POST(req: NextRequest) {
   try {
     const { payoutId } = await req.json() as { payoutId: string }
+    console.log('[journal] Request for payout:', payoutId)
     const db = createServiceClient()
 
     const { data: payout } = await db
@@ -19,6 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (payout.journal_entry_id) {
+      console.log('[journal] Already exists:', payout.journal_entry_id)
       return NextResponse.json({
         journalEntryId: payout.journal_entry_id,
         alreadyExists: true,
@@ -56,6 +58,7 @@ export async function POST(req: NextRequest) {
       lineItems,
     })
 
+    console.log('[journal] Created:', journalEntryId, '— total fees:', totalFees)
     await db
       .from('payouts')
       .update({

@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
   // Reconstruct the full callback URL using the configured redirect URI as base
   // (req.url may resolve to localhost internally, but Intuit needs the registered ngrok URL)
   const callbackUrl = `${process.env.QBO_REDIRECT_URI}?${searchParams.toString()}`
+  console.log('[qbo-auth] OAuth callback received')
 
   try {
     const tokens = await exchangeCodeForTokens(callbackUrl)
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
     )
 
     if (error) throw error
+    console.log('[qbo-auth] Tokens saved for realm:', tokens.realmId)
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nce-automation.vercel.app'
     return NextResponse.redirect(`${siteUrl}/settings?qbo=connected`)

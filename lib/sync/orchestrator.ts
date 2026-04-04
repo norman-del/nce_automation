@@ -24,6 +24,7 @@ export interface SyncResult {
 }
 
 export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
+  console.log('[sync] Starting payout', shopifyPayoutId)
   const db = createServiceClient()
   const errors: string[] = []
   let journalEntryId: string | null = null
@@ -51,6 +52,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
   const charges = transactions.filter(
     (t) => t.type === 'charge' && t.source_order_id
   )
+  console.log('[sync] Fetched', charges.length, 'charge transactions')
 
   // 3. Store transactions in DB + fetch order details
   const txnRows = []
@@ -107,6 +109,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
   if (!payout.journal_entry_id && allTxns && allTxns.length > 0) {
     try {
       totalFees = allTxns.reduce((sum, t) => sum + Number(t.fee), 0)
+      console.log('[sync] Creating journal entry — total fees:', totalFees)
       const lineItems = allTxns.map((t) => ({
         orderNumber: t.order_number ?? String(t.shopify_transaction_id),
         companyName: t.company_name ?? t.customer_name ?? 'Unknown',
@@ -121,6 +124,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
         lineItems,
       })
       journalCreated = true
+      console.log('[sync] Journal entry created:', journalEntryId)
 
       await db
         .from('payouts')
@@ -148,6 +152,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
     }
   } else {
     journalEntryId = payout.journal_entry_id
+    console.log('[sync] Journal entry already exists:', payout.journal_entry_id)
     if (allTxns) totalFees = allTxns.reduce((sum, t) => sum + Number(t.fee), 0)
   }
 
@@ -155,6 +160,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
   if (allTxns) {
     for (const txn of allTxns) {
       if (txn.qbo_payment_id) {
+        console.log('[sync] Payment already exists for order', txn.order_number)
         payments.push({
           orderNumber: txn.order_number ?? String(txn.shopify_transaction_id),
           customerName: txn.company_name ?? txn.customer_name,
@@ -165,6 +171,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
       }
 
       try {
+        console.log('[sync] Looking for invoice for order', txn.order_number)
         const invoice = await findInvoiceForOrder({
           orderNumber: txn.order_number ?? '',
           grossAmount: Number(txn.amount),
@@ -173,6 +180,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
           customerName: txn.customer_name,
         })
         if (!invoice) {
+          console.log('[sync] No invoice found for order', txn.order_number)
           await db
             .from('payout_transactions')
             .update({ payment_status: 'no_invoice' })
@@ -186,6 +194,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
           continue
         }
 
+        console.log('[sync] Invoice found:', invoice.Id, 'for order', txn.order_number)
         await db
           .from('payout_transactions')
           .update({ qbo_invoice_id: invoice.Id, payment_status: 'invoice_found' })
@@ -200,6 +209,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
           depositToAccountId: qboConnection.bank_account_id!,
         })
 
+        console.log('[sync] Payment created:', paymentId, 'for order', txn.order_number)
         await db
           .from('payout_transactions')
           .update({
@@ -248,6 +258,7 @@ export async function syncPayout(shopifyPayoutId: number): Promise<SyncResult> {
 
   // 6. Update overall payout sync status
   const finalStatus = errors.length === 0 ? 'synced' : 'error'
+  console.log('[sync] Payout', shopifyPayoutId, 'complete — status:', finalStatus, '— errors:', errors.length)
   await db
     .from('payouts')
     .update({
