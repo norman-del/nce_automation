@@ -158,18 +158,27 @@ The 5000+ existing products are already in both Shopify and QBO. We need them in
 Paste this into the next Claude Code session:
 
 ```
-Read docs/handoffs/product-ingestion-pipeline.md and CLAUDE.md for full context. This session should:
+Read docs/handoffs/product-ingestion-pipeline.md and CLAUDE.md for full context.
 
-1. Test the product ingestion pipeline end-to-end: go to /products/new, create a test product, verify it lands in Supabase, Shopify (as draft), and QBO (with cost, VAT, supplier). Then upload a photo and verify activation.
+URGENT BUG FIRST: The QBO API is returning 403 on journal entry creation for the April 2nd payout. Debug logging was just added (commit b444350). Steps:
+1. Reset the payout: UPDATE payouts SET sync_status='pending', sync_error=NULL WHERE payout_date='2026-04-02'; and same for payout_transactions payment_status/payment_error
+2. Have the user retry "Post to QuickBooks" from https://nce-automation.vercel.app/payouts (April 2nd payout)
+3. Check Vercel logs: `vercel logs nce-automation.vercel.app --no-follow` — look for [qbo-client] and [qbo-journal] entries
+4. The 403 might be: wrong QBO_ENVIRONMENT (should be "production"), sandbox flag misconfigured, token refresh failing silently, or realm_id mismatch. The new logging will reveal which.
+5. QBO was just reconnected (2026-04-04 ~20:16 UTC) so the refresh token is fresh (expires July 2026). The access token auto-refreshes every hour.
+6. If token refresh itself fails, user needs to re-auth: Settings → Disconnect QBO → Connect QuickBooks. The QBO_REDIRECT_URI on Vercel is now set to https://nce-automation.vercel.app/api/qbo/auth (updated this session). This must also match what's in the Intuit developer portal.
 
-2. Fix any issues found during testing.
-
-3. If testing passes: plan the existing product migration strategy (5000+ products from Shopify/CSV into Supabase) and the QBO sync app deactivation (untick "create new item" in QuickBooks Online Global).
+AFTER fixing the QBO bug, then:
+1. Test the product ingestion pipeline end-to-end: /products/new → create test product → verify Supabase + Shopify draft + QBO item
+2. Plan existing product migration (5000+ products from Shopify/CSV into Supabase)
+3. Plan QBO sync app deactivation (untick "create new item" in QuickBooks Online Global)
 
 Important context:
-- Shopify access token: working ([set in Vercel + .env.local — do not commit])
-- QBO connection: working (check token expiry)
-- The "QuickBooks Online Global" Shopify app still has "create new item in QBO" ticked — don't untick until our pipeline is validated
-- Product types and vendors populate from Shopify API (43 types, 13 vendors)
+- Shopify access token: working (set in Vercel + .env.local)
+- Two Shopify apps exist: "QuickBooks Integration" (third-party sync) and "NCE Automation API" (ours, managed via shopify.app.toml)
+- The "QuickBooks Online Global" Shopify app still has "create new item in QBO" ticked — don't untick until product ingestion is validated
+- Product types (43) and vendors (13) populate from Shopify API
 - SKU sequence starts at NCE5200
+- Use Vercel CLI for all Vercel operations (not MCP)
+- Parallel sessions: mobile redesign + logging — both committed to main
 ```
