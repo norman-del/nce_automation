@@ -1,0 +1,238 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createServiceClient } from '@/lib/supabase/client'
+import { calculateShippingTier } from '@/lib/products/shipping'
+import { createShopifyProduct, addProductToCollections } from '@/lib/shopify/products'
+import { createQboItem, findOrCreateQboVendor } from '@/lib/qbo/items'
+
+// GET /api/products?status=processing&q=search&limit=50&offset=0
+export async function GET(req: NextRequest) {
+  try {
+    const db = createServiceClient()
+    const params = req.nextUrl.searchParams
+    const status = params.get('status')
+    const q = params.get('q')?.trim()
+    const limit = Math.min(parseInt(params.get('limit') || '50', 10), 100)
+    const offset = parseInt(params.get('offset') || '0', 10)
+
+    let query = db
+      .from('products')
+      .select('*, suppliers(id, name)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (status) {
+      query = query.eq('status', status)
+    }
+
+    if (q) {
+      query = query.or(`sku.ilike.%${q}%,title.ilike.%${q}%,vendor.ilike.%${q}%`)
+    }
+
+    const { data, error, count } = await query
+    if (error) throw error
+
+    return NextResponse.json({ products: data, total: count })
+  } catch (e) {
+    console.error('Products GET error:', e)
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
+}
+
+interface ProductInput {
+  title: string
+  condition: 'new' | 'used'
+  vat_applicable: boolean
+  cost_price: number
+  selling_price: number
+  original_rrp?: number | null
+  model_number?: string | null
+  year_of_manufacture?: number | null
+  electrical_requirements?: string | null
+  notes?: string | null
+  width_cm: number
+  height_cm: number
+  depth_cm: number
+  weight_kg?: number | null
+  supplier_id: string
+  product_type: string
+  vendor: string
+  collections?: string[] | null
+  tags?: string[] | null
+}
+
+// POST /api/products — create one or more products (batch supported)
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+
+    // Accept a single object or an array for batch creation
+    const inputs: ProductInput[] = Array.isArray(body) ? body : [body]
+
+    if (inputs.length === 0) {
+      return NextResponse.json({ error: 'No products provided' }, { status: 400 })
+    }
+
+    const db = createServiceClient()
+    const results: { sku: string; id: string; error?: string }[] = []
+
+    for (const input of inputs) {
+      try {
+        // Validate required fields
+        if (!input.title?.trim()) throw new Error('Title is required')
+        if (!input.condition) throw new Error('Condition is required')
+        if (input.cost_price == null) throw new Error('Cost price is required')
+        if (input.selling_price == null) throw new Error('Selling price is required')
+        if (input.width_cm == null || input.height_cm == null || input.depth_cm == null) {
+          throw new Error('All dimensions (width, height, depth) are required')
+        }
+        if (!input.product_type?.trim()) throw new Error('Product type is required')
+        if (!input.vendor?.trim()) throw new Error('Vendor/brand is required')
+
+        // Generate SKU
+        const { data: skuRow, error: skuError } = await db.rpc('generate_product_sku')
+        if (skuError) throw new Error(`SKU generation failed: ${skuError.message}`)
+        const sku = skuRow as string
+
+        // Calculate shipping tier
+        const shippingTier = calculateShippingTier(
+          input.width_cm,
+          input.height_cm,
+          input.depth_cm,
+          input.weight_kg ?? null
+        )
+
+        const { data, error } = await db
+          .from('products')
+          .insert({
+            sku,
+            title: input.title.trim(),
+            condition: input.condition,
+            vat_applicable: input.vat_applicable ?? false,
+            cost_price: input.cost_price,
+            selling_price: input.selling_price,
+            original_rrp: input.original_rrp ?? null,
+            model_number: input.model_number?.trim() || null,
+            year_of_manufacture: input.year_of_manufacture ?? null,
+            electrical_requirements: input.electrical_requirements?.trim() || null,
+            notes: input.notes?.trim() || null,
+            width_cm: input.width_cm,
+            height_cm: input.height_cm,
+            depth_cm: input.depth_cm,
+            weight_kg: input.weight_kg ?? null,
+            shipping_tier: shippingTier,
+            supplier_id: input.supplier_id || null,
+            product_type: input.product_type.trim(),
+            vendor: input.vendor.trim(),
+            collections: input.collections ?? [],
+            tags: input.tags ?? [],
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        // Push to Shopify as draft (non-blocking — product is saved even if Shopify fails)
+        try {
+          const { shopifyProductId } = await createShopifyProduct({
+            sku,
+            title: input.title.trim(),
+            condition: input.condition,
+            sellingPrice: input.selling_price,
+            productType: input.product_type.trim(),
+            vendor: input.vendor.trim(),
+            tags: input.tags ?? [],
+            shippingTier,
+            widthCm: input.width_cm,
+            heightCm: input.height_cm,
+            depthCm: input.depth_cm,
+            weightKg: input.weight_kg ?? null,
+          })
+
+          // Update Supabase with Shopify ID
+          await db
+            .from('products')
+            .update({ shopify_product_id: shopifyProductId, shopify_status: 'draft' })
+            .eq('id', data.id)
+
+          // Add to collections if any
+          if (input.collections && input.collections.length > 0) {
+            await addProductToCollections(shopifyProductId, input.collections)
+          }
+        } catch (shopifyErr) {
+          console.error(`Shopify push failed for ${sku}:`, shopifyErr)
+          await db
+            .from('products')
+            .update({ sync_error: `Shopify: ${String(shopifyErr)}` })
+            .eq('id', data.id)
+        }
+
+        // Push to QBO (non-blocking — product is saved even if QBO fails)
+        try {
+          // Create or find QBO vendor from supplier
+          let qboVendorId: string | null = null
+          if (input.supplier_id) {
+            const { data: supplier } = await db
+              .from('suppliers')
+              .select('*')
+              .eq('id', input.supplier_id)
+              .single()
+
+            if (supplier) {
+              if (supplier.qbo_vendor_id) {
+                qboVendorId = supplier.qbo_vendor_id
+              } else {
+                qboVendorId = await findOrCreateQboVendor(supplier)
+                // Save the QBO vendor ID back to suppliers table
+                await db
+                  .from('suppliers')
+                  .update({ qbo_vendor_id: qboVendorId, updated_at: new Date().toISOString() })
+                  .eq('id', supplier.id)
+              }
+            }
+          }
+
+          const qboItemId = await createQboItem({
+            sku,
+            title: input.title.trim(),
+            sellingPrice: input.selling_price,
+            costPrice: input.cost_price,
+            vatApplicable: input.vat_applicable ?? false,
+            qboVendorId,
+          })
+
+          await db
+            .from('products')
+            .update({ qbo_item_id: qboItemId, qbo_synced: true })
+            .eq('id', data.id)
+        } catch (qboErr) {
+          console.error(`QBO push failed for ${sku}:`, qboErr)
+          const existing = (
+            await db.from('products').select('sync_error').eq('id', data.id).single()
+          ).data
+          const prevError = existing?.sync_error ? `${existing.sync_error}; ` : ''
+          await db
+            .from('products')
+            .update({ sync_error: `${prevError}QBO: ${String(qboErr)}` })
+            .eq('id', data.id)
+        }
+
+        results.push({ sku, id: data.id })
+      } catch (itemError) {
+        results.push({
+          sku: '',
+          id: '',
+          error: itemError instanceof Error ? itemError.message : String(itemError),
+        })
+      }
+    }
+
+    const hasErrors = results.some((r) => r.error)
+    return NextResponse.json(
+      { products: results },
+      { status: hasErrors ? 207 : 201 }
+    )
+  } catch (e) {
+    console.error('Products POST error:', e)
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
+}

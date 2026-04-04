@@ -1,0 +1,387 @@
+'use client'
+
+import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import SupplierTypeahead, { type Supplier } from './SupplierTypeahead'
+import { calculateShippingTier } from '@/lib/products/shipping'
+
+const SHIPPING_LABELS: Record<number, string> = {
+  0: 'Parcel',
+  1: 'Single Pallet',
+  2: 'Double Pallet',
+}
+
+const SHIPPING_COLORS: Record<number, string> = {
+  0: 'text-ok',
+  1: 'text-warn',
+  2: 'text-fail',
+}
+
+interface ProductDraft {
+  title: string
+  condition: 'new' | 'used'
+  vat_applicable: boolean
+  cost_price: string
+  selling_price: string
+  original_rrp: string
+  model_number: string
+  year_of_manufacture: string
+  electrical_requirements: string
+  notes: string
+  width_cm: string
+  height_cm: string
+  depth_cm: string
+  weight_kg: string
+  supplier: Supplier | null
+  product_type: string
+  vendor: string
+  collections: string[]
+  tags: string
+}
+
+function emptyDraft(): ProductDraft {
+  return {
+    title: '', condition: 'used', vat_applicable: false,
+    cost_price: '', selling_price: '', original_rrp: '',
+    model_number: '', year_of_manufacture: '', electrical_requirements: '',
+    notes: '', width_cm: '', height_cm: '', depth_cm: '', weight_kg: '',
+    supplier: null, product_type: '', vendor: '', collections: [], tags: '',
+  }
+}
+
+interface Props {
+  productTypes: string[]
+  vendors: string[]
+  collections: { id: string; title: string }[]
+}
+
+export default function ProductForm({ productTypes, vendors, collections }: Props) {
+  const router = useRouter()
+  const [drafts, setDrafts] = useState<ProductDraft[]>([emptyDraft()])
+  const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<(string | null)[]>([])
+  const [successCount, setSuccessCount] = useState(0)
+
+  function updateDraft(index: number, patch: Partial<ProductDraft>) {
+    setDrafts((prev) => prev.map((d, i) => (i === index ? { ...d, ...patch } : d)))
+  }
+
+  function removeDraft(index: number) {
+    if (drafts.length === 1) return
+    setDrafts((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  async function handleSubmit(andAddAnother: boolean) {
+    setSaving(true)
+    setErrors([])
+    setSuccessCount(0)
+
+    const payloads = drafts.map((d) => ({
+      title: d.title,
+      condition: d.condition,
+      vat_applicable: d.vat_applicable,
+      cost_price: parseFloat(d.cost_price) || 0,
+      selling_price: parseFloat(d.selling_price) || 0,
+      original_rrp: d.original_rrp ? parseFloat(d.original_rrp) : null,
+      model_number: d.model_number || null,
+      year_of_manufacture: d.year_of_manufacture ? parseInt(d.year_of_manufacture, 10) : null,
+      electrical_requirements: d.electrical_requirements || null,
+      notes: d.notes || null,
+      width_cm: parseFloat(d.width_cm) || 0,
+      height_cm: parseFloat(d.height_cm) || 0,
+      depth_cm: parseFloat(d.depth_cm) || 0,
+      weight_kg: d.weight_kg ? parseFloat(d.weight_kg) : null,
+      supplier_id: d.supplier?.id || null,
+      product_type: d.product_type,
+      vendor: d.vendor,
+      collections: d.collections,
+      tags: d.tags.split(',').map((t) => t.trim()).filter(Boolean),
+    }))
+
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloads.length === 1 ? payloads[0] : payloads),
+      })
+      const data = await res.json()
+      const results: { sku: string; id: string; error?: string }[] = data.products || []
+
+      const newErrors = results.map((r) => r.error || null)
+      setErrors(newErrors)
+
+      const successes = results.filter((r) => !r.error).length
+      setSuccessCount(successes)
+
+      if (successes > 0 && !newErrors.some(Boolean)) {
+        if (andAddAnother) {
+          // Keep the supplier from the first draft for convenience
+          const keepSupplier = drafts[0].supplier
+          setDrafts([{ ...emptyDraft(), supplier: keepSupplier }])
+        } else {
+          router.push('/products')
+        }
+      }
+    } catch (e) {
+      setErrors([String(e)])
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {successCount > 0 && (
+        <div className="bg-ok/10 border border-ok/25 text-ok rounded-md px-4 py-3 text-sm">
+          {successCount} product{successCount > 1 ? 's' : ''} created successfully
+        </div>
+      )}
+
+      {drafts.map((draft, idx) => (
+        <ProductCard
+          key={idx}
+          draft={draft}
+          index={idx}
+          total={drafts.length}
+          error={errors[idx] || null}
+          productTypes={productTypes}
+          vendors={vendors}
+          collections={collections}
+          onChange={(patch) => updateDraft(idx, patch)}
+          onRemove={() => removeDraft(idx)}
+        />
+      ))}
+
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            const keepSupplier = drafts[0]?.supplier
+            setDrafts((prev) => [...prev, { ...emptyDraft(), supplier: keepSupplier }])
+          }}
+          className="px-4 py-2 text-sm border border-edge text-secondary hover:text-primary hover:bg-overlay rounded-md transition-colors"
+        >
+          + Add Another Product
+        </button>
+      </div>
+
+      <div className="flex items-center gap-3 border-t border-edge pt-4">
+        <button
+          onClick={() => handleSubmit(false)}
+          disabled={saving}
+          className="px-5 py-2.5 bg-accent text-white text-sm font-medium rounded-md hover:bg-accent-hi disabled:opacity-50 transition-colors"
+        >
+          {saving ? 'Saving...' : drafts.length > 1 ? `Save ${drafts.length} Products` : 'Save Product'}
+        </button>
+        <button
+          onClick={() => handleSubmit(true)}
+          disabled={saving}
+          className="px-5 py-2.5 border border-accent text-accent text-sm font-medium rounded-md hover:bg-accent/10 disabled:opacity-50 transition-colors"
+        >
+          Save & Add Another
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Single product card                                                 */
+/* ------------------------------------------------------------------ */
+
+interface CardProps {
+  draft: ProductDraft
+  index: number
+  total: number
+  error: string | null
+  productTypes: string[]
+  vendors: string[]
+  collections: { id: string; title: string }[]
+  onChange: (patch: Partial<ProductDraft>) => void
+  onRemove: () => void
+}
+
+function ProductCard({ draft, index, total, error, productTypes, vendors, collections, onChange, onRemove }: CardProps) {
+  const shippingTier = useMemo(() => {
+    const w = parseFloat(draft.width_cm)
+    const h = parseFloat(draft.height_cm)
+    const d = parseFloat(draft.depth_cm)
+    const wt = draft.weight_kg ? parseFloat(draft.weight_kg) : null
+    if (isNaN(w) || isNaN(h) || isNaN(d)) return null
+    return calculateShippingTier(w, h, d, wt)
+  }, [draft.width_cm, draft.height_cm, draft.depth_cm, draft.weight_kg])
+
+  const inputCls = 'w-full bg-surface border border-edge rounded-md px-3 py-2 text-sm text-primary placeholder:text-secondary/50 focus:outline-none focus:border-accent'
+  const labelCls = 'block text-xs font-medium text-secondary mb-1'
+
+  return (
+    <div className="bg-surface border border-edge rounded-lg p-6 space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-primary">
+          {total > 1 ? `Product ${index + 1}` : 'New Product'}
+        </h3>
+        {total > 1 && (
+          <button type="button" onClick={onRemove} className="text-xs text-secondary hover:text-fail">
+            Remove
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div className="bg-fail/10 border border-fail/25 text-fail rounded-md px-3 py-2 text-sm">{error}</div>
+      )}
+
+      {/* Product Details */}
+      <fieldset className="space-y-3">
+        <legend className="text-xs font-semibold text-accent uppercase tracking-wide mb-2">Product Details</legend>
+        <div>
+          <label className={labelCls}>Title *</label>
+          <input className={inputCls} placeholder="e.g. Foster Xtra Single Upright Fridge" value={draft.title} onChange={(e) => onChange({ title: e.target.value })} />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <label className={labelCls}>Condition *</label>
+            <select className={inputCls} value={draft.condition} onChange={(e) => onChange({ condition: e.target.value as 'new' | 'used' })}>
+              <option value="used">Used</option>
+              <option value="new">New</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>VAT Applicable</label>
+            <select className={inputCls} value={draft.vat_applicable ? 'yes' : 'no'} onChange={(e) => onChange({ vat_applicable: e.target.value === 'yes' })}>
+              <option value="no">No (Margin Scheme)</option>
+              <option value="yes">Yes (20%)</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Cost Price (£) *</label>
+            <input className={inputCls} type="number" step="0.01" min="0" placeholder="0.00" value={draft.cost_price} onChange={(e) => onChange({ cost_price: e.target.value })} />
+          </div>
+          <div>
+            <label className={labelCls}>Selling Price (£) *</label>
+            <input className={inputCls} type="number" step="0.01" min="0" placeholder="0.00" value={draft.selling_price} onChange={(e) => onChange({ selling_price: e.target.value })} />
+          </div>
+        </div>
+      </fieldset>
+
+      {/* Model & Specs */}
+      <fieldset className="space-y-3">
+        <legend className="text-xs font-semibold text-accent uppercase tracking-wide mb-2">Model & Specs</legend>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <label className={labelCls}>Model Number</label>
+            <input className={inputCls} placeholder="e.g. Xr600h" value={draft.model_number} onChange={(e) => onChange({ model_number: e.target.value })} />
+          </div>
+          <div>
+            <label className={labelCls}>Year of Manufacture</label>
+            <input className={inputCls} type="number" min="1990" max="2030" placeholder="e.g. 2020" value={draft.year_of_manufacture} onChange={(e) => onChange({ year_of_manufacture: e.target.value })} />
+          </div>
+          <div>
+            <label className={labelCls}>Electrical Requirements</label>
+            <input className={inputCls} placeholder="e.g. 32amp 3ph" value={draft.electrical_requirements} onChange={(e) => onChange({ electrical_requirements: e.target.value })} />
+          </div>
+          <div>
+            <label className={labelCls}>Original RRP (£)</label>
+            <input className={inputCls} type="number" step="0.01" min="0" placeholder="0.00" value={draft.original_rrp} onChange={(e) => onChange({ original_rrp: e.target.value })} />
+          </div>
+        </div>
+        <div>
+          <label className={labelCls}>Notes</label>
+          <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Any additional info..." value={draft.notes} onChange={(e) => onChange({ notes: e.target.value })} />
+        </div>
+      </fieldset>
+
+      {/* Dimensions & Shipping */}
+      <fieldset className="space-y-3">
+        <legend className="text-xs font-semibold text-accent uppercase tracking-wide mb-2">Dimensions & Shipping</legend>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <label className={labelCls}>Width (cm) *</label>
+            <input className={inputCls} type="number" step="0.1" min="0" placeholder="0" value={draft.width_cm} onChange={(e) => onChange({ width_cm: e.target.value })} />
+          </div>
+          <div>
+            <label className={labelCls}>Height (cm) *</label>
+            <input className={inputCls} type="number" step="0.1" min="0" placeholder="0" value={draft.height_cm} onChange={(e) => onChange({ height_cm: e.target.value })} />
+          </div>
+          <div>
+            <label className={labelCls}>Depth (cm) *</label>
+            <input className={inputCls} type="number" step="0.1" min="0" placeholder="0" value={draft.depth_cm} onChange={(e) => onChange({ depth_cm: e.target.value })} />
+          </div>
+          <div>
+            <label className={labelCls}>Weight (kg)</label>
+            <input className={inputCls} type="number" step="0.1" min="0" placeholder="Optional" value={draft.weight_kg} onChange={(e) => onChange({ weight_kg: e.target.value })} />
+          </div>
+        </div>
+        {shippingTier !== null && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-secondary">Shipping tier:</span>
+            <span className={`font-medium ${SHIPPING_COLORS[shippingTier]}`}>
+              {SHIPPING_LABELS[shippingTier]}
+            </span>
+          </div>
+        )}
+      </fieldset>
+
+      {/* Classification */}
+      <fieldset className="space-y-3">
+        <legend className="text-xs font-semibold text-accent uppercase tracking-wide mb-2">Classification</legend>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Product Type *</label>
+            <input
+              className={inputCls}
+              list={`product-types-${index}`}
+              placeholder="e.g. Fridges"
+              value={draft.product_type}
+              onChange={(e) => onChange({ product_type: e.target.value })}
+            />
+            <datalist id={`product-types-${index}`}>
+              {productTypes.map((t) => <option key={t} value={t} />)}
+            </datalist>
+          </div>
+          <div>
+            <label className={labelCls}>Vendor / Brand *</label>
+            <input
+              className={inputCls}
+              list={`vendors-${index}`}
+              placeholder="e.g. Foster"
+              value={draft.vendor}
+              onChange={(e) => onChange({ vendor: e.target.value })}
+            />
+            <datalist id={`vendors-${index}`}>
+              {vendors.map((v) => <option key={v} value={v} />)}
+            </datalist>
+          </div>
+        </div>
+        <div>
+          <label className={labelCls}>Collections</label>
+          <select
+            multiple
+            className={`${inputCls} min-h-[80px]`}
+            value={draft.collections}
+            onChange={(e) => {
+              const selected = Array.from(e.target.selectedOptions, (o) => o.value)
+              onChange({ collections: selected })
+            }}
+          >
+            {collections.map((c) => (
+              <option key={c.id} value={c.id}>{c.title}</option>
+            ))}
+          </select>
+          <p className="text-xs text-secondary mt-1">Ctrl+click to select multiple</p>
+        </div>
+        <div>
+          <label className={labelCls}>Tags</label>
+          <input className={inputCls} placeholder="Comma-separated, e.g. Foster, Used, Fridge" value={draft.tags} onChange={(e) => onChange({ tags: e.target.value })} />
+        </div>
+      </fieldset>
+
+      {/* Supplier */}
+      <fieldset className="space-y-3">
+        <legend className="text-xs font-semibold text-accent uppercase tracking-wide mb-2">Supplier</legend>
+        <SupplierTypeahead value={draft.supplier} onChange={(s) => onChange({ supplier: s })} />
+      </fieldset>
+    </div>
+  )
+}
