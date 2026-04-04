@@ -7,8 +7,8 @@ const DEFAULT_SCOPES = 'read_orders,read_finances'
 
 export async function POST() {
   try {
-    const store_domain = process.env.SHOPIFY_STORE_DOMAIN
-    const accessToken = process.env.SHOPIFY_ACCESS_TOKEN
+    const store_domain = process.env.SHOPIFY_STORE_DOMAIN?.trim()
+    const accessToken = process.env.SHOPIFY_ACCESS_TOKEN?.trim()
 
     if (!store_domain || !accessToken) {
       throw new Error('Missing SHOPIFY_STORE_DOMAIN or SHOPIFY_ACCESS_TOKEN')
