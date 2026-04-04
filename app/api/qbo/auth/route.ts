@@ -42,12 +42,14 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error
 
-    return NextResponse.redirect('http://localhost:3000/settings?qbo=connected')
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nce-automation.vercel.app'
+    return NextResponse.redirect(`${siteUrl}/settings?qbo=connected`)
   } catch (e) {
     console.error('QBO auth error:', e)
     const msg = e instanceof Error ? e.message : JSON.stringify(e)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nce-automation.vercel.app'
     return NextResponse.redirect(
-      `http://localhost:3000/settings?qbo=error&message=${encodeURIComponent(msg)}`
+      `${siteUrl}/settings?qbo=error&message=${encodeURIComponent(msg)}`
     )
   }
 }

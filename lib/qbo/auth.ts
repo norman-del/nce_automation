@@ -2,10 +2,10 @@ import OAuthClient from 'intuit-oauth'
 
 function createOAuthClient(): OAuthClient {
   return new OAuthClient({
-    clientId: process.env.QBO_CLIENT_ID!,
-    clientSecret: process.env.QBO_CLIENT_SECRET!,
+    clientId: process.env.QBO_CLIENT_ID!.trim(),
+    clientSecret: process.env.QBO_CLIENT_SECRET!.trim(),
     environment: (process.env.QBO_ENVIRONMENT as 'sandbox' | 'production') ?? 'sandbox',
-    redirectUri: process.env.QBO_REDIRECT_URI!,
+    redirectUri: process.env.QBO_REDIRECT_URI!.trim(),
   })
 }
 
