@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
         access_token_encrypted: encrypt(tokens.accessToken),
         refresh_token_encrypted: encrypt(tokens.refreshToken),
         token_expires_at: tokens.expiresAt.toISOString(),
+        refresh_token_expires_at: new Date(
+          Date.now() + 100 * 24 * 60 * 60 * 1000
+        ).toISOString(),
         updated_at: new Date().toISOString(),
         // Fixed account mappings — Shopify Charges (133) and Shopify Receipt Account (1150040008)
         shopify_fees_account_id: '133',

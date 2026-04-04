@@ -9,6 +9,7 @@ export interface QboConnection {
   access_token_encrypted: string
   refresh_token_encrypted: string
   token_expires_at: string
+  refresh_token_expires_at: string | null
   company_name: string | null
   shopify_fees_account_id: string | null
   bank_account_id: string | null
@@ -50,6 +51,9 @@ export async function getQboClient(): Promise<{
         access_token_encrypted: encrypt(refreshed.accessToken),
         refresh_token_encrypted: encrypt(refreshed.refreshToken),
         token_expires_at: refreshed.expiresAt.toISOString(),
+        refresh_token_expires_at: new Date(
+          Date.now() + 100 * 24 * 60 * 60 * 1000
+        ).toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', connection.id)
@@ -60,6 +64,9 @@ export async function getQboClient(): Promise<{
       access_token_encrypted: encrypt(refreshed.accessToken),
       refresh_token_encrypted: encrypt(refreshed.refreshToken),
       token_expires_at: refreshed.expiresAt.toISOString(),
+      refresh_token_expires_at: new Date(
+        Date.now() + 100 * 24 * 60 * 60 * 1000
+      ).toISOString(),
     }
   }
 

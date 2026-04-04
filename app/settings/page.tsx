@@ -6,23 +6,39 @@ import AccountsModal from './AccountsModal'
 import { Suspense } from 'react'
 import ConnectedBanner from './ConnectedBanner'
 
+type QboSettingsRow = {
+  company_name: string | null
+  token_expires_at: string
+  refresh_token_expires_at: string | null
+  shopify_fees_account_id: string | null
+  bank_account_id: string | null
+}
+
 async function getConnections() {
   try {
     const db = createServiceClient()
     const [shopifyRes, qboRes] = await Promise.all([
       db.from('shopify_connections').select('store_domain, created_at').limit(1).single(),
-      db.from('qbo_connections').select('company_name, token_expires_at, shopify_fees_account_id, bank_account_id').limit(1).single(),
+      db
+        .from('qbo_connections')
+        .select(
+          'company_name, token_expires_at, refresh_token_expires_at, shopify_fees_account_id, bank_account_id'
+        )
+        .limit(1)
+        .single(),
     ])
     return {
       shopify: shopifyRes.data,
-      qbo: qboRes.data,
+      qbo: qboRes.data as QboSettingsRow | null,
     }
   } catch {
     return { shopify: null, qbo: null }
   }
 }
 
-function formatExpiry(isoDate: string): { text: string; urgent: boolean } {
+function formatExpiry(isoDate: string | null): { text: string; urgent: boolean } {
+  if (!isoDate) return { text: 'Unknown', urgent: true }
+
   const days = Math.floor(
     (new Date(isoDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
   )
@@ -106,10 +122,10 @@ export default async function SettingsPage() {
               )}
 
               {(() => {
-                const expiry = formatExpiry(qbo.token_expires_at)
+                const expiry = formatExpiry(qbo.refresh_token_expires_at)
                 return (
                   <p className="flex items-center gap-2">
-                    <span>Token:</span>
+                    <span>Refresh token:</span>
                     <span className={`font-medium ${expiry.urgent ? 'text-warn' : 'text-ok'}`}>
                       {expiry.urgent && '⚠ '}{expiry.text}
                     </span>
