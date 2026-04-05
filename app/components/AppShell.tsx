@@ -16,6 +16,16 @@ const tabs = [
     ),
   },
   {
+    href: '/products',
+    label: 'Products',
+    activeWhen: (p: string) => p.startsWith('/products'),
+    icon: (
+      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+      </svg>
+    ),
+  },
+  {
     href: '/',
     label: 'Dashboard',
     activeWhen: (p: string) => p === '/',
