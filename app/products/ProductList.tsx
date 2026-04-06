@@ -24,6 +24,7 @@ export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
   const [offset, setOffset] = useState(0)
@@ -31,20 +32,34 @@ export default function ProductList() {
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
+    setError(null)
     const params = new URLSearchParams()
     if (statusFilter !== 'all') params.set('status', statusFilter)
     if (search.trim()) params.set('q', search.trim())
     params.set('limit', String(limit))
     params.set('offset', String(offset))
 
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
+
     try {
-      const res = await fetch(`/api/products?${params}`)
+      const res = await fetch(`/api/products?${params}`, { signal: controller.signal })
+      clearTimeout(timeout)
+      if (!res.ok) {
+        const body = await res.text()
+        throw new Error(`API ${res.status}: ${body.slice(0, 200)}`)
+      }
       const data = await res.json()
       setProducts(data.products || [])
       setTotal(data.total || 0)
-    } catch {
-      console.error('Failed to fetch products')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[ProductList] fetch failed:', msg)
+      setError(msg)
+      setProducts([])
+      setTotal(0)
     } finally {
+      clearTimeout(timeout)
       setLoading(false)
     }
   }, [statusFilter, search, offset])
@@ -65,39 +80,55 @@ export default function ProductList() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-md border border-edge overflow-hidden">
-          {(['all', 'processing', 'active'] as StatusFilter[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 text-sm capitalize transition-colors ${
-                statusFilter === s
-                  ? 'bg-accent text-white'
-                  : 'bg-surface text-secondary hover:text-primary hover:bg-overlay'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-md border border-edge overflow-hidden">
+            {(['all', 'processing', 'active'] as StatusFilter[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-3 py-2 text-sm capitalize transition-colors ${
+                  statusFilter === s
+                    ? 'bg-accent text-white'
+                    : 'bg-surface text-secondary hover:text-primary hover:bg-overlay'
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+          <Link
+            href="/products/new"
+            className="sm:hidden ml-auto px-4 py-2 bg-accent text-white text-sm font-medium rounded-md hover:bg-accent-hi transition-colors whitespace-nowrap"
+          >
+            + Add
+          </Link>
         </div>
         <input
           type="text"
           placeholder="Search SKU, title, vendor..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-surface border border-edge rounded-md px-3 py-1.5 text-sm text-primary placeholder:text-secondary/50 focus:outline-none focus:border-accent w-64"
+          className="bg-surface border border-edge rounded-md px-3 py-2 text-sm text-primary placeholder:text-secondary/50 focus:outline-none focus:border-accent w-full sm:w-64"
         />
         <Link
           href="/products/new"
-          className="ml-auto px-4 py-1.5 bg-accent text-white text-sm font-medium rounded-md hover:bg-accent-hi transition-colors"
+          className="hidden sm:block sm:ml-auto px-4 py-1.5 bg-accent text-white text-sm font-medium rounded-md hover:bg-accent-hi transition-colors"
         >
           + Add Products
         </Link>
       </div>
 
-      {/* Table */}
-      <div className="bg-surface border border-edge rounded-lg overflow-hidden">
+      {/* Error banner */}
+      {error && (
+        <div className="bg-fail/10 border border-fail/25 rounded-lg px-4 py-3 flex items-start justify-between gap-3">
+          <p className="text-sm text-fail break-all">{error}</p>
+          <button onClick={fetchProducts} className="shrink-0 text-xs text-fail underline hover:no-underline">Retry</button>
+        </div>
+      )}
+
+      {/* Desktop table */}
+      <div className="hidden lg:block bg-surface border border-edge rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-overlay text-secondary text-left">
@@ -164,6 +195,50 @@ export default function ProductList() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Tablet/mobile card list */}
+      <div className="lg:hidden">
+        {loading ? (
+          <div className="bg-surface border border-edge rounded-lg px-4 py-8 text-center text-secondary text-sm">Loading...</div>
+        ) : products.length === 0 ? (
+          <div className="bg-surface border border-edge rounded-lg px-4 py-8 text-center text-secondary text-sm">No products found</div>
+        ) : (
+          <div className="space-y-2">
+            {products.map((p) => (
+              <Link
+                key={p.id}
+                href={`/products/${p.id}`}
+                className="block bg-surface border border-edge rounded-xl p-4 active:bg-overlay hover:border-secondary transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="min-w-0">
+                    <p className="font-mono text-accent text-sm font-medium">{p.sku}</p>
+                    <p className="text-primary text-sm leading-snug mt-0.5 line-clamp-2">{p.title}</p>
+                  </div>
+                  <div className="shrink-0 flex flex-col items-end gap-1.5">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium border capitalize ${statusBadge(p.status)}`}>
+                      {p.status}
+                    </span>
+                    <span className="text-primary font-medium text-sm">£{Number(p.selling_price).toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-secondary">
+                  <span className="truncate">{p.vendor}</span>
+                  <span className="text-edge shrink-0">·</span>
+                  <span className="capitalize shrink-0">{p.condition}</span>
+                  <span className="ml-auto shrink-0 flex gap-2">
+                    <span className={p.shopify_product_id ? 'text-ok' : 'text-secondary/40'}>S{p.shopify_product_id ? '✓' : '✗'}</span>
+                    <span className={p.qbo_synced ? 'text-ok' : 'text-secondary/40'}>Q{p.qbo_synced ? '✓' : '✗'}</span>
+                  </span>
+                </div>
+                {p.sync_error && (
+                  <p className="text-xs text-fail mt-2 truncate">{p.sync_error}</p>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Pagination */}

@@ -50,7 +50,7 @@ export default async function PayoutDetailPage({
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
         <div>
           <div className="mb-2">
             <Link href="/payouts" className="text-secondary hover:text-primary text-sm transition-colors">
@@ -98,7 +98,7 @@ export default async function PayoutDetailPage({
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden sm:block">
+          <div className="hidden lg:block">
             <div className="bg-surface border border-edge rounded-lg overflow-hidden">
               <div className="px-5 py-3 border-b border-edge flex items-center justify-between">
                 <p className="text-xs text-secondary">{transactions.length} orders in this payout</p>
@@ -148,8 +148,8 @@ export default async function PayoutDetailPage({
             </div>
           </div>
 
-          {/* Mobile transaction cards */}
-          <div className="sm:hidden space-y-2.5">
+          {/* Tablet/mobile transaction cards */}
+          <div className="lg:hidden space-y-2.5">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-secondary">{transactions.length} orders in this payout</p>
               <p className="text-xs text-secondary">{paidCount} of {transactions.length} paid in QBO</p>
@@ -184,8 +184,8 @@ export default async function PayoutDetailPage({
         </>
       )}
 
-      {/* Spacer so sticky sync button doesn't overlap transactions on mobile */}
-      <div className="sm:hidden h-44" />
+      {/* Spacer so sync button doesn't overlap last card on tablet/mobile */}
+      <div className="lg:hidden h-20" />
     </div>
   )
 }

@@ -64,14 +64,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (pathname === '/login') return <>{children}</>
 
   return (
-    <div className="flex flex-col sm:flex-row flex-1 w-full">
-      {/* Mobile top header */}
-      <header className="sticky top-0 z-40 flex h-12 items-center border-b border-edge bg-surface px-4 sm:hidden">
-        <h1 className="text-sm font-semibold text-primary">Fee Sync</h1>
+    <div className="flex flex-col lg:flex-row flex-1 w-full">
+      {/* Mobile/tablet top header */}
+      <header className="sticky top-0 z-40 flex h-12 items-center border-b border-edge bg-surface px-4 lg:hidden">
+        <h1 className="text-sm font-semibold text-primary">NCE Automation</h1>
       </header>
 
       {/* Desktop sidebar */}
-      <aside className="hidden sm:flex w-56 shrink-0 bg-surface border-r border-edge flex-col">
+      <aside className="hidden lg:flex w-56 shrink-0 bg-surface border-r border-edge flex-col">
         <div className="px-6 py-5 border-b border-edge">
           <h1 className="text-sm font-semibold text-primary leading-tight">
             Shopify ↔ QBO
@@ -86,12 +86,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 p-4 pb-16 bg-canvas sm:p-8 sm:pb-8">
+      <main className="flex-1 min-w-0 p-4 pb-20 bg-canvas lg:p-8 lg:pb-8">
         {children}
       </main>
 
-      {/* Mobile bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 border-t border-edge bg-surface sm:hidden">
+      {/* Mobile/tablet bottom tab bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 border-t border-edge bg-surface lg:hidden">
         {tabs.map((tab) => {
           const active = tab.activeWhen(pathname)
           return (

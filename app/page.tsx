@@ -97,16 +97,16 @@ export default async function DashboardPage() {
       </div>
 
       {/* Metric cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-8">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 mb-8">
         {stats.map((s) => (
           <Link
             key={s.label}
             href={s.href}
-            className="bg-surface rounded-lg border border-edge p-5 hover:border-secondary transition-colors group block"
+            className="bg-surface rounded-lg border border-edge p-4 hover:border-secondary transition-colors group block"
           >
-            <p className="text-xs text-secondary uppercase tracking-wide mb-2">{s.label}</p>
-            <p className={`text-3xl font-semibold font-mono ${s.color} ${s.glow}`}>{s.value}</p>
-            <p className="text-xs text-secondary mt-2 opacity-0 group-hover:opacity-100 transition-opacity">{s.hint}</p>
+            <p className="text-[11px] text-secondary uppercase tracking-wide mb-2 leading-tight">{s.label}</p>
+            <p className={`text-2xl font-semibold font-mono truncate ${s.color} ${s.glow}`}>{s.value}</p>
+            <p className="text-xs text-secondary mt-2 opacity-0 group-hover:opacity-100 transition-opacity leading-tight">{s.hint}</p>
           </Link>
         ))}
       </div>
@@ -119,7 +119,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent payouts */}
-      <div className="bg-surface border border-edge rounded-lg overflow-x-auto">
+      <div className="bg-surface border border-edge rounded-lg">
         <div className="px-5 py-4 border-b border-edge flex items-center justify-between">
           <p className="text-sm font-medium text-primary">Recent payouts</p>
           <Link href="/payouts" className="text-xs text-accent hover:text-accent-hi transition-colors">
@@ -135,47 +135,77 @@ export default async function DashboardPage() {
             to get started.
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-overlay border-b border-edge">
-                <th className="px-5 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Date</th>
-                <th className="px-5 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Gross</th>
-                <th className="px-5 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Fees</th>
-                <th className="px-5 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Net</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Status</th>
-                <th className="px-5 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-edge">
+          <>
+            {/* Desktop table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-overlay border-b border-edge">
+                    <th className="px-5 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Date</th>
+                    <th className="px-5 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Gross</th>
+                    <th className="px-5 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Fees</th>
+                    <th className="px-5 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wide">Net</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wide">Status</th>
+                    <th className="px-5 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-edge">
+                  {recentPayouts.map((p) => {
+                    const s = statusStyles[p.sync_status] ?? statusStyles.skipped
+                    return (
+                      <tr key={p.id} className="hover:bg-overlay transition-colors">
+                        <td className="px-5 py-3 text-primary font-mono text-xs">{p.payout_date}</td>
+                        <td className="px-5 py-3 text-right text-secondary">
+                          {p.gross_amount != null ? `£${Number(p.gross_amount).toFixed(2)}` : '—'}
+                        </td>
+                        <td className="px-5 py-3 text-right text-fail">
+                          {p.total_fees != null ? `£${Number(p.total_fees).toFixed(2)}` : '—'}
+                        </td>
+                        <td className="px-5 py-3 text-right font-medium text-primary">
+                          £{Number(p.amount).toFixed(2)}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${s.pill}`}>
+                            {s.label}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <Link href={`/payouts/${p.id}`} className="text-accent hover:text-accent-hi text-xs transition-colors">
+                            View →
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* Tablet/mobile cards */}
+            <div className="lg:hidden divide-y divide-edge">
               {recentPayouts.map((p) => {
                 const s = statusStyles[p.sync_status] ?? statusStyles.skipped
                 return (
-                  <tr key={p.id} className="hover:bg-overlay transition-colors">
-                    <td className="px-5 py-3 text-primary font-mono text-xs">{p.payout_date}</td>
-                    <td className="px-5 py-3 text-right text-secondary">
-                      {p.gross_amount != null ? `£${Number(p.gross_amount).toFixed(2)}` : '—'}
-                    </td>
-                    <td className="px-5 py-3 text-right text-fail">
-                      {p.total_fees != null ? `£${Number(p.total_fees).toFixed(2)}` : '—'}
-                    </td>
-                    <td className="px-5 py-3 text-right font-medium text-primary">
-                      £{Number(p.amount).toFixed(2)}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${s.pill}`}>
-                        {s.label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      <Link href={`/payouts/${p.id}`} className="text-accent hover:text-accent-hi text-xs transition-colors">
-                        View →
-                      </Link>
-                    </td>
-                  </tr>
+                  <Link
+                    key={p.id}
+                    href={`/payouts/${p.id}`}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-overlay active:bg-overlay transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-mono text-primary text-sm">{p.payout_date}</p>
+                      <div className="flex gap-4 mt-1 text-xs">
+                        <span className="text-primary font-medium">£{Number(p.amount).toFixed(2)}</span>
+                        <span className="text-fail">{p.total_fees != null ? `−£${Number(p.total_fees).toFixed(2)}` : ''}</span>
+                      </div>
+                    </div>
+                    <span className={`shrink-0 inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${s.pill}`}>
+                      {s.label}
+                    </span>
+                    <span className="text-secondary text-sm">›</span>
+                  </Link>
                 )
               })}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
     </div>

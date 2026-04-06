@@ -56,7 +56,7 @@ export default async function PayoutsPage({
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <div>
           <h2 className="text-2xl font-semibold text-primary">Payouts</h2>
           <p className="mt-1 text-sm text-secondary">Shopify payouts pulled from the API</p>
@@ -95,7 +95,7 @@ export default async function PayoutsPage({
           name="search"
           defaultValue={search ?? ''}
           placeholder="Search by order number e.g. NCE1580"
-          className="flex-1 max-w-xs px-3 py-2 bg-overlay border border-edge rounded-md text-sm text-primary placeholder:text-secondary focus:outline-none focus:border-accent transition-colors"
+          className="flex-1 min-w-0 px-3 py-2 bg-overlay border border-edge rounded-md text-sm text-primary placeholder:text-secondary focus:outline-none focus:border-accent transition-colors"
         />
         <button
           type="submit"
@@ -124,7 +124,7 @@ export default async function PayoutsPage({
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden sm:block">
+          <div className="hidden lg:block">
             <div className="bg-surface border border-edge rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
@@ -185,8 +185,8 @@ export default async function PayoutsPage({
             </div>
           </div>
 
-          {/* Mobile cards */}
-          <div className="sm:hidden space-y-2.5">
+          {/* Tablet/mobile cards */}
+          <div className="lg:hidden space-y-2.5">
             {payouts.map((payout: { id: string; payout_date: string; gross_amount: number | null; total_fees: number | null; amount: number; currency: string; sync_status: string }) => {
               const s = statusStyles[payout.sync_status] ?? statusStyles.skipped
               return (
