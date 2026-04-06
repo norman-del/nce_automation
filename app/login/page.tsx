@@ -1,26 +1,18 @@
-'use client'
-
-import { useSearchParams } from 'next/navigation'
-import { Suspense, useState } from 'react'
-
-function LoginForm() {
-  const searchParams = useSearchParams()
-  const urlError = searchParams.get('error')
-  const [submitting, setSubmitting] = useState(false)
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>
+}) {
+  const { error } = await searchParams
 
   return (
-    <div className="fixed inset-0 bg-canvas flex items-center justify-center">
-      <div className="w-full max-w-sm bg-surface border border-edge rounded-lg p-8 shadow-lg">
-        <h1 className="text-xl font-semibold text-primary mb-6">Sign in</h1>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117' }}>
+      <div style={{ width: '100%', maxWidth: '24rem', backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '0.5rem', padding: '2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+        <h1 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#e6edf3', marginBottom: '1.5rem' }}>Sign in</h1>
 
-        <form
-          method="POST"
-          action="/api/auth/login"
-          onSubmit={() => setSubmitting(true)}
-          className="space-y-4"
-        >
+        <form method="POST" action="/api/auth/login" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label htmlFor="email" className="block text-sm text-secondary mb-1">
+            <label htmlFor="email" style={{ display: 'block', fontSize: '0.875rem', color: '#8b949e', marginBottom: '0.25rem' }}>
               Email
             </label>
             <input
@@ -29,12 +21,12 @@ function LoginForm() {
               type="email"
               required
               autoComplete="email"
-              className="w-full px-3 py-2 bg-overlay border border-edge rounded-md text-primary text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+              style={{ width: '100%', padding: '0.5rem 0.75rem', backgroundColor: '#21262d', border: '1px solid #30363d', borderRadius: '0.375rem', color: '#e6edf3', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm text-secondary mb-1">
+            <label htmlFor="password" style={{ display: 'block', fontSize: '0.875rem', color: '#8b949e', marginBottom: '0.25rem' }}>
               Password
             </label>
             <input
@@ -43,31 +35,22 @@ function LoginForm() {
               type="password"
               required
               autoComplete="current-password"
-              className="w-full px-3 py-2 bg-overlay border border-edge rounded-md text-primary text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+              style={{ width: '100%', padding: '0.5rem 0.75rem', backgroundColor: '#21262d', border: '1px solid #30363d', borderRadius: '0.375rem', color: '#e6edf3', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
-          {urlError && (
-            <p className="text-sm text-red-400">{urlError}</p>
+          {error && (
+            <p style={{ fontSize: '0.875rem', color: '#f85149', margin: 0 }}>{error}</p>
           )}
 
           <button
             type="submit"
-            disabled={submitting}
-            className="w-full py-2 px-4 bg-accent text-white text-sm font-medium rounded-md hover:bg-accent/90 disabled:opacity-50 transition-colors"
+            style={{ width: '100%', padding: '0.5rem 1rem', backgroundColor: '#388bfd', color: '#ffffff', fontSize: '0.875rem', fontWeight: 500, borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
           >
-            {submitting ? 'Signing in\u2026' : 'Sign in'}
+            Sign in
           </button>
         </form>
       </div>
     </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
   )
 }
