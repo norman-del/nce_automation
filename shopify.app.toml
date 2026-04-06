@@ -4,7 +4,7 @@ application_url = "https://nce-automation.vercel.app/api/shopify/auth"
 embedded = false
 
 [access_scopes]
-scopes = "read_orders,read_products,write_products,read_shopify_payments_payouts"
+scopes = "read_orders,read_products,write_products,read_shopify_payments_payouts,read_product_listings,write_product_listings,read_publications"
 
 [auth]
 redirect_urls = ["https://nce-automation.vercel.app/api/shopify/auth/callback"]

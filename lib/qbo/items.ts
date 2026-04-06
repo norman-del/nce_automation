@@ -131,26 +131,21 @@ export async function createQboItem(params: {
     UnitPrice: sellingPrice,
     IncomeAccountRef: { value: accounts.income || '1' },
     SalesTaxIncluded: true,
-    SalesTaxCodeRef: { value: String(vatApplicable ? taxCodes.standardRated : taxCodes.margin) },
+    SalesTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
 
     // Purchase info — always VAT inclusive
+    PurchaseDesc: title,
     PurchaseCost: costPrice,
     ExpenseAccountRef: { value: accounts.expense || '1' },
     PurchaseTaxIncluded: true,
-    PurchaseTaxCodeRef: { value: String(vatApplicable ? taxCodes.standardRated : taxCodes.margin) },
+    PurchaseTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
   }
 
   if (qboVendorId) {
     itemData.PrefVendorRef = { value: qboVendorId }
   }
 
-  console.log('[qbo-items] Creating inventory item:', sku, JSON.stringify({
-    type: 'Inventory', vatApplicable,
-    salesTax: vatApplicable ? 'standardRated' : 'margin',
-    taxCodeIds: { standard: taxCodes.standardRated, margin: taxCodes.margin },
-    accountIds: { income: accounts.income, expense: accounts.expense, asset: accounts.asset },
-    vendor: qboVendorId || 'none',
-  }))
+  console.log('[qbo-items] Creating inventory item:', sku, JSON.stringify(itemData, null, 0))
 
   const created = await new Promise<QboItem>((resolve, reject) => {
     client.createItem(

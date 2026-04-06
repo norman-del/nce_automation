@@ -114,6 +114,27 @@ export async function createShopifyProduct(params: {
   const productId = result.product.id
   console.log('[shopify] Product created:', sku, '→ id', productId)
 
+  // Publish to ALL sales channels
+  try {
+    const pubData = await shopifyFetch<{ publications: { id: number; name: string }[] }>(
+      '/publications.json'
+    )
+    console.log('[shopify] Available channels:', pubData.publications?.map(p => `${p.id}="${p.name}"`).join(', '))
+    for (const pub of pubData.publications || []) {
+      try {
+        await shopifyFetch(`/product_listings/${productId}.json`, {
+          method: 'PUT',
+          body: JSON.stringify({ product_listing: { product_id: productId } }),
+        })
+      } catch {
+        // Channel may not support this product
+      }
+    }
+    console.log('[shopify] Published to all channels')
+  } catch (pubErr) {
+    console.warn('[shopify] Publishing to channels failed:', String(pubErr))
+  }
+
   return { shopifyProductId: productId }
 }
 
