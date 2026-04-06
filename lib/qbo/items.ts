@@ -131,13 +131,19 @@ export async function createQboItem(params: {
     UnitPrice: sellingPrice,
     IncomeAccountRef: { value: accounts.income || '1' },
     SalesTaxIncluded: true,
-    SalesTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
+    SalesTaxCodeRef: {
+      value: vatApplicable ? taxCodes.standardRated : taxCodes.margin,
+      name: vatApplicable ? taxCodes.standardRatedName : taxCodes.marginName,
+    },
 
     // Purchase info — always VAT inclusive
     PurchaseCost: costPrice,
     ExpenseAccountRef: { value: accounts.expense || '1' },
     PurchaseTaxIncluded: true,
-    PurchaseTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
+    PurchaseTaxCodeRef: {
+      value: vatApplicable ? taxCodes.standardRated : taxCodes.margin,
+      name: vatApplicable ? taxCodes.standardRatedName : taxCodes.marginName,
+    },
   }
 
   if (qboVendorId) {
@@ -181,7 +187,9 @@ export async function createQboItem(params: {
 
 interface TaxCodeResult {
   standardRated: string
+  standardRatedName: string
   margin: string
+  marginName: string
 }
 
 let cachedTaxCodes: TaxCodeResult | null = null
@@ -205,23 +213,25 @@ async function findTaxCodes(): Promise<TaxCodeResult> {
   console.log('[qbo-items] Available tax codes:', result.map(tc => `${tc.Id}="${tc.Name}"`).join(', '))
 
   let standardRated: string | null = null
+  let standardRatedName = ''
   let margin: string | null = null
+  let marginName = ''
 
   for (const tc of result) {
     const name = tc.Name.toLowerCase()
-    // Match 20% standard rate: "20.0% S", "20% Standard", etc.
     if (name.includes('20')) {
       standardRated = tc.Id
+      standardRatedName = tc.Name
     }
-    // Match margin scheme: "Margin", "Margin Scheme", etc.
     if (name.includes('margin')) {
       margin = tc.Id
+      marginName = tc.Name
     }
   }
 
-  if (!standardRated) console.error('[qbo-items] WARNING: No 20% standard rate tax code found!')
+  if (!standardRated) console.error('[qbo-items] WARNING: No 20% tax code found!')
   if (!margin) console.error('[qbo-items] WARNING: No Margin tax code found!')
-  console.log('[qbo-items] Selected tax codes — standardRated:', standardRated, ', margin:', margin)
+  console.log('[qbo-items] Selected tax codes — standard:', standardRated, `"${standardRatedName}"`, ', margin:', margin, `"${marginName}"`)
   if (!standardRated || !margin) {
     throw new Error(
       `QBO tax codes not found. Available: ${result.map(tc => `${tc.Id}="${tc.Name}"`).join(', ')}. ` +
@@ -229,7 +239,7 @@ async function findTaxCodes(): Promise<TaxCodeResult> {
     )
   }
 
-  cachedTaxCodes = { standardRated, margin }
+  cachedTaxCodes = { standardRated, standardRatedName, margin, marginName }
   return cachedTaxCodes
 }
 
@@ -279,7 +289,9 @@ async function findAccountsByType(): Promise<AccountRefs> {
     }
     // QBO API uses "Other Current Asset" with SubType "Inventory" for stock asset accounts
     if (acc.AccountType === 'Other Current Asset' && (
-      acc.AccountSubType === 'Inventory' || name === 'stock' || name === 'inventory' || name.includes('inventory asset')
+      acc.AccountSubType === 'Inventory' || name === 'stock' || name === 'inventory'
+      || name === 'stock asset' || name === 'inventory asset' || name.includes('uncategorized')
+      || name.includes('stock asset')
     )) {
       asset = acc.Id
     }
@@ -290,7 +302,7 @@ async function findAccountsByType(): Promise<AccountRefs> {
   if (!asset) {
     console.log('[qbo-items] No stock asset account found. Current asset accounts:',
       result.filter(a => a.AccountType.includes('Current')).map(a => `${a.Id}="${a.Name}" (${a.AccountType}/${a.AccountSubType || '?'})`).join(', ') || 'NONE')
-    console.log('[qbo-items] Auto-creating "Inventory Asset" account via raw API...')
+    console.log('[qbo-items] Auto-creating "Stock Asset" account via raw API...')
 
     const { connection } = await getQboClient()
     const isSandbox = process.env.QBO_ENVIRONMENT?.trim() !== 'production'
@@ -309,7 +321,7 @@ async function findAccountsByType(): Promise<AccountRefs> {
           'Accept': 'application/json',
         },
         body: JSON.stringify({
-          Name: 'Inventory Asset',
+          Name: 'Stock Asset',
           AccountType: 'Other Current Asset',
           AccountSubType: 'Inventory',
         }),
@@ -323,7 +335,7 @@ async function findAccountsByType(): Promise<AccountRefs> {
     }
 
     asset = createBody.Account?.Id
-    console.log('[qbo-items] Created "Inventory Asset" account, id:', asset)
+    console.log('[qbo-items] Created "Stock Asset" account, id:', asset)
   }
 
   console.log('[qbo-items] Selected accounts — income:', income, ', expense:', expense, ', asset (stock):', asset)

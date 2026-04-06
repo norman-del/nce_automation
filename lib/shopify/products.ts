@@ -57,16 +57,19 @@ export async function createShopifyProduct(params: {
   heightCm: number
   depthCm: number
   weightKg: number | null
+  notes?: string | null
 }): Promise<{ shopifyProductId: number }> {
   const {
     sku, title, condition, vatApplicable, sellingPrice, productType,
-    vendor, tags, shippingTier, widthCm, heightCm, depthCm,
+    vendor, tags, shippingTier, widthCm, heightCm, depthCm, notes,
   } = params
 
   const fullTitle = `${title} (NCE${sku})`
 
-  // Build description from specs
-  const descParts = [title]
+  // Build description — notes first, then specs
+  const descParts: string[] = []
+  if (notes) descParts.push(notes)
+  descParts.push(title)
   if (condition) descParts.push(`Condition: ${condition === 'new' ? 'New' : 'Used'}`)
   descParts.push(`Dimensions: ${widthCm}W x ${heightCm}H x ${depthCm}D cm`)
 
@@ -106,8 +109,39 @@ export async function createShopifyProduct(params: {
     body: JSON.stringify({ product }),
   })
 
-  console.log('[shopify] Product created:', sku, '→ id', result.product.id)
-  return { shopifyProductId: result.product.id }
+  const productId = result.product.id
+  console.log('[shopify] Product created:', sku, '→ id', productId)
+
+  // Publish to all sales channels immediately
+  try {
+    const pubData = await shopifyFetch<{ publications: { id: number; name: string }[] }>(
+      '/publications.json'
+    )
+    console.log('[shopify] Available channels:', pubData.publications?.map(p => `${p.id}="${p.name}"`).join(', '))
+    for (const pub of pubData.publications || []) {
+      try {
+        await shopifyFetch(`/product_listings/${productId}.json`, {
+          method: 'PUT',
+          body: JSON.stringify({ product_listing: { product_id: productId } }),
+        })
+      } catch {
+        // Try alternative endpoint for this channel
+        try {
+          await shopifyFetch(`/publications/${pub.id}/product_listings.json`, {
+            method: 'PUT',
+            body: JSON.stringify({ product_listing: { product_id: productId } }),
+          })
+        } catch {
+          // Channel may not accept draft products
+        }
+      }
+    }
+    console.log('[shopify] Published to channels')
+  } catch (pubErr) {
+    console.warn('[shopify] Could not publish to channels:', String(pubErr))
+  }
+
+  return { shopifyProductId: productId }
 }
 
 /* ------------------------------------------------------------------ */

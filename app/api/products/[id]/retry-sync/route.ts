@@ -44,6 +44,7 @@ export async function POST(
           heightCm: product.height_cm,
           depthCm: product.depth_cm,
           weightKg: product.weight_kg,
+          notes: product.notes,
         })
 
         await db

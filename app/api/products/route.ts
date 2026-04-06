@@ -163,6 +163,7 @@ export async function POST(req: NextRequest) {
             heightCm: input.height_cm,
             depthCm: input.depth_cm,
             weightKg: input.weight_kg ?? null,
+            notes: input.notes?.trim() || null,
           })
 
           // Update Supabase with Shopify ID
