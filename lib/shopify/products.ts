@@ -19,6 +19,7 @@ interface ShopifyProductInput {
   product_type: string
   tags: string
   status: 'draft' | 'active'
+  published_scope: 'web' | 'global'
   variants: ShopifyVariantInput[]
   metafields?: { namespace: string; key: string; value: string; type: string }[]
 }
@@ -75,6 +76,7 @@ export async function createShopifyProduct(params: {
     product_type: productType,
     tags: [...tags, condition === 'new' ? 'New' : 'Used'].join(', '),
     status: 'draft',
+    published_scope: 'global',
     variants: [
       {
         price: sellingPrice.toFixed(2),
@@ -90,6 +92,8 @@ export async function createShopifyProduct(params: {
       { namespace: 'theme', key: 'label', value: condition.toUpperCase(), type: 'single_line_text_field' },
       // Condition metafield — used by Shopify for product condition display
       { namespace: 'custom', key: 'condition-new-used', value: JSON.stringify([condition === 'used' ? 'Used \u2013 Good' : 'New']), type: 'list.single_line_text_field' },
+      // Dimensions metafield
+      { namespace: 'custom', key: 'dimensions', value: `${widthCm}x${depthCm}x${heightCm}cm`, type: 'single_line_text_field' },
     ],
   }
 
