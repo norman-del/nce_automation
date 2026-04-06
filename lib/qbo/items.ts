@@ -279,11 +279,11 @@ async function findAccountsByType(): Promise<AccountRefs> {
 
   // If no stock asset account found, create one
   if (!asset) {
-    console.log('[qbo-items] No stock asset account found — please create a "Stock" account in QBO manually:')
-    console.log('[qbo-items]   Go to QBO → Chart of Accounts → New → Type: Current Asset, Detail: Stock, Name: Stock')
+    console.error('[qbo-items] No stock asset account found. Available Current Asset accounts:',
+      result.filter(a => a.AccountType.includes('Current')).map(a => `${a.Id}="${a.Name}" (${a.AccountType}/${a.AccountSubType || '?'})`).join(', ') || 'NONE')
     throw new Error(
-      'QBO needs a "Stock" asset account (Current Asset / Stock type). ' +
-      'Please create it in QBO: Chart of Accounts → New → Type "Current Asset", Detail "Stock", Name "Stock". ' +
+      'QBO needs a "Stock" asset account. ' +
+      'Create it in QBO: Chart of Accounts → New → Type "Other Current Assets", Detail "Inventory", Name "Stock". ' +
       'Then retry sync.'
     )
   }
