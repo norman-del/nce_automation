@@ -238,11 +238,11 @@ async function findAccountsByType(): Promise<AccountRefs> {
   const { client: _c } = await getQboClient()
   const client = _c as QboAny
 
-  const result = await new Promise<{ Id: string; Name: string; AccountType: string }[]>(
+  const result = await new Promise<{ Id: string; Name: string; AccountType: string; AccountSubType?: string }[]>(
     (resolve, reject) => {
       client.findAccounts(
         {},
-        (err: unknown, data: { QueryResponse: { Account?: { Id: string; Name: string; AccountType: string }[] } }) => {
+        (err: unknown, data: { QueryResponse: { Account?: { Id: string; Name: string; AccountType: string; AccountSubType?: string }[] } }) => {
           if (err) reject(err)
           else resolve(data.QueryResponse.Account || [])
         }
@@ -250,7 +250,7 @@ async function findAccountsByType(): Promise<AccountRefs> {
     }
   )
 
-  console.log('[qbo-items] Available accounts:', result.map(a => `${a.Id}="${a.Name}" (${a.AccountType})`).join(', '))
+  console.log('[qbo-items] Available accounts:', result.map(a => `${a.Id}="${a.Name}" (${a.AccountType}/${a.AccountSubType || '?'})`).join(', '))
 
   let income: string | null = null
   let expense: string | null = null
@@ -264,7 +264,7 @@ async function findAccountsByType(): Promise<AccountRefs> {
     if (name.includes('cost of sales') || name.includes('cost of goods')) {
       expense = acc.Id
     }
-    if (name === 'stock' && (acc.AccountType === 'Other Current Asset' || acc.AccountType.includes('Asset'))) {
+    if (name === 'stock' && acc.AccountType === 'Current Asset') {
       asset = acc.Id
     }
   }
