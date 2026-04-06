@@ -1,4 +1,5 @@
 import { getQboClient } from './client'
+import { decrypt } from '../crypto'
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -264,28 +265,53 @@ async function findAccountsByType(): Promise<AccountRefs> {
     if (name.includes('cost of sales') || name.includes('cost of goods')) {
       expense = acc.Id
     }
-    if (acc.AccountType === 'Current Asset' && (
-      name === 'stock' || name === 'inventory' || name === 'stock asset' || name === 'inventory asset'
-    )) {
-      asset = acc.Id
-    }
-    // Fallback: any Other Current Asset with stock/inventory in the name or subtype
-    if (!asset && acc.AccountType === 'Other Current Asset' && (
-      name.includes('stock') || name.includes('inventory') || acc.AccountSubType === 'Inventory'
+    // QBO API uses "Other Current Asset" with SubType "Inventory" for stock asset accounts
+    if (acc.AccountType === 'Other Current Asset' && (
+      acc.AccountSubType === 'Inventory' || name === 'stock' || name === 'inventory' || name.includes('inventory asset')
     )) {
       asset = acc.Id
     }
   }
 
-  // If no stock asset account found, create one
+  // If no stock asset account found, auto-create via raw API call
+  // (node-quickbooks createAccount mangles the payload for UK QBO)
   if (!asset) {
-    console.error('[qbo-items] No stock asset account found. Available Current Asset accounts:',
+    console.log('[qbo-items] No stock asset account found. Current asset accounts:',
       result.filter(a => a.AccountType.includes('Current')).map(a => `${a.Id}="${a.Name}" (${a.AccountType}/${a.AccountSubType || '?'})`).join(', ') || 'NONE')
-    throw new Error(
-      'QBO needs a "Stock" asset account. ' +
-      'Create it in QBO: Chart of Accounts → New → Type "Other Current Assets", Detail "Inventory", Name "Stock". ' +
-      'Then retry sync.'
+    console.log('[qbo-items] Auto-creating "Inventory Asset" account via raw API...')
+
+    const { connection } = await getQboClient()
+    const isSandbox = process.env.QBO_ENVIRONMENT?.trim() !== 'production'
+    const baseUrl = isSandbox
+      ? 'https://sandbox-quickbooks.api.intuit.com'
+      : 'https://quickbooks.api.intuit.com'
+    const accessToken = decrypt(connection.access_token_encrypted)
+
+    const createRes = await fetch(
+      `${baseUrl}/v3/company/${connection.realm_id}/account?minorversion=65`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          Name: 'Inventory Asset',
+          AccountType: 'Other Current Asset',
+          AccountSubType: 'Inventory',
+        }),
+      }
     )
+
+    const createBody = await createRes.json()
+    if (!createRes.ok) {
+      console.error('[qbo-items] Failed to create inventory asset account:', JSON.stringify(createBody))
+      throw new Error(`QBO needs a stock asset account but auto-creation failed: ${JSON.stringify(createBody.Fault?.Error?.[0]?.Detail || createBody)}`)
+    }
+
+    asset = createBody.Account?.Id
+    console.log('[qbo-items] Created "Inventory Asset" account, id:', asset)
   }
 
   console.log('[qbo-items] Selected accounts — income:', income, ', expense:', expense, ', asset (stock):', asset)
