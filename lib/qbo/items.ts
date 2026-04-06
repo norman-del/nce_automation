@@ -143,18 +143,29 @@ export async function createQboItem(params: {
     itemData.PrefVendorRef = { value: qboVendorId }
   }
 
-  console.log('[qbo-items] Creating inventory item:', sku, {
+  console.log('[qbo-items] Creating inventory item:', sku, JSON.stringify({
     type: 'Inventory', vatApplicable,
     salesTax: vatApplicable ? 'standardRated' : 'margin',
+    taxCodeIds: { standard: taxCodes.standardRated, margin: taxCodes.margin },
+    accountIds: { income: accounts.income, expense: accounts.expense, asset: accounts.asset },
     vendor: qboVendorId || 'none',
-  })
+  }))
 
   const created = await new Promise<QboItem>((resolve, reject) => {
     client.createItem(
       itemData,
       (err: unknown, item: QboItem) => {
-        if (err) reject(err)
-        else resolve(item)
+        if (err) {
+          // Extract QBO error detail from Axios response
+          const axErr = err as { response?: { data?: unknown }; message?: string }
+          const detail = axErr.response?.data
+            ? JSON.stringify(axErr.response.data)
+            : axErr.message || String(err)
+          console.error('[qbo-items] createItem FAILED:', detail)
+          reject(new Error(`QBO createItem: ${detail}`))
+        } else {
+          resolve(item)
+        }
       }
     )
   })
@@ -253,7 +264,7 @@ async function findAccountsByType(): Promise<AccountRefs> {
     if (name.includes('cost of sales') || name.includes('cost of goods')) {
       expense = acc.Id
     }
-    if (acc.AccountType === 'Other Current Asset' && name === 'stock') {
+    if (name === 'stock' && (acc.AccountType === 'Other Current Asset' || acc.AccountType.includes('Asset'))) {
       asset = acc.Id
     }
   }
