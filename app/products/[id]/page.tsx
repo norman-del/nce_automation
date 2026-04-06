@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import PhotoUploadWrapper from './PhotoUploadWrapper'
 import RetrySyncButton from './RetrySyncButton'
+import DeleteProductButton from './DeleteProductButton'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -52,6 +53,7 @@ export default async function ProductDetailPage({ params }: Props) {
           }`}>
             {product.status}
           </span>
+          <DeleteProductButton productId={product.id} sku={product.sku} />
         </div>
       </div>
 

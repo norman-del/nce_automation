@@ -2,6 +2,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/client'
 import { calculateShippingTier } from '@/lib/products/shipping'
 
+// DELETE /api/products/[id]
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const db = createServiceClient()
+
+    // product_images cascade-deletes via FK
+    const { error } = await db
+      .from('products')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+
+    console.log('[products/DELETE] deleted product:', id)
+    return NextResponse.json({ ok: true })
+  } catch (e) {
+    console.error('[products/DELETE] failed:', String(e))
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
+}
+
 // GET /api/products/[id]
 export async function GET(
   _req: NextRequest,
