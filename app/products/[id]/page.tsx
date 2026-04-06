@@ -159,9 +159,11 @@ export default async function ProductDetailPage({ params }: Props) {
                   {product.sync_error}
                 </div>
               )}
-              {(!product.shopify_product_id || !product.qbo_synced) && (
-                <RetrySyncButton productId={product.id} />
-              )}
+              <RetrySyncButton
+                productId={product.id}
+                hasShopify={!!product.shopify_product_id}
+                hasQbo={!!product.qbo_synced}
+              />
             </div>
           </div>
 

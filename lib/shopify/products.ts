@@ -118,6 +118,16 @@ export async function createShopifyProduct(params: {
 }
 
 /* ------------------------------------------------------------------ */
+/* Delete a product from Shopify                                       */
+/* ------------------------------------------------------------------ */
+
+export async function deleteShopifyProduct(productId: number): Promise<void> {
+  console.log(`[shopify] Deleting product ${productId}`)
+  await shopifyFetch(`/products/${productId}.json`, { method: 'DELETE' })
+  console.log(`[shopify] Product ${productId} deleted`)
+}
+
+/* ------------------------------------------------------------------ */
 /* Add a product to collections                                        */
 /* ------------------------------------------------------------------ */
 
