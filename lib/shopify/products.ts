@@ -21,6 +21,7 @@ interface ShopifyProductInput {
   tags: string
   status: 'draft' | 'active'
   published_scope: 'web' | 'global'
+  published: boolean
   variants: ShopifyVariantInput[]
   metafields?: { namespace: string; key: string; value: string; type: string }[]
 }
@@ -81,6 +82,7 @@ export async function createShopifyProduct(params: {
     tags: [...tags, condition === 'new' ? 'New' : 'Used'].join(', '),
     status: 'draft',
     published_scope: 'global',
+    published: true,
     variants: [
       {
         price: sellingPrice.toFixed(2),
@@ -111,35 +113,6 @@ export async function createShopifyProduct(params: {
 
   const productId = result.product.id
   console.log('[shopify] Product created:', sku, '→ id', productId)
-
-  // Publish to all sales channels immediately
-  try {
-    const pubData = await shopifyFetch<{ publications: { id: number; name: string }[] }>(
-      '/publications.json'
-    )
-    console.log('[shopify] Available channels:', pubData.publications?.map(p => `${p.id}="${p.name}"`).join(', '))
-    for (const pub of pubData.publications || []) {
-      try {
-        await shopifyFetch(`/product_listings/${productId}.json`, {
-          method: 'PUT',
-          body: JSON.stringify({ product_listing: { product_id: productId } }),
-        })
-      } catch {
-        // Try alternative endpoint for this channel
-        try {
-          await shopifyFetch(`/publications/${pub.id}/product_listings.json`, {
-            method: 'PUT',
-            body: JSON.stringify({ product_listing: { product_id: productId } }),
-          })
-        } catch {
-          // Channel may not accept draft products
-        }
-      }
-    }
-    console.log('[shopify] Published to channels')
-  } catch (pubErr) {
-    console.warn('[shopify] Could not publish to channels:', String(pubErr))
-  }
 
   return { shopifyProductId: productId }
 }
@@ -206,32 +179,8 @@ export async function updateProductStatus(
   console.log(`[shopify] Updating product ${productId} status → ${status}`)
   await shopifyFetch(`/products/${productId}.json`, {
     method: 'PUT',
-    body: JSON.stringify({ product: { id: productId, status, published_scope: 'global' } }),
+    body: JSON.stringify({ product: { id: productId, status, published: true, published_scope: 'global' } }),
   })
-
-  // When activating, publish to all sales channels
-  if (status === 'active') {
-    console.log(`[shopify] Publishing product ${productId} to all sales channels...`)
-    try {
-      // Get all publication IDs (sales channels)
-      const pubData = await shopifyFetch<{ publications: { id: number }[] }>(
-        '/publications.json'
-      )
-      for (const pub of pubData.publications || []) {
-        try {
-          await shopifyFetch(`/publications/${pub.id}/product_listings.json`, {
-            method: 'PUT',
-            body: JSON.stringify({ product_listing: { product_id: productId } }),
-          })
-        } catch {
-          // Some channels may not accept the product — that's ok
-        }
-      }
-      console.log(`[shopify] Published to ${pubData.publications?.length || 0} channels`)
-    } catch (pubErr) {
-      console.warn(`[shopify] Could not publish to all channels:`, String(pubErr))
-    }
-  }
 
   console.log(`[shopify] Product ${productId} status updated to ${status}`)
 }

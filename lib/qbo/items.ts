@@ -131,19 +131,13 @@ export async function createQboItem(params: {
     UnitPrice: sellingPrice,
     IncomeAccountRef: { value: accounts.income || '1' },
     SalesTaxIncluded: true,
-    SalesTaxCodeRef: {
-      value: vatApplicable ? taxCodes.standardRated : taxCodes.margin,
-      name: vatApplicable ? taxCodes.standardRatedName : taxCodes.marginName,
-    },
+    SalesTaxCodeRef: { value: String(vatApplicable ? taxCodes.standardRated : taxCodes.margin) },
 
     // Purchase info — always VAT inclusive
     PurchaseCost: costPrice,
     ExpenseAccountRef: { value: accounts.expense || '1' },
     PurchaseTaxIncluded: true,
-    PurchaseTaxCodeRef: {
-      value: vatApplicable ? taxCodes.standardRated : taxCodes.margin,
-      name: vatApplicable ? taxCodes.standardRatedName : taxCodes.marginName,
-    },
+    PurchaseTaxCodeRef: { value: String(vatApplicable ? taxCodes.standardRated : taxCodes.margin) },
   }
 
   if (qboVendorId) {
@@ -288,12 +282,18 @@ async function findAccountsByType(): Promise<AccountRefs> {
       expense = acc.Id
     }
     // QBO API uses "Other Current Asset" with SubType "Inventory" for stock asset accounts
-    if (acc.AccountType === 'Other Current Asset' && (
-      acc.AccountSubType === 'Inventory' || name === 'stock' || name === 'inventory'
-      || name === 'stock asset' || name === 'inventory asset' || name.includes('uncategorized')
-      || name.includes('stock asset')
-    )) {
-      asset = acc.Id
+    // But also match by name regardless of type, since QBO auto-creates with varying types
+    if (
+      (acc.AccountSubType === 'Inventory') ||
+      (acc.AccountType.includes('Asset') && (
+        name === 'stock' || name === 'stock asset' || name === 'inventory'
+        || name === 'inventory asset' || name.includes('stock asset')
+      ))
+    ) {
+      // Prefer "Stock Asset" over "Uncategorized Stock Asset"
+      if (!asset || name === 'stock asset' || name === 'stock') {
+        asset = acc.Id
+      }
     }
   }
 
