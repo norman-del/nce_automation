@@ -86,6 +86,10 @@ export async function createShopifyProduct(params: {
     metafields: [
       { namespace: 'nce', key: 'condition', value: condition, type: 'single_line_text_field' },
       { namespace: 'nce', key: 'shipping_tier', value: String(shippingTier), type: 'number_integer' },
+      // Theme label — shown as a badge on the product card (e.g. "USED", "NEW")
+      { namespace: 'theme', key: 'label', value: condition.toUpperCase(), type: 'single_line_text_field' },
+      // Condition metafield — used by Shopify for product condition display
+      { namespace: 'custom', key: 'condition-new-used', value: JSON.stringify([condition === 'used' ? 'Used \u2013 Good' : 'New']), type: 'list.single_line_text_field' },
     ],
   }
 
