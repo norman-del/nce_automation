@@ -34,6 +34,7 @@ export async function POST(
           sku: product.sku,
           title: product.title,
           condition: product.condition,
+          vatApplicable: product.vat_applicable,
           sellingPrice: product.selling_price,
           productType: product.product_type,
           vendor: product.vendor,

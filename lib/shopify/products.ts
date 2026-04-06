@@ -8,8 +8,9 @@ interface ShopifyVariantInput {
   price: string
   sku: string
   requires_shipping: boolean
-  weight?: number
-  weight_unit?: 'kg'
+  taxable: boolean
+  weight: number
+  weight_unit: 'kg'
 }
 
 interface ShopifyProductInput {
@@ -46,6 +47,7 @@ export async function createShopifyProduct(params: {
   sku: string
   title: string
   condition: 'new' | 'used'
+  vatApplicable: boolean
   sellingPrice: number
   productType: string
   vendor: string
@@ -57,8 +59,8 @@ export async function createShopifyProduct(params: {
   weightKg: number | null
 }): Promise<{ shopifyProductId: number }> {
   const {
-    sku, title, condition, sellingPrice, productType,
-    vendor, tags, shippingTier, widthCm, heightCm, depthCm, weightKg,
+    sku, title, condition, vatApplicable, sellingPrice, productType,
+    vendor, tags, shippingTier, widthCm, heightCm, depthCm,
   } = params
 
   const fullTitle = `${title} (NCE${sku})`
@@ -81,7 +83,9 @@ export async function createShopifyProduct(params: {
         price: sellingPrice.toFixed(2),
         sku,
         requires_shipping: true,
-        ...(weightKg ? { weight: weightKg, weight_unit: 'kg' as const } : {}),
+        taxable: vatApplicable, // charge tax only for 20% VAT, not margin scheme
+        weight: shippingTier, // 0=Parcel, 1=Single Pallet, 2=Double Pallet
+        weight_unit: 'kg',
       },
     ],
     metafields: [
@@ -168,8 +172,33 @@ export async function updateProductStatus(
   console.log(`[shopify] Updating product ${productId} status → ${status}`)
   await shopifyFetch(`/products/${productId}.json`, {
     method: 'PUT',
-    body: JSON.stringify({ product: { id: productId, status } }),
+    body: JSON.stringify({ product: { id: productId, status, published_scope: 'global' } }),
   })
+
+  // When activating, publish to all sales channels
+  if (status === 'active') {
+    console.log(`[shopify] Publishing product ${productId} to all sales channels...`)
+    try {
+      // Get all publication IDs (sales channels)
+      const pubData = await shopifyFetch<{ publications: { id: number }[] }>(
+        '/publications.json'
+      )
+      for (const pub of pubData.publications || []) {
+        try {
+          await shopifyFetch(`/publications/${pub.id}/product_listings.json`, {
+            method: 'PUT',
+            body: JSON.stringify({ product_listing: { product_id: productId } }),
+          })
+        } catch {
+          // Some channels may not accept the product — that's ok
+        }
+      }
+      console.log(`[shopify] Published to ${pubData.publications?.length || 0} channels`)
+    } catch (pubErr) {
+      console.warn(`[shopify] Could not publish to all channels:`, String(pubErr))
+    }
+  }
+
   console.log(`[shopify] Product ${productId} status updated to ${status}`)
 }
 

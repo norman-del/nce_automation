@@ -204,19 +204,31 @@ async function findTaxCodes(): Promise<TaxCodeResult> {
 
   console.log('[qbo-items] Available tax codes:', result.map(tc => `${tc.Id}="${tc.Name}"`).join(', '))
 
-  let standardRated = '1' // fallback
-  let margin = '0' // fallback
+  let standardRated: string | null = null
+  let margin: string | null = null
 
   for (const tc of result) {
     const name = tc.Name.toLowerCase()
-    if (name.includes('20') && (name.includes('s') || name.includes('standard'))) {
+    // Match 20% standard rate: "20.0% S", "20% Standard", etc.
+    if (name.includes('20')) {
       standardRated = tc.Id
-    } else if (name.includes('margin')) {
+    }
+    // Match margin scheme: "Margin", "Margin Scheme", etc.
+    if (name.includes('margin')) {
       margin = tc.Id
     }
   }
 
+  if (!standardRated) console.error('[qbo-items] WARNING: No 20% standard rate tax code found!')
+  if (!margin) console.error('[qbo-items] WARNING: No Margin tax code found!')
   console.log('[qbo-items] Selected tax codes — standardRated:', standardRated, ', margin:', margin)
+  if (!standardRated || !margin) {
+    throw new Error(
+      `QBO tax codes not found. Available: ${result.map(tc => `${tc.Id}="${tc.Name}"`).join(', ')}. ` +
+      `Need a "20%" code and a "Margin" code.`
+    )
+  }
+
   cachedTaxCodes = { standardRated, margin }
   return cachedTaxCodes
 }

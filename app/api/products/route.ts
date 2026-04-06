@@ -153,6 +153,7 @@ export async function POST(req: NextRequest) {
             sku,
             title: input.title.trim(),
             condition: input.condition,
+            vatApplicable: input.vat_applicable ?? false,
             sellingPrice: input.selling_price,
             productType: input.product_type.trim(),
             vendor: input.vendor.trim(),
