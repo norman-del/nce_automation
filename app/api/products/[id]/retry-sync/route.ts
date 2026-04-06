@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/client'
 import { createShopifyProduct, addProductToCollections } from '@/lib/shopify/products'
-import { createQboItem, findOrCreateQboVendor } from '@/lib/qbo/items'
+import { createQboItem } from '@/lib/qbo/items'
 
 // POST /api/products/[id]/retry-sync — retry failed Shopify/QBO sync
 export async function POST(
@@ -16,7 +16,7 @@ export async function POST(
     const db = createServiceClient()
     const { data: product, error } = await db
       .from('products')
-      .select('*, suppliers(*)')
+      .select('*')
       .eq('id', id)
       .single()
 
@@ -69,26 +69,13 @@ export async function POST(
     if (!product.qbo_synced) {
       console.log(`[retry-sync] ${product.sku} → QBO push`)
       try {
-        let qboVendorId: string | null = null
-        if (product.supplier_id && product.suppliers) {
-          if (product.suppliers.qbo_vendor_id) {
-            qboVendorId = product.suppliers.qbo_vendor_id
-          } else {
-            qboVendorId = await findOrCreateQboVendor(product.suppliers)
-            await db
-              .from('suppliers')
-              .update({ qbo_vendor_id: qboVendorId, updated_at: new Date().toISOString() })
-              .eq('id', product.suppliers.id)
-          }
-        }
-
         const qboItemId = await createQboItem({
           sku: product.sku,
           title: product.title,
           sellingPrice: product.selling_price,
           costPrice: product.cost_price,
           vatApplicable: product.vat_applicable,
-          qboVendorId,
+          qboVendorId: product.qbo_vendor_id || null,
         })
 
         await db

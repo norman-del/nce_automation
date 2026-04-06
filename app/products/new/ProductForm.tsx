@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import SupplierTypeahead, { type Supplier } from './SupplierTypeahead'
+import SupplierTypeahead, { type QboVendor } from './SupplierTypeahead'
 import { calculateShippingTier } from '@/lib/products/shipping'
 
 const SHIPPING_LABELS: Record<number, string> = {
@@ -32,7 +32,7 @@ interface ProductDraft {
   height_cm: string
   depth_cm: string
   weight_kg: string
-  supplier: Supplier | null
+  supplier: QboVendor | null
   product_type: string
   vendor: string
   collections: string[]
@@ -91,7 +91,8 @@ export default function ProductForm({ productTypes, vendors, collections }: Prop
       height_cm: parseFloat(d.height_cm) || 0,
       depth_cm: parseFloat(d.depth_cm) || 0,
       weight_kg: d.weight_kg ? parseFloat(d.weight_kg) : null,
-      supplier_id: d.supplier?.id || null,
+      qbo_vendor_id: d.supplier?.id || null,
+      qbo_vendor_name: d.supplier?.name || null,
       product_type: d.product_type,
       vendor: d.vendor,
       collections: d.collections,

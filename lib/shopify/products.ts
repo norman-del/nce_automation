@@ -60,7 +60,7 @@ export async function createShopifyProduct(params: {
     vendor, tags, shippingTier, widthCm, heightCm, depthCm, weightKg,
   } = params
 
-  const fullTitle = `${title} (${sku})`
+  const fullTitle = `${title} (NCE${sku})`
 
   // Build description from specs
   const descParts = [title]

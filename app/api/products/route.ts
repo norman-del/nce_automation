@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/client'
 import { calculateShippingTier } from '@/lib/products/shipping'
 import { createShopifyProduct, addProductToCollections } from '@/lib/shopify/products'
-import { createQboItem, findOrCreateQboVendor } from '@/lib/qbo/items'
+import { createQboItem } from '@/lib/qbo/items'
 
 // GET /api/products?status=processing&q=search&limit=50&offset=0
 export async function GET(req: NextRequest) {
@@ -62,7 +62,9 @@ interface ProductInput {
   height_cm: number
   depth_cm: number
   weight_kg?: number | null
-  supplier_id: string
+  supplier_id?: string
+  qbo_vendor_id?: string | null
+  qbo_vendor_name?: string | null
   product_type: string
   vendor: string
   collections?: string[] | null
@@ -132,6 +134,8 @@ export async function POST(req: NextRequest) {
             weight_kg: input.weight_kg ?? null,
             shipping_tier: shippingTier,
             supplier_id: input.supplier_id || null,
+            qbo_vendor_id: input.qbo_vendor_id || null,
+            qbo_vendor_name: input.qbo_vendor_name || null,
             product_type: input.product_type.trim(),
             vendor: input.vendor.trim(),
             collections: input.collections ?? [],
@@ -182,36 +186,13 @@ export async function POST(req: NextRequest) {
         // Push to QBO (non-blocking — product is saved even if QBO fails)
         console.log(`[products/POST] ${sku} → QBO push starting`)
         try {
-          // Create or find QBO vendor from supplier
-          let qboVendorId: string | null = null
-          if (input.supplier_id) {
-            const { data: supplier } = await db
-              .from('suppliers')
-              .select('*')
-              .eq('id', input.supplier_id)
-              .single()
-
-            if (supplier) {
-              if (supplier.qbo_vendor_id) {
-                qboVendorId = supplier.qbo_vendor_id
-              } else {
-                qboVendorId = await findOrCreateQboVendor(supplier)
-                // Save the QBO vendor ID back to suppliers table
-                await db
-                  .from('suppliers')
-                  .update({ qbo_vendor_id: qboVendorId, updated_at: new Date().toISOString() })
-                  .eq('id', supplier.id)
-              }
-            }
-          }
-
           const qboItemId = await createQboItem({
             sku,
             title: input.title.trim(),
             sellingPrice: input.selling_price,
             costPrice: input.cost_price,
             vatApplicable: input.vat_applicable ?? false,
-            qboVendorId,
+            qboVendorId: input.qbo_vendor_id || null,
           })
 
           await db

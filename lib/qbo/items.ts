@@ -110,38 +110,44 @@ export async function createQboItem(params: {
   const client = _client as QboAny
   const { sku, title, sellingPrice, costPrice, vatApplicable, qboVendorId } = params
 
-  // First, find the correct tax codes for UK VAT
-  // Standard rated = 20% VAT, Exempt = margin scheme / no VAT
+  // Find tax codes and accounts
   const taxCodes = await findTaxCodes()
+  const accounts = await findAccountsByType()
 
   const itemData: Record<string, unknown> = {
-    Name: `${title} ${sku}`.slice(0, 100), // QBO has 100 char limit on Name
+    Name: `${title} (NCE${sku})`.slice(0, 100), // QBO has 100 char limit on Name
     Sku: sku,
     Description: title,
-    Type: 'NonInventory',
-    TrackQtyOnHand: false,
+    Type: 'Inventory',
+    TrackQtyOnHand: true,
+    QtyOnHand: 0,
+    InvStartDate: new Date().toISOString().split('T')[0],
 
-    // Sales info
+    // Asset account for stock
+    AssetAccountRef: { value: accounts.asset || '1' },
+
+    // Sales info — always VAT inclusive
     UnitPrice: sellingPrice,
-    IncomeAccountRef: { value: '1' }, // Sales of Product Income (default)
-    SalesTaxIncluded: vatApplicable,
-    SalesTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.exempt },
+    IncomeAccountRef: { value: accounts.income || '1' },
+    SalesTaxIncluded: true,
+    SalesTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
 
-    // Purchase info
+    // Purchase info — always VAT inclusive
     PurchaseCost: costPrice,
-    ExpenseAccountRef: { value: '1' }, // Will be set to Cost of Sales
-    PurchaseTaxIncluded: vatApplicable,
-    PurchaseTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.exempt },
+    ExpenseAccountRef: { value: accounts.expense || '1' },
+    PurchaseTaxIncluded: true,
+    PurchaseTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
   }
 
   if (qboVendorId) {
     itemData.PrefVendorRef = { value: qboVendorId }
   }
 
-  // Look up the correct income and expense accounts
-  const accounts = await findAccountsByType()
-  if (accounts.income) itemData.IncomeAccountRef = { value: accounts.income }
-  if (accounts.expense) itemData.ExpenseAccountRef = { value: accounts.expense }
+  console.log('[qbo-items] Creating inventory item:', sku, {
+    type: 'Inventory', vatApplicable,
+    salesTax: vatApplicable ? 'standardRated' : 'margin',
+    vendor: qboVendorId || 'none',
+  })
 
   const created = await new Promise<QboItem>((resolve, reject) => {
     client.createItem(
@@ -153,6 +159,7 @@ export async function createQboItem(params: {
     )
   })
 
+  console.log('[qbo-items] Item created:', sku, '→ QBO id', created.Id)
   return created.Id
 }
 
@@ -162,7 +169,7 @@ export async function createQboItem(params: {
 
 interface TaxCodeResult {
   standardRated: string
-  exempt: string
+  margin: string
 }
 
 let cachedTaxCodes: TaxCodeResult | null = null
@@ -183,20 +190,22 @@ async function findTaxCodes(): Promise<TaxCodeResult> {
     )
   })
 
-  // UK QBO typically has: "20.0% S" for standard rate, "Exempt" or "No VAT" for exempt
+  console.log('[qbo-items] Available tax codes:', result.map(tc => `${tc.Id}="${tc.Name}"`).join(', '))
+
   let standardRated = '1' // fallback
-  let exempt = '0' // fallback
+  let margin = '0' // fallback
 
   for (const tc of result) {
     const name = tc.Name.toLowerCase()
     if (name.includes('20') && (name.includes('s') || name.includes('standard'))) {
       standardRated = tc.Id
-    } else if (name.includes('exempt') || name.includes('no vat') || name === 'o') {
-      exempt = tc.Id
+    } else if (name.includes('margin')) {
+      margin = tc.Id
     }
   }
 
-  cachedTaxCodes = { standardRated, exempt }
+  console.log('[qbo-items] Selected tax codes — standardRated:', standardRated, ', margin:', margin)
+  cachedTaxCodes = { standardRated, margin }
   return cachedTaxCodes
 }
 
@@ -207,9 +216,14 @@ async function findTaxCodes(): Promise<TaxCodeResult> {
 interface AccountRefs {
   income: string | null
   expense: string | null
+  asset: string | null
 }
 
+let cachedAccounts: AccountRefs | null = null
+
 async function findAccountsByType(): Promise<AccountRefs> {
+  if (cachedAccounts) return cachedAccounts
+
   const { client: _c } = await getQboClient()
   const client = _c as QboAny
 
@@ -225,8 +239,11 @@ async function findAccountsByType(): Promise<AccountRefs> {
     }
   )
 
+  console.log('[qbo-items] Available accounts:', result.map(a => `${a.Id}="${a.Name}" (${a.AccountType})`).join(', '))
+
   let income: string | null = null
   let expense: string | null = null
+  let asset: string | null = null
 
   for (const acc of result) {
     const name = acc.Name.toLowerCase()
@@ -236,7 +253,12 @@ async function findAccountsByType(): Promise<AccountRefs> {
     if (name.includes('cost of sales') || name.includes('cost of goods')) {
       expense = acc.Id
     }
+    if (acc.AccountType === 'Other Current Asset' && name === 'stock') {
+      asset = acc.Id
+    }
   }
 
-  return { income, expense }
+  console.log('[qbo-items] Selected accounts — income:', income, ', expense:', expense, ', asset (stock):', asset)
+  cachedAccounts = { income, expense, asset }
+  return cachedAccounts
 }

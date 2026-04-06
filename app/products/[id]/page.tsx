@@ -113,18 +113,11 @@ export default async function ProductDetailPage({ params }: Props) {
           </div>
 
           {/* Supplier */}
-          {product.suppliers && (
+          {(product.qbo_vendor_name || product.suppliers) && (
             <div className="bg-surface border border-edge rounded-lg p-5 space-y-2">
               <h3 className="text-xs font-semibold text-accent uppercase tracking-wide">Supplier</h3>
-              <p className={valueCls}>{product.suppliers.name}</p>
-              {product.suppliers.contact_name && <p className="text-xs text-secondary">{product.suppliers.contact_name}</p>}
-              {product.suppliers.phone && <p className="text-xs text-secondary">{product.suppliers.phone}</p>}
-              {product.suppliers.address_line1 && (
-                <p className="text-xs text-secondary">
-                  {[product.suppliers.address_line1, product.suppliers.city, product.suppliers.postcode]
-                    .filter(Boolean).join(', ')}
-                </p>
-              )}
+              <p className={valueCls}>{product.qbo_vendor_name || product.suppliers?.name}</p>
+              {product.qbo_vendor_id && <p className="text-xs text-secondary">QBO Vendor #{product.qbo_vendor_id}</p>}
             </div>
           )}
         </div>
