@@ -264,9 +264,36 @@ async function findAccountsByType(): Promise<AccountRefs> {
     if (name.includes('cost of sales') || name.includes('cost of goods')) {
       expense = acc.Id
     }
-    if (name === 'stock' && acc.AccountType === 'Current Asset') {
+    if ((name === 'stock' || name === 'inventory' || name === 'stock asset' || name === 'inventory asset')
+        && acc.AccountType === 'Current Asset') {
       asset = acc.Id
     }
+  }
+
+  // If no stock asset account found, create one
+  if (!asset) {
+    console.log('[qbo-items] No stock asset account found, creating "Stock" account...')
+    const created = await new Promise<{ Id: string }>((resolve, reject) => {
+      client.createAccount(
+        {
+          Name: 'Stock',
+          AccountType: 'Current Asset',
+          AccountSubType: 'Inventory',
+        },
+        (err: unknown, acc: { Id: string }) => {
+          if (err) {
+            const axErr = err as { response?: { data?: unknown }; message?: string }
+            const detail = axErr.response?.data ? JSON.stringify(axErr.response.data) : String(err)
+            console.error('[qbo-items] Failed to create Stock account:', detail)
+            reject(new Error(`Failed to create Stock account: ${detail}`))
+          } else {
+            resolve(acc)
+          }
+        }
+      )
+    })
+    asset = created.Id
+    console.log('[qbo-items] Created Stock account with id:', asset)
   }
 
   console.log('[qbo-items] Selected accounts — income:', income, ', expense:', expense, ', asset (stock):', asset)

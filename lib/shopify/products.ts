@@ -67,7 +67,6 @@ export async function createShopifyProduct(params: {
   const descParts = [title]
   if (condition) descParts.push(`Condition: ${condition === 'new' ? 'New' : 'Used'}`)
   descParts.push(`Dimensions: ${widthCm}W x ${heightCm}H x ${depthCm}D cm`)
-  if (weightKg) descParts.push(`Weight: ${weightKg}kg`)
 
   const product: ShopifyProductInput = {
     title: fullTitle,
