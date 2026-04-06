@@ -10,8 +10,21 @@ Next.js 16 (App Router), React 19, Supabase, Tailwind 4, node-quickbooks, intuit
 
 ## Deployment
 - **Production**: https://nce-automation.vercel.app (auto-deploys from `main` branch)
-- **Vercel CLI** installed globally — use for env vars, logs, deployments
 - **Vercel project**: `prj_8zIpLhyV521wE3vzKAAmvTUnS0eV` / org `team_8W8KmJZHBpZtLVAOJAcWPNoC`
+
+## CLIs — Always Use CLI Over MCP
+Both Vercel and Supabase have CLIs installed. **Always use CLI commands via Bash, never MCP tools.** MCP has permission limitations and higher token overhead. CLIs work directly in the terminal with no friction.
+
+### Vercel CLI (v50+)
+- Installed globally via npm (`vercel`)
+- Use for: env vars (`vercel env`), logs (`vercel logs`), deployments (`vercel deploy`), project info (`vercel ls`)
+- Already authenticated and linked to the project
+
+### Supabase CLI (v2.84+)
+- Installed via Scoop — **must prefix commands with**: `export PATH="$HOME/scoop/shims:$PATH"`
+- Use for: running SQL (`supabase db query --linked "SQL"`), migrations, project management
+- Already authenticated and linked to project `daesvkeogxuqlrskuwpg`
+- Example: `export PATH="$HOME/scoop/shims:$PATH" && supabase db query --linked "SELECT * FROM products LIMIT 5;"`
 
 ## Hard Rules
 - NEVER store tokens in plaintext — always encrypt with AES-256-GCM
