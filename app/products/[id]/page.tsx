@@ -53,6 +53,14 @@ export default async function ProductDetailPage({ params }: Props) {
           }`}>
             {product.status}
           </span>
+          {product.status === 'processing' && (
+            <Link
+              href={`/products/${product.id}/edit`}
+              className="px-3 py-1.5 text-xs font-medium text-accent border border-accent/25 rounded-md hover:bg-accent/10 transition-colors"
+            >
+              Edit
+            </Link>
+          )}
           <DeleteProductButton productId={product.id} sku={product.sku} />
         </div>
       </div>
