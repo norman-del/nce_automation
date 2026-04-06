@@ -27,44 +27,52 @@ export async function getQboConnection(): Promise<QboConnection | null> {
   return data as QboConnection
 }
 
-export async function getQboClient(): Promise<{
-  client: QuickBooks
+/* ------------------------------------------------------------------ */
+/* Refresh mutex — prevents concurrent refreshes from killing the     */
+/* token chain. Intuit invalidates the old refresh token the moment   */
+/* a new one is issued, so two concurrent refreshes = dead chain.     */
+/* ------------------------------------------------------------------ */
+
+let refreshPromise: Promise<{
+  accessToken: string
+  connection: QboConnection
+}> | null = null
+
+async function getValidToken(connection: QboConnection): Promise<{
+  accessToken: string
   connection: QboConnection
 }> {
-  const connection = await getQboConnection()
-  if (!connection) throw new Error('QBO not connected. Please connect via Settings.')
-
-  let accessToken = decrypt(connection.access_token_encrypted)
-  let conn = connection
-
-  // Refresh if token expires within 5 minutes
   const expiresAt = new Date(connection.token_expires_at)
   const fiveMinutes = 5 * 60 * 1000
   const timeLeft = expiresAt.getTime() - Date.now()
   console.log('[qbo-client] Token expires at:', expiresAt.toISOString(), '— time left:', Math.round(timeLeft / 1000), 'seconds')
 
-  if (timeLeft < fiveMinutes) {
+  if (timeLeft >= fiveMinutes) {
+    return { accessToken: decrypt(connection.access_token_encrypted), connection }
+  }
+
+  // If another caller is already refreshing, wait for that result
+  if (refreshPromise) {
+    console.log('[qbo-client] Refresh already in progress, waiting...')
+    return refreshPromise
+  }
+
+  // We're the first caller — take the lock and refresh
+  refreshPromise = (async () => {
     console.log('[qbo-client] Token expired or expiring soon, refreshing...')
     const refreshToken = decrypt(connection.refresh_token_encrypted)
-    const refreshed = await refreshAccessToken(refreshToken)
+    let refreshed: Awaited<ReturnType<typeof refreshAccessToken>>
+    try {
+      refreshed = await refreshAccessToken(refreshToken)
+    } catch (err) {
+      console.error('[qbo-client] Token refresh FAILED:', String(err))
+      console.error('[qbo-client] Refresh token may be expired or revoked. Re-auth needed via /settings')
+      throw new Error(`QBO token refresh failed — please re-connect QuickBooks via Settings. (${String(err)})`)
+    }
     console.log('[qbo-client] Token refreshed successfully, new expiry:', refreshed.expiresAt.toISOString())
 
     const db = createServiceClient()
-    await db
-      .from('qbo_connections')
-      .update({
-        access_token_encrypted: encrypt(refreshed.accessToken),
-        refresh_token_encrypted: encrypt(refreshed.refreshToken),
-        token_expires_at: refreshed.expiresAt.toISOString(),
-        refresh_token_expires_at: new Date(
-          Date.now() + 100 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', connection.id)
-
-    accessToken = refreshed.accessToken
-    conn = {
+    const newConn: QboConnection = {
       ...connection,
       access_token_encrypted: encrypt(refreshed.accessToken),
       refresh_token_encrypted: encrypt(refreshed.refreshToken),
@@ -73,7 +81,37 @@ export async function getQboClient(): Promise<{
         Date.now() + 100 * 24 * 60 * 60 * 1000
       ).toISOString(),
     }
+
+    await db
+      .from('qbo_connections')
+      .update({
+        access_token_encrypted: newConn.access_token_encrypted,
+        refresh_token_encrypted: newConn.refresh_token_encrypted,
+        token_expires_at: newConn.token_expires_at,
+        refresh_token_expires_at: newConn.refresh_token_expires_at,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', connection.id)
+
+    return { accessToken: refreshed.accessToken, connection: newConn }
+  })()
+
+  try {
+    return await refreshPromise
+  } finally {
+    // Release the lock so next expiry cycle can refresh again
+    refreshPromise = null
   }
+}
+
+export async function getQboClient(): Promise<{
+  client: QuickBooks
+  connection: QboConnection
+}> {
+  const connection = await getQboConnection()
+  if (!connection) throw new Error('QBO not connected. Please connect via Settings.')
+
+  const { accessToken, connection: conn } = await getValidToken(connection)
 
   const isSandbox = process.env.QBO_ENVIRONMENT?.trim() !== 'production'
   const qbo = new QuickBooks(

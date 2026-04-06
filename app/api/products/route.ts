@@ -6,13 +6,17 @@ import { createQboItem, findOrCreateQboVendor } from '@/lib/qbo/items'
 
 // GET /api/products?status=processing&q=search&limit=50&offset=0
 export async function GET(req: NextRequest) {
+  const t0 = Date.now()
+  const params = req.nextUrl.searchParams
+  const status = params.get('status')
+  const q = params.get('q')?.trim()
+  const limit = Math.min(parseInt(params.get('limit') || '50', 10), 100)
+  const offset = parseInt(params.get('offset') || '0', 10)
+
+  console.log('[products/GET] start', { status, q, limit, offset })
+
   try {
     const db = createServiceClient()
-    const params = req.nextUrl.searchParams
-    const status = params.get('status')
-    const q = params.get('q')?.trim()
-    const limit = Math.min(parseInt(params.get('limit') || '50', 10), 100)
-    const offset = parseInt(params.get('offset') || '0', 10)
 
     let query = db
       .from('products')
@@ -29,11 +33,16 @@ export async function GET(req: NextRequest) {
     }
 
     const { data, error, count } = await query
-    if (error) throw error
 
+    if (error) {
+      console.error('[products/GET] Supabase error:', error.message, error.code)
+      throw error
+    }
+
+    console.log('[products/GET] ok', { count, returned: data?.length, ms: Date.now() - t0 })
     return NextResponse.json({ products: data, total: count })
   } catch (e) {
-    console.error('Products GET error:', e)
+    console.error('[products/GET] failed:', String(e), { ms: Date.now() - t0 })
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }
@@ -62,6 +71,8 @@ interface ProductInput {
 
 // POST /api/products — create one or more products (batch supported)
 export async function POST(req: NextRequest) {
+  const t0 = Date.now()
+  console.log('[products/POST] start')
   try {
     const body = await req.json()
 
@@ -132,6 +143,7 @@ export async function POST(req: NextRequest) {
         if (error) throw error
 
         // Push to Shopify as draft (non-blocking — product is saved even if Shopify fails)
+        console.log(`[products/POST] ${sku} → Shopify push starting`)
         try {
           const { shopifyProductId } = await createShopifyProduct({
             sku,
@@ -158,8 +170,9 @@ export async function POST(req: NextRequest) {
           if (input.collections && input.collections.length > 0) {
             await addProductToCollections(shopifyProductId, input.collections)
           }
+          console.log(`[products/POST] ${sku} → Shopify ok, productId=${shopifyProductId}`)
         } catch (shopifyErr) {
-          console.error(`Shopify push failed for ${sku}:`, shopifyErr)
+          console.error(`[products/POST] ${sku} → Shopify FAILED:`, String(shopifyErr))
           await db
             .from('products')
             .update({ sync_error: `Shopify: ${String(shopifyErr)}` })
@@ -167,6 +180,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Push to QBO (non-blocking — product is saved even if QBO fails)
+        console.log(`[products/POST] ${sku} → QBO push starting`)
         try {
           // Create or find QBO vendor from supplier
           let qboVendorId: string | null = null
@@ -204,8 +218,9 @@ export async function POST(req: NextRequest) {
             .from('products')
             .update({ qbo_item_id: qboItemId, qbo_synced: true })
             .eq('id', data.id)
+          console.log(`[products/POST] ${sku} → QBO ok, itemId=${qboItemId}`)
         } catch (qboErr) {
-          console.error(`QBO push failed for ${sku}:`, qboErr)
+          console.error(`[products/POST] ${sku} → QBO FAILED:`, String(qboErr))
           const existing = (
             await db.from('products').select('sync_error').eq('id', data.id).single()
           ).data
@@ -227,12 +242,13 @@ export async function POST(req: NextRequest) {
     }
 
     const hasErrors = results.some((r) => r.error)
+    console.log('[products/POST] done', { total: results.length, errors: results.filter(r => r.error).length, ms: Date.now() - t0 })
     return NextResponse.json(
       { products: results },
       { status: hasErrors ? 207 : 201 }
     )
   } catch (e) {
-    console.error('Products POST error:', e)
+    console.error('[products/POST] failed:', String(e), { ms: Date.now() - t0 })
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }

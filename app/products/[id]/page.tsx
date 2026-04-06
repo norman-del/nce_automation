@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/client'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import PhotoUploadWrapper from './PhotoUploadWrapper'
+import RetrySyncButton from './RetrySyncButton'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -154,6 +155,9 @@ export default async function ProductDetailPage({ params }: Props) {
                 <div className="bg-fail/10 border border-fail/25 rounded-md px-3 py-2 text-xs text-fail">
                   {product.sync_error}
                 </div>
+              )}
+              {(!product.shopify_product_id || !product.qbo_synced) && (
+                <RetrySyncButton productId={product.id} />
               )}
             </div>
           </div>
