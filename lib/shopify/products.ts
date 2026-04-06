@@ -89,11 +89,13 @@ export async function createShopifyProduct(params: {
     ],
   }
 
+  console.log('[shopify] Creating draft product:', sku, fullTitle)
   const result = await shopifyFetch<{ product: ShopifyProduct }>('/products.json', {
     method: 'POST',
     body: JSON.stringify({ product }),
   })
 
+  console.log('[shopify] Product created:', sku, '→ id', result.product.id)
   return { shopifyProductId: result.product.id }
 }
 
@@ -129,6 +131,7 @@ export async function uploadProductImage(
   filename: string,
   position: number
 ): Promise<{ shopifyImageId: number }> {
+  console.log(`[shopify] Uploading image to product ${productId}: ${filename} (pos ${position}, ${(imageBase64.length / 1024).toFixed(0)}KB base64)`)
   const result = await shopifyFetch<{ image: ShopifyImage }>(
     `/products/${productId}/images.json`,
     {
@@ -143,6 +146,7 @@ export async function uploadProductImage(
     }
   )
 
+  console.log(`[shopify] Image uploaded: ${filename} → imageId ${result.image.id}`)
   return { shopifyImageId: result.image.id }
 }
 
@@ -154,10 +158,12 @@ export async function updateProductStatus(
   productId: number,
   status: 'draft' | 'active'
 ): Promise<void> {
+  console.log(`[shopify] Updating product ${productId} status → ${status}`)
   await shopifyFetch(`/products/${productId}.json`, {
     method: 'PUT',
     body: JSON.stringify({ product: { id: productId, status } }),
   })
+  console.log(`[shopify] Product ${productId} status updated to ${status}`)
 }
 
 /* ------------------------------------------------------------------ */
