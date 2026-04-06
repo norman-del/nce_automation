@@ -1,24 +1,24 @@
 'use client'
 
-import { useActionState } from 'react'
-import { login } from './actions'
+import { useSearchParams } from 'next/navigation'
+import { Suspense, useState } from 'react'
 
-export default function LoginPage() {
-  const [state, formAction, pending] = useActionState(
-    async (_prev: { error: string } | null, formData: FormData) => {
-      const result = await login(formData)
-      // If login succeeds, redirect() throws so we never reach here
-      return result ?? null
-    },
-    null
-  )
+function LoginForm() {
+  const searchParams = useSearchParams()
+  const urlError = searchParams.get('error')
+  const [submitting, setSubmitting] = useState(false)
 
   return (
     <div className="fixed inset-0 bg-canvas flex items-center justify-center">
       <div className="w-full max-w-sm bg-surface border border-edge rounded-lg p-8 shadow-lg">
         <h1 className="text-xl font-semibold text-primary mb-6">Sign in</h1>
 
-        <form action={formAction} className="space-y-4">
+        <form
+          method="POST"
+          action="/api/auth/login"
+          onSubmit={() => setSubmitting(true)}
+          className="space-y-4"
+        >
           <div>
             <label htmlFor="email" className="block text-sm text-secondary mb-1">
               Email
@@ -47,19 +47,27 @@ export default function LoginPage() {
             />
           </div>
 
-          {state?.error && (
-            <p className="text-sm text-red-400">{state.error}</p>
+          {urlError && (
+            <p className="text-sm text-red-400">{urlError}</p>
           )}
 
           <button
             type="submit"
-            disabled={pending}
+            disabled={submitting}
             className="w-full py-2 px-4 bg-accent text-white text-sm font-medium rounded-md hover:bg-accent/90 disabled:opacity-50 transition-colors"
           >
-            {pending ? 'Signing in\u2026' : 'Sign in'}
+            {submitting ? 'Signing in\u2026' : 'Sign in'}
           </button>
         </form>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }
