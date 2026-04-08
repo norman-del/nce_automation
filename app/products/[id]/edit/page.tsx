@@ -26,7 +26,21 @@ export default async function EditProductPage({ params }: Props) {
     redirect(`/products/${id}`)
   }
 
-  const { productTypes, vendors, collections } = await fetchProductMetadata()
+  const { productTypes, vendors } = await fetchProductMetadata()
+
+  // Resolve collection IDs to { id, title } for the typeahead
+  const collectionIds: string[] = product.collections || []
+  let initialCollections: { id: string; title: string }[] = []
+  if (collectionIds.length > 0) {
+    const { data: cols } = await db
+      .from('collections')
+      .select('shopify_id, title')
+      .in('shopify_id', collectionIds.map(Number))
+    initialCollections = (cols || []).map((c: { shopify_id: number; title: string }) => ({
+      id: String(c.shopify_id),
+      title: c.title,
+    }))
+  }
 
   return (
     <div>
@@ -38,7 +52,7 @@ export default async function EditProductPage({ params }: Props) {
         product={product}
         productTypes={productTypes}
         vendors={vendors}
-        collections={collections}
+        initialCollections={initialCollections}
       />
     </div>
   )

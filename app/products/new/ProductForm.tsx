@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import SupplierTypeahead, { type QboVendor } from './SupplierTypeahead'
+import CollectionTypeahead from './CollectionTypeahead'
 import { calculateShippingTier } from '@/lib/products/shipping'
 
 const SHIPPING_LABELS: Record<number, string> = {
@@ -35,7 +36,7 @@ interface ProductDraft {
   supplier: QboVendor | null
   product_type: string
   vendor: string
-  collections: string[]
+  collections: { id: string; title: string }[]
   tags: string
 }
 
@@ -45,17 +46,16 @@ function emptyDraft(): ProductDraft {
     cost_price: '', selling_price: '', original_rrp: '',
     model_number: '', year_of_manufacture: '', electrical_requirements: '',
     notes: '', width_cm: '', height_cm: '', depth_cm: '', weight_kg: '',
-    supplier: null, product_type: '', vendor: '', collections: [], tags: '',
+    supplier: null, product_type: '', vendor: '', collections: [] as { id: string; title: string }[], tags: '',
   }
 }
 
 interface Props {
   productTypes: string[]
   vendors: string[]
-  collections: { id: string; title: string }[]
 }
 
-export default function ProductForm({ productTypes, vendors, collections }: Props) {
+export default function ProductForm({ productTypes, vendors }: Props) {
   const router = useRouter()
   const [drafts, setDrafts] = useState<ProductDraft[]>([emptyDraft()])
   const [saving, setSaving] = useState(false)
@@ -95,7 +95,7 @@ export default function ProductForm({ productTypes, vendors, collections }: Prop
       qbo_vendor_name: d.supplier?.name || null,
       product_type: d.product_type,
       vendor: d.vendor,
-      collections: d.collections,
+      collections: d.collections.map((c) => c.id),
       tags: d.tags.split(',').map((t) => t.trim()).filter(Boolean),
     }))
 
@@ -147,7 +147,6 @@ export default function ProductForm({ productTypes, vendors, collections }: Prop
           error={errors[idx] || null}
           productTypes={productTypes}
           vendors={vendors}
-          collections={collections}
           onChange={(patch) => updateDraft(idx, patch)}
           onRemove={() => removeDraft(idx)}
         />
@@ -204,12 +203,11 @@ interface CardProps {
   error: string | null
   productTypes: string[]
   vendors: string[]
-  collections: { id: string; title: string }[]
   onChange: (patch: Partial<ProductDraft>) => void
   onRemove: () => void
 }
 
-function ProductCard({ draft, index, total, error, productTypes, vendors, collections, onChange, onRemove }: CardProps) {
+function ProductCard({ draft, index, total, error, productTypes, vendors, onChange, onRemove }: CardProps) {
   const shippingTier = useMemo(() => {
     const w = parseFloat(draft.width_cm)
     const h = parseFloat(draft.height_cm)
@@ -364,20 +362,10 @@ function ProductCard({ draft, index, total, error, productTypes, vendors, collec
         </div>
         <div>
           <label className={labelCls}>Collections</label>
-          <select
-            multiple
-            className={`${inputCls} min-h-[80px]`}
+          <CollectionTypeahead
             value={draft.collections}
-            onChange={(e) => {
-              const selected = Array.from(e.target.selectedOptions, (o) => o.value)
-              onChange({ collections: selected })
-            }}
-          >
-            {collections.map((c) => (
-              <option key={c.id} value={c.id}>{c.title}</option>
-            ))}
-          </select>
-          <p className="text-xs text-secondary mt-1">Ctrl+click to select multiple</p>
+            onChange={(collections) => onChange({ collections })}
+          />
         </div>
         <div>
           <label className={labelCls}>Tags</label>

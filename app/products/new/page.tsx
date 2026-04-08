@@ -4,7 +4,7 @@ import ProductForm from './ProductForm'
 import { fetchProductMetadata } from '@/lib/shopify/products'
 
 export default async function NewProductPage() {
-  const { productTypes, vendors, collections } = await fetchProductMetadata()
+  const { productTypes, vendors } = await fetchProductMetadata()
 
   return (
     <div>
@@ -17,7 +17,6 @@ export default async function NewProductPage() {
       <ProductForm
         productTypes={productTypes}
         vendors={vendors}
-        collections={collections}
       />
     </div>
   )

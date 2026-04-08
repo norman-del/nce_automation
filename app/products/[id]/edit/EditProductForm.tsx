@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import SupplierTypeahead, { type QboVendor } from '../../new/SupplierTypeahead'
+import CollectionTypeahead from '../../new/CollectionTypeahead'
 import { calculateShippingTier } from '@/lib/products/shipping'
 
 const SHIPPING_LABELS: Record<number, string> = { 0: 'Parcel', 1: 'Single Pallet', 2: 'Double Pallet' }
@@ -37,10 +38,10 @@ interface Props {
   product: Product
   productTypes: string[]
   vendors: string[]
-  collections: { id: string; title: string }[]
+  initialCollections: { id: string; title: string }[]
 }
 
-export default function EditProductForm({ product, productTypes, vendors, collections }: Props) {
+export default function EditProductForm({ product, productTypes, vendors, initialCollections }: Props) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -61,7 +62,7 @@ export default function EditProductForm({ product, productTypes, vendors, collec
   const [weightKg, setWeightKg] = useState(product.weight_kg ? String(product.weight_kg) : '')
   const [productType, setProductType] = useState(product.product_type)
   const [vendor, setVendor] = useState(product.vendor)
-  const [selectedCollections, setSelectedCollections] = useState<string[]>(product.collections || [])
+  const [selectedCollections, setSelectedCollections] = useState<{ id: string; title: string }[]>(initialCollections)
   const [tags, setTags] = useState((product.tags || []).join(', '))
   const [supplier, setSupplier] = useState<QboVendor | null>(
     product.qbo_vendor_id ? { id: product.qbo_vendor_id, name: product.qbo_vendor_name || '' } : null
@@ -101,7 +102,7 @@ export default function EditProductForm({ product, productTypes, vendors, collec
           weight_kg: weightKg ? parseFloat(weightKg) : null,
           product_type: productType,
           vendor,
-          collections: selectedCollections,
+          collections: selectedCollections.map(c => c.id),
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
           qbo_vendor_id: supplier?.id || null,
           qbo_vendor_name: supplier?.name || null,
@@ -241,14 +242,10 @@ export default function EditProductForm({ product, productTypes, vendors, collec
           </div>
           <div>
             <label className={labelCls}>Collections</label>
-            <select
-              multiple
-              className={`${inputCls} min-h-[80px]`}
+            <CollectionTypeahead
               value={selectedCollections}
-              onChange={e => setSelectedCollections(Array.from(e.target.selectedOptions, o => o.value))}
-            >
-              {collections.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-            </select>
+              onChange={setSelectedCollections}
+            />
           </div>
           <div>
             <label className={labelCls}>Tags</label>
