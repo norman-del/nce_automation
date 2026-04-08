@@ -14,6 +14,7 @@ export interface QboConnection {
   shopify_fees_account_id: string | null
   bank_account_id: string | null
   updated_at?: string
+  last_refreshed_by?: string | null
 }
 
 export async function getQboConnection(): Promise<QboConnection | null> {
@@ -29,126 +30,156 @@ export async function getQboConnection(): Promise<QboConnection | null> {
 }
 
 /* ------------------------------------------------------------------ */
-/* Token refresh with cross-instance safety                            */
+/* Token refresh with atomic compare-and-swap lock                     */
 /*                                                                     */
 /* Problem: Intuit invalidates the old refresh token the moment a new  */
-/* one is issued. If two Vercel function instances both read the same  */
-/* expired token and both try to refresh, the second one kills the     */
-/* chain permanently.                                                  */
+/* one is issued (single-use). If two instances refresh simultaneously */
+/* the second kills the chain permanently.                             */
 /*                                                                     */
-/* Solution: Two layers of protection:                                 */
-/* 1. In-memory mutex (same instance, concurrent requests)             */
-/* 2. Optimistic locking via updated_at (cross-instance)               */
-/*    - Before refreshing, record the connection's updated_at          */
-/*    - After refreshing, only save if updated_at hasn't changed       */
-/*    - If another instance already refreshed, re-read the fresh token */
+/* Solution: Atomic CAS via Supabase RPC.                              */
+/* 1. claim_qbo_refresh_lock() — UPDATE ... WHERE lock_holder IS NULL  */
+/*    Only ONE caller wins the row (Postgres atomicity). Loser gets    */
+/*    zero rows back.                                                  */
+/* 2. Winner calls Intuit, then save_refreshed_qbo_token() to save    */
+/*    new tokens + release the lock.                                   */
+/* 3. Loser polls until fresh tokens appear (or lock times out).       */
+/* 4. Stale locks (>30s) are auto-broken so a crashed instance can't   */
+/*    deadlock the system.                                             */
 /* ------------------------------------------------------------------ */
 
-let refreshPromise: Promise<{
-  accessToken: string
-  connection: QboConnection
-}> | null = null
+/** Identifier for log tracing */
+const INSTANCE_ID = process.env.VERCEL
+  ? `vercel-${(process.env.VERCEL_DEPLOYMENT_ID ?? '').slice(0, 8)}`
+  : 'local'
+
+const FIVE_MINUTES_MS = 5 * 60 * 1000
+const POLL_INTERVAL_MS = 500
+const MAX_POLL_ATTEMPTS = 40 // 20 seconds max wait
 
 async function getValidToken(connection: QboConnection): Promise<{
   accessToken: string
   connection: QboConnection
 }> {
   const expiresAt = new Date(connection.token_expires_at)
-  const fiveMinutes = 5 * 60 * 1000
   const timeLeft = expiresAt.getTime() - Date.now()
-  console.log('[qbo-client] Token expires at:', expiresAt.toISOString(), '— time left:', Math.round(timeLeft / 1000), 'seconds')
+  console.log(`[qbo:${INSTANCE_ID}] Token expires at:`, expiresAt.toISOString(),
+    '— time left:', Math.round(timeLeft / 1000), 's')
 
-  if (timeLeft >= fiveMinutes) {
+  if (timeLeft >= FIVE_MINUTES_MS) {
     return { accessToken: decrypt(connection.access_token_encrypted), connection }
   }
 
-  // In-memory mutex: if this instance is already refreshing, wait for that result
-  if (refreshPromise) {
-    console.log('[qbo-client] Refresh already in progress (same instance), waiting...')
-    return refreshPromise
-  }
-
-  refreshPromise = doRefresh(connection)
-
-  try {
-    return await refreshPromise
-  } finally {
-    refreshPromise = null
-  }
+  // Token needs refresh
+  console.log(`[qbo:${INSTANCE_ID}] Token expired/expiring, attempting refresh...`)
+  return refreshWithCAS(connection)
 }
 
-async function doRefresh(connection: QboConnection): Promise<{
+async function refreshWithCAS(connection: QboConnection): Promise<{
   accessToken: string
   connection: QboConnection
 }> {
   const db = createServiceClient()
-  const savedUpdatedAt = connection.updated_at
 
-  console.log('[qbo-client] Token expired or expiring soon, refreshing...')
+  // Try to claim the refresh lock (atomic — only one caller wins)
+  const { data: rows } = await db.rpc('claim_qbo_refresh_lock', {
+    conn_id: connection.id,
+    caller_id: INSTANCE_ID,
+  })
+
+  const claimed = (rows as QboConnection[] | null)?.[0] ?? null
+
+  if (claimed) {
+    // We won the lock — we are the sole refresher
+    console.log(`[qbo:${INSTANCE_ID}] Lock claimed, refreshing with Intuit...`)
+    return doRefreshAndSave(claimed)
+  }
+
+  // We lost the lock — another instance is refreshing. Poll until done.
+  console.log(`[qbo:${INSTANCE_ID}] Another instance is refreshing, waiting...`)
+  return pollForFreshToken(connection.id)
+}
+
+async function doRefreshAndSave(connection: QboConnection): Promise<{
+  accessToken: string
+  connection: QboConnection
+}> {
+  const db = createServiceClient()
   const refreshToken = decrypt(connection.refresh_token_encrypted)
 
   let refreshed: Awaited<ReturnType<typeof refreshAccessToken>>
   try {
     refreshed = await refreshAccessToken(refreshToken)
   } catch (err) {
-    // Refresh failed — maybe another instance already rotated the token.
-    // Re-read from DB and check if the token is now valid.
-    console.warn('[qbo-client] Refresh failed, checking if another instance already refreshed...')
-    const freshConn = await getQboConnection()
-    if (freshConn && freshConn.updated_at !== savedUpdatedAt) {
-      // Another instance updated the token — check if it's now valid
-      const freshExpiry = new Date(freshConn.token_expires_at)
-      if (freshExpiry.getTime() - Date.now() > 60_000) {
-        console.log('[qbo-client] Another instance already refreshed, using their token')
-        return { accessToken: decrypt(freshConn.access_token_encrypted), connection: freshConn }
-      }
-    }
-    // Genuinely dead — surface the error
-    console.error('[qbo-client] Token refresh FAILED:', String(err))
-    throw new Error(`QBO token refresh failed — please re-connect QuickBooks via Settings. (${String(err)})`)
+    // Release the lock so others can try (or detect the failure)
+    console.error(`[qbo:${INSTANCE_ID}] Refresh FAILED:`, String(err))
+    await db.rpc('release_qbo_refresh_lock', { conn_id: connection.id })
+    throw new Error(`QBO token refresh failed — re-connect via Settings. (${String(err)})`)
   }
 
-  console.log('[qbo-client] Token refreshed successfully, new expiry:', refreshed.expiresAt.toISOString())
+  console.log(`[qbo:${INSTANCE_ID}] Refreshed OK, new expiry:`, refreshed.expiresAt.toISOString())
 
-  const now = new Date().toISOString()
-  const newConn: QboConnection = {
+  // Save new tokens + release lock atomically
+  const newAccessEnc = encrypt(refreshed.accessToken)
+  const newRefreshEnc = encrypt(refreshed.refreshToken)
+
+  const { error: saveErr } = await db.rpc('save_refreshed_qbo_token', {
+    conn_id: connection.id,
+    new_access_token_encrypted: newAccessEnc,
+    new_refresh_token_encrypted: newRefreshEnc,
+    new_token_expires_at: refreshed.expiresAt.toISOString(),
+    new_refresh_token_expires_at: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000).toISOString(),
+    refreshed_by: INSTANCE_ID,
+  })
+
+  if (saveErr) {
+    console.error(`[qbo:${INSTANCE_ID}] CRITICAL: Refreshed but failed to save:`, saveErr.message)
+    // Still return the token for this request — but the next request will break
+    throw new Error(`Token refreshed but save failed — re-connect via Settings. (${saveErr.message})`)
+  }
+
+  const updatedConn: QboConnection = {
     ...connection,
-    access_token_encrypted: encrypt(refreshed.accessToken),
-    refresh_token_encrypted: encrypt(refreshed.refreshToken),
+    access_token_encrypted: newAccessEnc,
+    refresh_token_encrypted: newRefreshEnc,
     token_expires_at: refreshed.expiresAt.toISOString(),
     refresh_token_expires_at: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: now,
+    updated_at: new Date().toISOString(),
+    last_refreshed_by: INSTANCE_ID,
   }
 
-  // Optimistic lock: only save if no other instance beat us to it
-  const { data: updated } = await db
-    .from('qbo_connections')
-    .update({
-      access_token_encrypted: newConn.access_token_encrypted,
-      refresh_token_encrypted: newConn.refresh_token_encrypted,
-      token_expires_at: newConn.token_expires_at,
-      refresh_token_expires_at: newConn.refresh_token_expires_at,
-      updated_at: now,
-    })
-    .eq('id', connection.id)
-    .eq('updated_at', savedUpdatedAt ?? '')
-    .select('id')
+  return { accessToken: refreshed.accessToken, connection: updatedConn }
+}
 
-  if (!updated || updated.length === 0) {
-    // Another instance beat us — re-read and use their token
-    console.log('[qbo-client] Another instance refreshed first (optimistic lock), re-reading...')
-    const freshConn = await getQboConnection()
-    if (freshConn) {
-      return { accessToken: decrypt(freshConn.access_token_encrypted), connection: freshConn }
+async function pollForFreshToken(connId: string): Promise<{
+  accessToken: string
+  connection: QboConnection
+}> {
+  for (let i = 0; i < MAX_POLL_ATTEMPTS; i++) {
+    await new Promise(r => setTimeout(r, POLL_INTERVAL_MS))
+
+    const fresh = await getQboConnection()
+    if (!fresh || fresh.id !== connId) {
+      throw new Error('QBO connection disappeared while waiting for token refresh')
+    }
+
+    const timeLeft = new Date(fresh.token_expires_at).getTime() - Date.now()
+    if (timeLeft >= FIVE_MINUTES_MS) {
+      console.log(`[qbo:${INSTANCE_ID}] Fresh token available after ${(i + 1) * POLL_INTERVAL_MS}ms wait`)
+      return { accessToken: decrypt(fresh.access_token_encrypted), connection: fresh }
     }
   }
 
-  return { accessToken: refreshed.accessToken, connection: newConn }
+  // Timed out — the other instance probably crashed. Try claiming the lock ourselves.
+  console.warn(`[qbo:${INSTANCE_ID}] Timed out waiting for refresh, attempting takeover...`)
+  const conn = await getQboConnection()
+  if (!conn) throw new Error('QBO not connected')
+  return refreshWithCAS(conn)
 }
 
 export async function getQboClient(): Promise<{
   client: QuickBooks
   connection: QboConnection
+  accessToken: string
 }> {
   const connection = await getQboConnection()
   if (!connection) throw new Error('QBO not connected. Please connect via Settings.')
@@ -169,5 +200,5 @@ export async function getQboClient(): Promise<{
     null // refresh token (we handle refresh ourselves)
   )
 
-  return { client: qbo, connection: conn }
+  return { client: qbo, connection: conn, accessToken }
 }

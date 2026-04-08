@@ -1,5 +1,4 @@
 import { getQboClient } from './client'
-import { decrypt } from '../crypto'
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -299,15 +298,14 @@ async function findAccountsByType(): Promise<AccountRefs> {
       result.filter(a => a.AccountType.includes('Current')).map(a => `${a.Id}="${a.Name}" (${a.AccountType}/${a.AccountSubType || '?'})`).join(', ') || 'NONE')
     console.log('[qbo-items] Auto-creating "Stock Asset" account via raw API...')
 
-    const { connection } = await getQboClient()
+    const { accessToken, connection: freshConn } = await getQboClient()
     const isSandbox = process.env.QBO_ENVIRONMENT?.trim() !== 'production'
     const baseUrl = isSandbox
       ? 'https://sandbox-quickbooks.api.intuit.com'
       : 'https://quickbooks.api.intuit.com'
-    const accessToken = decrypt(connection.access_token_encrypted)
 
     const createRes = await fetch(
-      `${baseUrl}/v3/company/${connection.realm_id}/account?minorversion=65`,
+      `${baseUrl}/v3/company/${freshConn.realm_id}/account?minorversion=65`,
       {
         method: 'POST',
         headers: {
