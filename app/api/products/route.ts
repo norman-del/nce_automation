@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
 }
 
 interface ProductInput {
+  sku_override?: string
   title: string
   condition: 'new' | 'used'
   vat_applicable: boolean
@@ -101,10 +102,22 @@ export async function POST(req: NextRequest) {
         if (!input.product_type?.trim()) throw new Error('Product type is required')
         if (!input.vendor?.trim()) throw new Error('Vendor/brand is required')
 
-        // Generate SKU
-        const { data: skuRow, error: skuError } = await db.rpc('generate_product_sku')
-        if (skuError) throw new Error(`SKU generation failed: ${skuError.message}`)
-        const sku = skuRow as string
+        // Use manual SKU or auto-generate
+        let sku: string
+        if (input.sku_override?.trim()) {
+          sku = input.sku_override.trim()
+          // Check uniqueness before insert to give a clear error
+          const { data: existing } = await db
+            .from('products')
+            .select('id')
+            .eq('sku', sku)
+            .maybeSingle()
+          if (existing) throw new Error(`SKU "${sku}" is already in use`)
+        } else {
+          const { data: skuRow, error: skuError } = await db.rpc('generate_product_sku')
+          if (skuError) throw new Error(`SKU generation failed: ${skuError.message}`)
+          sku = skuRow as string
+        }
 
         // Calculate shipping tier
         const shippingTier = calculateShippingTier(

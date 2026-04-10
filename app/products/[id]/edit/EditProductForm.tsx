@@ -46,6 +46,7 @@ export default function EditProductForm({ product, productTypes, vendors, initia
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [sku, setSku] = useState(product.sku)
   const [title, setTitle] = useState(product.title)
   const [condition, setCondition] = useState(product.condition)
   const [vatApplicable, setVatApplicable] = useState(product.vat_applicable)
@@ -86,6 +87,7 @@ export default function EditProductForm({ product, productTypes, vendors, initia
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...(sku !== product.sku ? { sku } : {}),
           title,
           condition,
           vat_applicable: vatApplicable,
@@ -135,9 +137,15 @@ export default function EditProductForm({ product, productTypes, vendors, initia
         {/* Product Details */}
         <fieldset className="space-y-3">
           <legend className="text-xs font-semibold text-accent uppercase tracking-wide mb-2">Product Details</legend>
-          <div>
-            <label className={labelCls}>Title *</label>
-            <input className={inputCls} value={title} onChange={e => setTitle(e.target.value)} />
+          <div className="grid grid-cols-[120px_1fr] gap-3">
+            <div>
+              <label className={labelCls}>SKU</label>
+              <input className={inputCls} value={sku} onChange={e => setSku(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>Title *</label>
+              <input className={inputCls} value={title} onChange={e => setTitle(e.target.value)} />
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>

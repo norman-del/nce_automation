@@ -19,6 +19,7 @@ const SHIPPING_COLORS: Record<number, string> = {
 }
 
 interface ProductDraft {
+  sku_override: string
   title: string
   condition: 'new' | 'used'
   vat_applicable: boolean
@@ -42,7 +43,7 @@ interface ProductDraft {
 
 function emptyDraft(): ProductDraft {
   return {
-    title: '', condition: 'used', vat_applicable: false,
+    sku_override: '', title: '', condition: 'used', vat_applicable: false,
     cost_price: '', selling_price: '', original_rrp: '',
     model_number: '', year_of_manufacture: '', electrical_requirements: '',
     notes: '', width_cm: '', height_cm: '', depth_cm: '', weight_kg: '',
@@ -77,6 +78,7 @@ export default function ProductForm({ productTypes, vendors }: Props) {
     setSuccessCount(0)
 
     const payloads = drafts.map((d) => ({
+      sku_override: d.sku_override.trim() || undefined,
       title: d.title,
       condition: d.condition,
       vat_applicable: d.vat_applicable,
@@ -241,9 +243,15 @@ function ProductCard({ draft, index, total, error, productTypes, vendors, onChan
       {/* Product Details */}
       <fieldset className="space-y-3">
         <legend className="text-xs font-semibold text-accent uppercase tracking-wide mb-2">Product Details</legend>
-        <div>
-          <label className={labelCls}>Title *</label>
-          <input className={inputCls} placeholder="e.g. Foster Xtra Single Upright Fridge" value={draft.title} onChange={(e) => onChange({ title: e.target.value })} />
+        <div className="grid grid-cols-[120px_1fr] gap-3">
+          <div>
+            <label className={labelCls}>SKU</label>
+            <input className={inputCls} placeholder="Auto" value={draft.sku_override} onChange={(e) => onChange({ sku_override: e.target.value })} />
+          </div>
+          <div>
+            <label className={labelCls}>Title *</label>
+            <input className={inputCls} placeholder="e.g. Foster Xtra Single Upright Fridge" value={draft.title} onChange={(e) => onChange({ title: e.target.value })} />
+          </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>

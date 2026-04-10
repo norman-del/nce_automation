@@ -125,6 +125,24 @@ export async function PATCH(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
+    // If SKU is being changed, validate uniqueness
+    if (body.sku != null && body.sku !== current.sku) {
+      const trimmedSku = body.sku.trim()
+      if (!trimmedSku) {
+        return NextResponse.json({ error: 'SKU cannot be empty' }, { status: 400 })
+      }
+      const { data: existing } = await db
+        .from('products')
+        .select('id')
+        .eq('sku', trimmedSku)
+        .neq('id', id)
+        .maybeSingle()
+      if (existing) {
+        return NextResponse.json({ error: `SKU "${trimmedSku}" is already in use` }, { status: 409 })
+      }
+      body.sku = trimmedSku
+    }
+
     // If dimensions changed, recalculate shipping tier
     const updates = { ...body, updated_at: new Date().toISOString() }
 
