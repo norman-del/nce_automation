@@ -1,7 +1,10 @@
 # NCE Automation
 
 ## What This Is
-Automation tool for Nationwide Catering Equipment with two main pipelines:
+Internal operations dashboard for Nationwide Catering Equipment.
+See parent `../CLAUDE.md` for shared context, table ownership, and the migration master plan.
+
+Current pipelines:
 1. **Payout Fee Sync** — Shopify payout fee reconciliation with QuickBooks Online
 2. **Product Ingestion** — Single-form entry that pushes to Supabase, Shopify (draft), and QBO simultaneously
 

@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation'
 
 const navLinks = [
   { href: '/',          label: 'Dashboard' },
+  { href: '/orders',    label: 'Orders'    },
+  { href: '/customers', label: 'Customers' },
   { href: '/products',  label: 'Products'  },
   { href: '/payouts',   label: 'Payouts'   },
   { href: '/sync-log',  label: 'Sync Log'  },
