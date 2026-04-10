@@ -6,6 +6,7 @@ import Link from 'next/link'
 import PhotoUploadWrapper from './PhotoUploadWrapper'
 import RetrySyncButton from './RetrySyncButton'
 import DeleteProductButton from './DeleteProductButton'
+import StockManager from './StockManager'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -130,8 +131,15 @@ export default async function ProductDetailPage({ params }: Props) {
           )}
         </div>
 
-        {/* Right column — sync status + photos */}
+        {/* Right column — inventory, sync status, photos */}
         <div className="space-y-5">
+          {/* Inventory */}
+          <StockManager
+            productId={product.id}
+            stockQuantity={product.stock_quantity ?? 0}
+            lowStockThreshold={product.low_stock_threshold ?? 1}
+          />
+
           {/* Sync Status */}
           <div className="bg-surface border border-edge rounded-lg p-5 space-y-3">
             <h3 className="text-xs font-semibold text-accent uppercase tracking-wide">Sync Status</h3>

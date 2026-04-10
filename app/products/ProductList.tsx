@@ -15,6 +15,8 @@ interface Product {
   qbo_synced: boolean
   sync_error: string | null
   created_at: string
+  stock_quantity: number
+  low_stock_threshold: number
   suppliers: { id: string; name: string } | null
 }
 
@@ -137,6 +139,7 @@ export default function ProductList() {
               <th className="px-4 py-3 font-medium">Vendor</th>
               <th className="px-4 py-3 font-medium">Condition</th>
               <th className="px-4 py-3 font-medium text-right">Price</th>
+              <th className="px-4 py-3 font-medium text-right">Stock</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Sync</th>
               <th className="px-4 py-3 font-medium">Date</th>
@@ -145,11 +148,11 @@ export default function ProductList() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-secondary">Loading...</td>
+                <td colSpan={9} className="px-4 py-8 text-center text-secondary">Loading...</td>
               </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-secondary">
+                <td colSpan={9} className="px-4 py-8 text-center text-secondary">
                   No products found
                 </td>
               </tr>
@@ -166,6 +169,15 @@ export default function ProductList() {
                   <td className="px-4 py-3 capitalize text-secondary">{p.condition}</td>
                   <td className="px-4 py-3 text-right text-primary">
                     £{Number(p.selling_price).toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className={`text-sm ${
+                      p.stock_quantity === 0 ? 'text-fail font-medium' :
+                      p.stock_quantity <= p.low_stock_threshold ? 'text-warn font-medium' :
+                      'text-secondary'
+                    }`}>
+                      {p.stock_quantity}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium border capitalize ${statusBadge(p.status)}`}>
