@@ -229,9 +229,37 @@ approvalPolicy: options.approvalPolicy ?? (sandbox === "workspace-write" || sand
 
 The root cause: `approvalPolicy: "never"` means the app server declines all tool calls. `on-request` + `danger-full-access` sandbox matches what `codex exec --dangerously-bypass-approvals-and-sandbox` does internally.
 
+## Shopify Replacement Strategy
+
+nce_automation must work with Shopify **today** (product sync to Shopify is live) and without Shopify **after migration**. This is controlled by a toggle.
+
+### SHOPIFY_SYNC_ENABLED env var
+- `true` (current default): product create/edit/activate push to Shopify, photos go to Shopify CDN, payout cron runs
+- `false` (post-migration): Shopify calls are skipped, photos go to Vercel Blob or Supabase Storage, products managed entirely in Supabase
+
+### What depends on Shopify today (must be toggle-aware)
+1. `fetchProductMetadata()` in `lib/shopify/products.ts` — populates form dropdowns. **Should always read from Supabase** (product types, vendors from `products` table; collections from `collections` table).
+2. `createShopifyProduct()` — pushes new product as draft. Skip when disabled.
+3. `updateShopifyProduct()` — syncs edits. Skip when disabled.
+4. `activateShopifyProduct()` — draft → active. When disabled, just set `products.status = 'active'` in Supabase.
+5. `uploadImageToShopify()` — photos to Shopify CDN. When disabled, upload to Vercel Blob or Supabase Storage.
+6. Payout cron (`/api/cron/sync`) — pulls from Shopify Payments. Disable when sync is off.
+
+### What's already Shopify-independent (no work needed)
+Orders, refunds, customers, inventory, shipping rates, promotions, email, search, auth, QBO item sync — all use Supabase/Stripe directly.
+
+### Gaps to build before migration
+1. **Shopify sync toggle** — `SHOPIFY_SYNC_ENABLED` env var + `lib/shopify/config.ts` helper
+2. **Supabase-sourced metadata** — replace `fetchProductMetadata()` Shopify calls with Supabase queries
+3. **Product description field** — `body_html` column exists (2,695 products have data), add textarea to create + edit forms
+4. **Collection management UI** — CRUD page for the 68 collections already in Supabase
+5. **Image hosting switch** — Vercel Blob or Supabase Storage when Shopify CDN is unavailable
+
+See `docs/handoffs/shopify-replacement-2026-04-10.md` for full audit including all 44 product types, 13 vendors, 68 collections, metafield definitions, and shipping zone configs from the live Shopify store.
+
 ## Next Steps
+- **Shopify replacement gaps** — build the 5 items listed above (see handoff doc for details)
 - **Test product ingestion end-to-end** — form → Supabase → Shopify draft → QBO item → photo upload → active
 - **Existing product migration** — strategy needed to import 5000+ existing products from spreadsheet into Supabase (not into Shopify/QBO — they already exist there)
 - **QBO sync app deactivation** — untick "create new item in QBO" in the QuickBooks Online Global app once our pipeline is validated
-- **Staff account management UI** — add a UI in Settings for admins to invite/manage staff users (currently seeded via SQL)
 - **Mobile frontend** — being rebuilt in a parallel session
