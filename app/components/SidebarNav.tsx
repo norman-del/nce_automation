@@ -8,6 +8,8 @@ const navLinks = [
   { href: '/orders',    label: 'Orders'    },
   { href: '/customers', label: 'Customers' },
   { href: '/products',  label: 'Products'  },
+  { href: '/promotions', label: 'Promotions' },
+  { href: '/shipping',   label: 'Shipping'   },
   { href: '/payouts',   label: 'Payouts'   },
   { href: '/sync-log',  label: 'Sync Log'  },
   { href: '/settings',  label: 'Settings'  },

@@ -44,6 +44,30 @@ export async function POST(
 
     if (updateError) throw updateError
 
+    // Trigger shipping notification email via nce-site
+    const siteUrl = process.env.NCE_SITE_URL
+    const internalKey = process.env.INTERNAL_API_KEY
+    if (siteUrl && internalKey) {
+      try {
+        const emailRes = await fetch(`${siteUrl}/api/email/shipping`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': internalKey,
+          },
+          body: JSON.stringify({ order_id: id }),
+        })
+        if (!emailRes.ok) {
+          const body = await emailRes.json().catch(() => ({}))
+          console.warn('[orders/ship] Shipping email failed:', body.error ?? emailRes.status)
+        } else {
+          console.log('[orders/ship] Shipping email sent for order', id)
+        }
+      } catch (emailErr) {
+        console.warn('[orders/ship] Shipping email request failed:', String(emailErr))
+      }
+    }
+
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error('[orders/ship] error:', e)
