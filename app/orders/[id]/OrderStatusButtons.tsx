@@ -23,9 +23,11 @@ const buttonStyles: Record<string, string> = {
 export default function OrderStatusButtons({
   orderId,
   currentStatus,
+  canRefund = true,
 }: {
   orderId: string
   currentStatus: string
+  canRefund?: boolean
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
@@ -67,7 +69,7 @@ export default function OrderStatusButtons({
           {loading === s ? 'Updating...' : `Mark ${s}`}
         </button>
       ))}
-      {currentStatus === 'paid' && (
+      {currentStatus === 'paid' && canRefund && (
         <a
           href={`/api/orders/${orderId}/refund`}
           onClick={async (e) => {

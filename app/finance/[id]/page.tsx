@@ -2,7 +2,8 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { createServiceClient } from '@/lib/supabase/client'
-import { notFound } from 'next/navigation'
+import { getStaffUser } from '@/lib/auth/staff'
+import { notFound, redirect } from 'next/navigation'
 import SyncButton from './SyncButton'
 
 async function getPayout(id: string) {
@@ -28,6 +29,11 @@ export default async function PayoutDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  const staff = await getStaffUser()
+  if (!staff || staff.role !== 'admin') {
+    redirect('/')
+  }
+
   const { id } = await params
   const payout = await getPayout(id)
   if (!payout) notFound()
@@ -53,8 +59,8 @@ export default async function PayoutDetailPage({
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
         <div>
           <div className="mb-2">
-            <Link href="/payouts" className="text-secondary hover:text-primary text-sm transition-colors">
-              ← Payouts
+            <Link href="/finance" className="text-secondary hover:text-primary text-sm transition-colors">
+              ← Finance
             </Link>
           </div>
           <h2 className="text-2xl font-semibold text-primary">

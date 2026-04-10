@@ -62,11 +62,14 @@ Supabase Postgres. Migrations in supabase/migrations/.
 - `payout_transactions` — individual orders within payouts
 - `sync_log` — audit trail
 
-**Product ingestion (new):**
+**Product ingestion:**
 - `suppliers` — supplier directory (name, contact, address, qbo_vendor_id)
 - `products` — core product table (replaces the Google Sheet)
 - `product_images` — photo tracking for Shopify uploads
 - `product_sku_seq` — sequence for auto-generating SKU numbers (starts at NCE5200)
+
+**Staff & auth:**
+- `staff_users` — staff accounts with role (admin/staff), linked to Supabase Auth via auth_user_id
 
 ## Folder Guide
 ```
@@ -74,17 +77,35 @@ lib/shopify/       — Shopify API client, payouts, orders, products
 lib/qbo/           — QBO OAuth, journal entries, invoices, payments, items
 lib/sync/          — Orchestrator that ties Shopify → QBO (payouts)
 lib/products/      — Shipping tier calculation
+lib/auth/          — Staff user lookup, role checking
 app/api/           — API routes
   api/products/    — Product CRUD, batch create, image upload
   api/suppliers/   — Supplier CRUD + typeahead search
   api/shopify/     — Shopify sync + OAuth auth flow
   api/qbo/         — QBO auth, journal, payment, accounts
   api/cron/        — Automated sync
-app/products/      — Product list, detail, ingestion form
-app/payouts/       — Payout list + detail pages
-app/settings/      — Connection management + account mapping
-app/sync-log/      — Sync history + error log
+  api/orders/      — Order status, shipping, refunds (admin-only)
+  api/promotions/  — Stripe promo codes (admin-only write)
+  api/shipping-rates/ — Shipping rate config (admin-only write)
+app/orders/        — Order list + detail (all staff)
+app/products/      — Product list, detail, ingestion form (all staff)
+app/customers/     — Customer list + detail (all staff)
+app/finance/       — Payout reconciliation (admin only, was /payouts)
+app/settings/      — Tabbed: Connections, Promotions, Shipping, Activity Log (admin only)
+app/login/         — Login page (public)
+proxy.ts           — Auth middleware (redirects unauthenticated to /login)
 ```
+
+## Navigation
+Sidebar: Dashboard, Orders, Products, Customers, Finance (admin), Settings (admin)
+Mobile tab bar: Orders, Products, Dashboard, Customers, Settings (admin)
+
+## Staff Roles
+- **admin** — full access: all pages, refunds, settings, finance
+- **staff** — orders (view, fulfill, ship), products (add, edit, stock), customers (view)
+- Role stored in `staff_users.role`, checked via `lib/auth/staff.ts`
+- API routes for refunds, promotions (POST), shipping-rates (PATCH) require admin
+- Finance and Settings pages redirect non-admin to dashboard
 
 ## Shopify Apps (two apps exist)
 1. **QuickBooks Integration** (Dev Dashboard) — the third-party sync app. Has a setting "When a Product is created in Shopify, create a new item in QuickBooks Online" which should be **unticked** once our product ingestion goes live (to prevent duplicates).
@@ -212,5 +233,5 @@ The root cause: `approvalPolicy: "never"` means the app server declines all tool
 - **Test product ingestion end-to-end** — form → Supabase → Shopify draft → QBO item → photo upload → active
 - **Existing product migration** — strategy needed to import 5000+ existing products from spreadsheet into Supabase (not into Shopify/QBO — they already exist there)
 - **QBO sync app deactivation** — untick "create new item in QBO" in the QuickBooks Online Global app once our pipeline is validated
+- **Staff account management UI** — add a UI in Settings for admins to invite/manage staff users (currently seeded via SQL)
 - **Mobile frontend** — being rebuilt in a parallel session
-- **Logging** — being added in a parallel session

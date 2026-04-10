@@ -76,15 +76,15 @@ export default async function DashboardPage() {
     await getDashboardData()
 
   const stats = [
-    { label: 'Payouts this month', value: payoutsThisMonth.toString(),      color: 'text-accent', glow: 'drop-shadow-[0_0_8px_rgba(56,139,253,0.45)]',  href: '/payouts',                 hint: 'View all payouts this month'    },
-    { label: 'Fees recorded',      value: `£${feesThisMonth.toFixed(2)}`,   color: 'text-fail',   glow: 'drop-shadow-[0_0_8px_rgba(248,81,73,0.35)]',   href: '/payouts',                 hint: 'Shopify processing fees'        },
-    { label: 'Payments applied',   value: `£${paymentsApplied.toFixed(2)}`, color: 'text-ok',     glow: 'drop-shadow-[0_0_8px_rgba(63,185,80,0.35)]',   href: '/payouts',                 hint: 'Gross amounts posted to QBO'    },
+    { label: 'Payouts this month', value: payoutsThisMonth.toString(),      color: 'text-accent', glow: 'drop-shadow-[0_0_8px_rgba(56,139,253,0.45)]',  href: '/finance',                 hint: 'View all payouts this month'    },
+    { label: 'Fees recorded',      value: `£${feesThisMonth.toFixed(2)}`,   color: 'text-fail',   glow: 'drop-shadow-[0_0_8px_rgba(248,81,73,0.35)]',   href: '/finance',                 hint: 'Shopify processing fees'        },
+    { label: 'Payments applied',   value: `£${paymentsApplied.toFixed(2)}`, color: 'text-ok',     glow: 'drop-shadow-[0_0_8px_rgba(63,185,80,0.35)]',   href: '/finance',                 hint: 'Gross amounts posted to QBO'    },
     {
       label: 'Needs attention',
       value: needsAttention.toString(),
       color: needsAttention > 0 ? 'text-warn' : 'text-secondary',
       glow:  needsAttention > 0 ? 'drop-shadow-[0_0_8px_rgba(210,153,34,0.45)]' : '',
-      href:  '/payouts?filter=attention',
+      href:  '/finance?filter=attention',
       hint:  needsAttention > 0 ? 'Pending + error payouts — click to view' : 'All payouts synced',
     },
   ]
@@ -93,7 +93,7 @@ export default async function DashboardPage() {
     <div>
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-primary">Dashboard</h2>
-        <p className="mt-1 text-sm text-secondary">Shopify payout sync — this month</p>
+        <p className="mt-1 text-sm text-secondary">Operations overview — this month</p>
       </div>
 
       {/* Metric cards */}
@@ -122,14 +122,14 @@ export default async function DashboardPage() {
       <div className="bg-surface border border-edge rounded-lg">
         <div className="px-5 py-4 border-b border-edge flex items-center justify-between">
           <p className="text-sm font-medium text-primary">Recent payouts</p>
-          <Link href="/payouts" className="text-xs text-accent hover:text-accent-hi transition-colors">
+          <Link href="/finance" className="text-xs text-accent hover:text-accent-hi transition-colors">
             View all →
           </Link>
         </div>
         {recentPayouts.length === 0 ? (
           <div className="px-5 py-10 text-center text-secondary text-sm">
             No payouts yet.{' '}
-            <Link href="/payouts" className="text-accent hover:underline">
+            <Link href="/finance" className="text-accent hover:underline">
               Sync Payouts
             </Link>{' '}
             to get started.
@@ -170,7 +170,7 @@ export default async function DashboardPage() {
                           </span>
                         </td>
                         <td className="px-5 py-3 text-right">
-                          <Link href={`/payouts/${p.id}`} className="text-accent hover:text-accent-hi text-xs transition-colors">
+                          <Link href={`/finance/${p.id}`} className="text-accent hover:text-accent-hi text-xs transition-colors">
                             View →
                           </Link>
                         </td>
@@ -187,7 +187,7 @@ export default async function DashboardPage() {
                 return (
                   <Link
                     key={p.id}
-                    href={`/payouts/${p.id}`}
+                    href={`/finance/${p.id}`}
                     className="flex items-center gap-3 px-4 py-3 hover:bg-overlay active:bg-overlay transition-colors"
                   >
                     <div className="flex-1 min-w-0">

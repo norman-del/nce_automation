@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/client'
 import { getStripe } from '@/lib/stripe/client'
+import { getStaffUserFromRequest } from '@/lib/auth/staff'
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Admin-only: refunds require admin role
+    const staff = await getStaffUserFromRequest(req)
+    if (!staff || staff.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
     const { id } = await params
     const db = createServiceClient()
 

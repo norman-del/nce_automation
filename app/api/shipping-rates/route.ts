@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/client'
+import { getStaffUserFromRequest } from '@/lib/auth/staff'
 
 // GET /api/shipping-rates
 export async function GET() {
@@ -17,9 +18,14 @@ export async function GET() {
   }
 }
 
-// PATCH /api/shipping-rates — update rates (accepts array of rate objects)
+// PATCH /api/shipping-rates — update rates (admin only)
 export async function PATCH(req: NextRequest) {
   try {
+    const staff = await getStaffUserFromRequest(req)
+    if (!staff || staff.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
     const { rates } = await req.json() as {
       rates: { id: string; rate_pence: number; free_threshold_pence: number | null; estimated_days: string; label: string }[]
     }

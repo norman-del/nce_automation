@@ -3,6 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import SidebarNav from './SidebarNav'
+import type { StaffRole } from '@/lib/auth/staff'
+
+interface StaffInfo {
+  name: string
+  role: StaffRole
+}
 
 const tabs = [
   {
@@ -58,26 +64,37 @@ const tabs = [
   },
 ]
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({
+  children,
+  staff,
+}: {
+  children: React.ReactNode
+  staff?: StaffInfo | null
+}) {
   const pathname = usePathname()
 
   if (pathname === '/login') return <>{children}</>
+
+  const isAdmin = staff?.role === 'admin'
+  const visibleTabs = tabs.filter(t =>
+    t.href !== '/settings' || isAdmin
+  )
 
   return (
     <div className="flex flex-col lg:flex-row flex-1 w-full">
       {/* Mobile/tablet top header */}
       <header className="sticky top-0 z-40 flex h-12 items-center border-b border-edge bg-surface px-4 lg:hidden">
-        <h1 className="text-sm font-semibold text-primary">NCE Automation</h1>
+        <h1 className="text-sm font-semibold text-primary">NCE Operations</h1>
       </header>
 
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-56 shrink-0 bg-surface border-r border-edge flex-col">
         <div className="px-6 py-5 border-b border-edge">
           <h1 className="text-sm font-semibold text-primary leading-tight">
-            NCE Automation
+            NCE Operations
           </h1>
         </div>
-        <SidebarNav />
+        <SidebarNav staffName={staff?.name} staffRole={staff?.role} />
         <div className="px-6 py-4 border-t border-edge">
           <p className="text-xs text-secondary">NCE Equipment</p>
         </div>
@@ -90,7 +107,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile/tablet bottom tab bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 border-t border-edge bg-surface lg:hidden">
-        {tabs.map((tab) => {
+        {visibleTabs.map((tab) => {
           const active = tab.activeWhen(pathname)
           return (
             <Link

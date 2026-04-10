@@ -99,12 +99,6 @@ export default function ProductList() {
               </button>
             ))}
           </div>
-          <Link
-            href="/products/new"
-            className="sm:hidden ml-auto px-4 py-2 bg-accent text-white text-sm font-medium rounded-md hover:bg-accent-hi transition-colors whitespace-nowrap"
-          >
-            + Add
-          </Link>
         </div>
         <input
           type="text"
@@ -113,12 +107,6 @@ export default function ProductList() {
           onChange={(e) => setSearch(e.target.value)}
           className="bg-surface border border-edge rounded-md px-3 py-2 text-sm text-primary placeholder:text-secondary/50 focus:outline-none focus:border-accent w-full sm:w-64"
         />
-        <Link
-          href="/products/new"
-          className="hidden sm:block sm:ml-auto px-4 py-1.5 bg-accent text-white text-sm font-medium rounded-md hover:bg-accent-hi transition-colors"
-        >
-          + Add Products
-        </Link>
       </div>
 
       {/* Error banner */}

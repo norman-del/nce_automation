@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe/client'
+import { getStaffUserFromRequest } from '@/lib/auth/staff'
 
 // GET /api/promotions — list active promotion codes
 export async function GET() {
@@ -40,9 +41,14 @@ export async function GET() {
   }
 }
 
-// POST /api/promotions — create a new promotion code
+// POST /api/promotions — create a new promotion code (admin only)
 export async function POST(req: NextRequest) {
   try {
+    const staff = await getStaffUserFromRequest(req)
+    if (!staff || staff.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
     const body = await req.json()
     const { code, percent_off, amount_off, max_redemptions, expires_at } = body
 

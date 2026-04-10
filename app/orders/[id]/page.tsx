@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { createServiceClient } from '@/lib/supabase/client'
 import { notFound } from 'next/navigation'
 import { getPaymentDetails } from '@/lib/stripe/payment-details'
+import { getStaffUser } from '@/lib/auth/staff'
 import OrderStatusButtons from './OrderStatusButtons'
 import ShippingForm from './ShippingForm'
 
@@ -83,8 +84,9 @@ export default async function OrderDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const order = await getOrder(id)
+  const [order, staff] = await Promise.all([getOrder(id), getStaffUser()])
   if (!order) notFound()
+  const canRefund = staff?.role === 'admin'
 
   const s = statusStyles[order.status] ?? statusStyles.paid
   const date = new Date(order.created_at).toLocaleDateString('en-GB', {
@@ -116,7 +118,7 @@ export default async function OrderDetailPage({
             <span className="text-primary font-medium">{pence(order.total_pence)}</span>
           </div>
         </div>
-        <OrderStatusButtons orderId={order.id} currentStatus={order.status} />
+        <OrderStatusButtons orderId={order.id} currentStatus={order.status} canRefund={canRefund} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

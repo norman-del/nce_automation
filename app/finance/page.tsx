@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { createServiceClient } from '@/lib/supabase/client'
+import { getStaffUser } from '@/lib/auth/staff'
+import { redirect } from 'next/navigation'
 import SyncPayoutsButton from './SyncPayoutsButton'
 
 async function getPayouts(search?: string, filter?: string) {
@@ -50,6 +52,11 @@ export default async function PayoutsPage({
 }: {
   searchParams: Promise<{ search?: string; filter?: string }>
 }) {
+  const staff = await getStaffUser()
+  if (!staff || staff.role !== 'admin') {
+    redirect('/')
+  }
+
   const { search, filter } = await searchParams
   const payouts = await getPayouts(search, filter)
   const isAttentionFilter = filter === 'attention'
@@ -58,8 +65,8 @@ export default async function PayoutsPage({
     <div>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <div>
-          <h2 className="text-2xl font-semibold text-primary">Payouts</h2>
-          <p className="mt-1 text-sm text-secondary">Shopify payouts pulled from the API</p>
+          <h2 className="text-2xl font-semibold text-primary">Finance</h2>
+          <p className="mt-1 text-sm text-secondary">Payout reconciliation and fee sync</p>
         </div>
         <SyncPayoutsButton />
       </div>
@@ -67,7 +74,7 @@ export default async function PayoutsPage({
       {/* Filter pills */}
       <div className="flex gap-2 mb-4">
         <Link
-          href="/payouts"
+          href="/finance"
           className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
             !isAttentionFilter
               ? 'bg-accent/15 text-accent border border-accent/30'
@@ -77,7 +84,7 @@ export default async function PayoutsPage({
           All
         </Link>
         <Link
-          href="/payouts?filter=attention"
+          href="/finance?filter=attention"
           className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
             isAttentionFilter
               ? 'bg-warn/15 text-warn border border-warn/30'
@@ -105,7 +112,7 @@ export default async function PayoutsPage({
         </button>
         {search && (
           <a
-            href="/payouts"
+            href="/finance"
             className="px-4 py-2 text-secondary text-sm rounded-md hover:bg-overlay transition-colors"
           >
             Clear
@@ -171,7 +178,7 @@ export default async function PayoutsPage({
                         </td>
                         <td className="px-4 py-3 text-right">
                           <Link
-                            href={`/payouts/${payout.id}`}
+                            href={`/finance/${payout.id}`}
                             className="text-accent hover:text-accent-hi text-xs transition-colors"
                           >
                             View →
@@ -192,7 +199,7 @@ export default async function PayoutsPage({
               return (
                 <Link
                   key={payout.id}
-                  href={`/payouts/${payout.id}`}
+                  href={`/finance/${payout.id}`}
                   className="block bg-surface border border-edge rounded-xl p-4 active:bg-overlay transition-colors"
                 >
                   <div className="flex items-center justify-between gap-2 mb-3">
