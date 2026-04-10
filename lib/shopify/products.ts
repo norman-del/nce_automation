@@ -139,6 +139,77 @@ export async function createShopifyProduct(params: {
 }
 
 /* ------------------------------------------------------------------ */
+/* Update an existing product in Shopify                               */
+/* ------------------------------------------------------------------ */
+
+export async function updateShopifyProduct(
+  shopifyProductId: number,
+  params: {
+    sku: string
+    title: string
+    condition: 'new' | 'used'
+    vatApplicable: boolean
+    sellingPrice: number
+    productType: string
+    vendor: string
+    tags: string[]
+    shippingTier: number
+    widthCm: number
+    heightCm: number
+    depthCm: number
+    weightKg: number | null
+    notes?: string | null
+  }
+): Promise<void> {
+  const {
+    sku, title, condition, vatApplicable, sellingPrice, productType,
+    vendor, tags, shippingTier, widthCm, heightCm, depthCm, notes,
+  } = params
+
+  const fullTitle = `${title} (NCE${sku})`
+
+  const descParts: string[] = []
+  if (notes) descParts.push(notes)
+  descParts.push(title)
+  if (condition) descParts.push(`Condition: ${condition === 'new' ? 'New' : 'Used'}`)
+  descParts.push(`Dimensions: ${widthCm}W x ${heightCm}H x ${depthCm}D cm`)
+
+  // Get existing product to find variant ID
+  const existing = await shopifyFetch<{ product: ShopifyProduct }>(
+    `/products/${shopifyProductId}.json?fields=id,variants`
+  )
+  const variantId = existing.product.variants[0]?.id
+
+  const productUpdate: Record<string, unknown> = {
+    id: shopifyProductId,
+    title: fullTitle,
+    body_html: descParts.join('<br>'),
+    vendor,
+    product_type: productType,
+    tags: [...tags, condition === 'new' ? 'New' : 'Used'].join(', '),
+  }
+
+  if (variantId) {
+    productUpdate.variants = [{
+      id: variantId,
+      price: sellingPrice.toFixed(2),
+      sku,
+      requires_shipping: true,
+      taxable: vatApplicable,
+      weight: shippingTier,
+      weight_unit: 'kg',
+    }]
+  }
+
+  console.log('[shopify] Updating product:', sku, shopifyProductId)
+  await shopifyFetch(`/products/${shopifyProductId}.json`, {
+    method: 'PUT',
+    body: JSON.stringify({ product: productUpdate }),
+  })
+  console.log('[shopify] Product updated:', sku, '→ id', shopifyProductId)
+}
+
+/* ------------------------------------------------------------------ */
 /* Delete a product from Shopify                                       */
 /* ------------------------------------------------------------------ */
 

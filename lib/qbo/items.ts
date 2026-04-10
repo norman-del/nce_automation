@@ -170,6 +170,75 @@ export async function createQboItem(params: {
 }
 
 /* ------------------------------------------------------------------ */
+/* Update an existing QBO Item                                         */
+/* ------------------------------------------------------------------ */
+
+export async function updateQboItem(params: {
+  qboItemId: string
+  sku: string
+  title: string
+  sellingPrice: number
+  costPrice: number
+  vatApplicable: boolean
+  qboVendorId: string | null
+}): Promise<void> {
+  const { client: _client } = await getQboClient()
+  const client = _client as QboAny
+  const { qboItemId, sku, title, sellingPrice, costPrice, vatApplicable, qboVendorId } = params
+
+  // Fetch current item to get SyncToken (required for updates)
+  const current = await new Promise<{ Id: string; SyncToken: string }>((resolve, reject) => {
+    client.getItem(qboItemId, (err: unknown, item: { Id: string; SyncToken: string }) => {
+      if (err) reject(err)
+      else resolve(item)
+    })
+  })
+
+  const taxCodes = await findTaxCodes()
+
+  const itemUpdate: Record<string, unknown> = {
+    Id: qboItemId,
+    SyncToken: current.SyncToken,
+    Name: `${title} (NCE${sku})`.slice(0, 100),
+    Sku: sku,
+    Description: title,
+    UnitPrice: sellingPrice,
+    PurchaseDesc: title,
+    PurchaseCost: costPrice,
+    SalesTaxIncluded: true,
+    SalesTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
+    PurchaseTaxIncluded: true,
+    PurchaseTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
+  }
+
+  if (qboVendorId) {
+    itemUpdate.PrefVendorRef = { value: qboVendorId }
+  }
+
+  console.log('[qbo-items] Updating item:', sku, qboItemId)
+
+  await new Promise<void>((resolve, reject) => {
+    client.updateItem(
+      itemUpdate,
+      (err: unknown) => {
+        if (err) {
+          const axErr = err as { response?: { data?: unknown }; message?: string }
+          const detail = axErr.response?.data
+            ? JSON.stringify(axErr.response.data)
+            : axErr.message || String(err)
+          console.error('[qbo-items] updateItem FAILED:', detail)
+          reject(new Error(`QBO updateItem: ${detail}`))
+        } else {
+          resolve()
+        }
+      }
+    )
+  })
+
+  console.log('[qbo-items] Item updated:', sku, '→ QBO id', qboItemId)
+}
+
+/* ------------------------------------------------------------------ */
 /* Find UK VAT tax codes                                               */
 /* ------------------------------------------------------------------ */
 

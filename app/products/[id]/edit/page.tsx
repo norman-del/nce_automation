@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createServiceClient } from '@/lib/supabase/client'
 import { fetchProductMetadata } from '@/lib/shopify/products'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import EditProductForm from './EditProductForm'
 
 interface Props {
@@ -20,11 +20,6 @@ export default async function EditProductPage({ params }: Props) {
     .single()
 
   if (error || !product) notFound()
-
-  // Only allow editing while processing
-  if (product.status !== 'processing') {
-    redirect(`/products/${id}`)
-  }
 
   const { productTypes, vendors } = await fetchProductMetadata()
 

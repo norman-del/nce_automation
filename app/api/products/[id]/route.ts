@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/client'
 import { calculateShippingTier } from '@/lib/products/shipping'
-import { deleteShopifyProduct } from '@/lib/shopify/products'
+import { deleteShopifyProduct, updateShopifyProduct } from '@/lib/shopify/products'
+import { updateQboItem } from '@/lib/qbo/items'
 import { getQboClient } from '@/lib/qbo/client'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -103,7 +104,7 @@ export async function GET(
   }
 }
 
-// PATCH /api/products/[id] — update product fields
+// PATCH /api/products/[id] — update product fields in Supabase, then sync to Shopify + QBO
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -113,27 +114,29 @@ export async function PATCH(
     const body = await req.json()
     const db = createServiceClient()
 
+    // Fetch current product (need it for dimension merge + external IDs)
+    const { data: current, error: fetchError } = await db
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !current) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    }
+
     // If dimensions changed, recalculate shipping tier
     const updates = { ...body, updated_at: new Date().toISOString() }
 
     if (body.width_cm != null || body.height_cm != null || body.depth_cm != null) {
-      // Fetch current dimensions to fill in any missing values
-      const { data: current, error: fetchError } = await db
-        .from('products')
-        .select('width_cm, height_cm, depth_cm, weight_kg')
-        .eq('id', id)
-        .single()
-
-      if (fetchError) throw fetchError
-
       const w = body.width_cm ?? current.width_cm
       const h = body.height_cm ?? current.height_cm
       const d = body.depth_cm ?? current.depth_cm
       const wt = body.weight_kg ?? current.weight_kg
-
       updates.shipping_tier = calculateShippingTier(w, h, d, wt)
     }
 
+    // Save to Supabase
     const { data, error } = await db
       .from('products')
       .update(updates)
@@ -142,6 +145,66 @@ export async function PATCH(
       .single()
 
     if (error) throw error
+
+    // Sync to external systems (non-blocking — collect errors but don't fail the request)
+    const syncErrors: string[] = []
+    const product = data
+
+    // Sync to Shopify if product has a Shopify ID
+    if (product.shopify_product_id) {
+      try {
+        await updateShopifyProduct(product.shopify_product_id, {
+          sku: product.sku,
+          title: product.title,
+          condition: product.condition,
+          vatApplicable: product.vat_applicable,
+          sellingPrice: product.selling_price,
+          productType: product.product_type,
+          vendor: product.vendor,
+          tags: product.tags ?? [],
+          shippingTier: product.shipping_tier,
+          widthCm: product.width_cm,
+          heightCm: product.height_cm,
+          depthCm: product.depth_cm,
+          weightKg: product.weight_kg,
+          notes: product.notes,
+        })
+        console.log('[products/PATCH] Shopify updated:', product.sku)
+      } catch (err) {
+        syncErrors.push(`Shopify: ${String(err)}`)
+        console.error('[products/PATCH] Shopify sync failed:', String(err))
+      }
+    }
+
+    // Sync to QBO if product has a QBO item ID
+    if (product.qbo_item_id) {
+      try {
+        await updateQboItem({
+          qboItemId: product.qbo_item_id,
+          sku: product.sku,
+          title: product.title,
+          sellingPrice: product.selling_price,
+          costPrice: product.cost_price,
+          vatApplicable: product.vat_applicable,
+          qboVendorId: product.qbo_vendor_id || null,
+        })
+        console.log('[products/PATCH] QBO updated:', product.sku)
+      } catch (err) {
+        syncErrors.push(`QBO: ${String(err)}`)
+        console.error('[products/PATCH] QBO sync failed:', String(err))
+      }
+    }
+
+    // Store sync errors if any
+    if (syncErrors.length > 0) {
+      await db.from('products').update({ sync_error: syncErrors.join('; ') }).eq('id', id)
+      return NextResponse.json({ ...product, sync_error: syncErrors.join('; '), _syncErrors: syncErrors }, { status: 207 })
+    }
+
+    // Clear any previous sync errors on success
+    if (product.sync_error && (product.shopify_product_id || product.qbo_item_id)) {
+      await db.from('products').update({ sync_error: null }).eq('id', id)
+    }
 
     return NextResponse.json(data)
   } catch (e) {
