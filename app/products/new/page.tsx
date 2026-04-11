@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic'
 
 import ProductForm from './ProductForm'
-import { fetchProductMetadata } from '@/lib/shopify/products'
+import { fetchProductMetadataFromSupabase } from '@/lib/products/metadata'
 
 export default async function NewProductPage() {
-  const { productTypes, vendors } = await fetchProductMetadata()
+  const { productTypes, vendors } = await fetchProductMetadataFromSupabase()
 
   return (
     <div>

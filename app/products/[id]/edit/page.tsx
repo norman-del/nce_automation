@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createServiceClient } from '@/lib/supabase/client'
-import { fetchProductMetadata } from '@/lib/shopify/products'
+import { fetchProductMetadataFromSupabase } from '@/lib/products/metadata'
 import { notFound } from 'next/navigation'
 import EditProductForm from './EditProductForm'
 
@@ -21,7 +21,7 @@ export default async function EditProductPage({ params }: Props) {
 
   if (error || !product) notFound()
 
-  const { productTypes, vendors } = await fetchProductMetadata()
+  const { productTypes, vendors } = await fetchProductMetadataFromSupabase()
 
   // Resolve collection IDs to { id, title } for the typeahead
   const collectionIds: string[] = product.collections || []

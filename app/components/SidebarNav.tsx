@@ -5,12 +5,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import type { StaffRole } from '@/lib/auth/staff'
 
 const navLinks = [
-  { href: '/',          label: 'Dashboard', adminOnly: false },
-  { href: '/orders',    label: 'Orders',    adminOnly: false },
+  { href: '/',          label: 'Dashboard', adminOnly: true  },
+  { href: '/orders',    label: 'Orders',    adminOnly: true  },
   { href: '/products',  label: 'Products',  adminOnly: false },
-  { href: '/customers', label: 'Customers', adminOnly: false },
-  { href: '/finance',   label: 'Finance',   adminOnly: true  },
-  { href: '/settings',  label: 'Settings',  adminOnly: true  },
+  { href: '/customers', label: 'Customers', adminOnly: true  },
+  { href: '/finance',   label: 'Finance',   adminOnly: false },
+  { href: '/settings',  label: 'Settings',  adminOnly: false },
 ]
 
 interface Props {

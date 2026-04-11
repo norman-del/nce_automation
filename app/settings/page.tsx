@@ -56,8 +56,8 @@ export default async function SettingsPage({
   searchParams: Promise<{ tab?: string; qbo?: string }>
 }) {
   const staff = await getStaffUser()
-  if (!staff || staff.role !== 'admin') {
-    redirect('/')
+  if (!staff) {
+    redirect('/login')
   }
 
   const { tab } = await searchParams
@@ -79,6 +79,7 @@ export default async function SettingsPage({
         qbo={qbo}
         logs={logs}
         initialTab={tab}
+        staffRole={staff.role}
       />
     </div>
   )

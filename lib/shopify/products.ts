@@ -59,24 +59,31 @@ export async function createShopifyProduct(params: {
   depthCm: number
   weightKg: number | null
   notes?: string | null
+  bodyHtml?: string | null
 }): Promise<{ shopifyProductId: number }> {
   const {
     sku, title, condition, vatApplicable, sellingPrice, productType,
-    vendor, tags, shippingTier, widthCm, heightCm, depthCm, notes,
+    vendor, tags, shippingTier, widthCm, heightCm, depthCm, notes, bodyHtml,
   } = params
 
   const fullTitle = `${title} (NCE${sku})`
 
-  // Build description — notes first, then specs
-  const descParts: string[] = []
-  if (notes) descParts.push(notes)
-  descParts.push(title)
-  if (condition) descParts.push(`Condition: ${condition === 'new' ? 'New' : 'Used'}`)
-  descParts.push(`Dimensions: ${widthCm}W x ${heightCm}H x ${depthCm}D cm`)
+  // Use explicit description if provided, otherwise build from specs
+  let description: string
+  if (bodyHtml) {
+    description = bodyHtml
+  } else {
+    const descParts: string[] = []
+    if (notes) descParts.push(notes)
+    descParts.push(title)
+    if (condition) descParts.push(`Condition: ${condition === 'new' ? 'New' : 'Used'}`)
+    descParts.push(`Dimensions: ${widthCm}W x ${heightCm}H x ${depthCm}D cm`)
+    description = descParts.join('<br>')
+  }
 
   const product: ShopifyProductInput = {
     title: fullTitle,
-    body_html: descParts.join('<br>'),
+    body_html: description,
     vendor,
     product_type: productType,
     tags: [...tags, condition === 'new' ? 'New' : 'Used'].join(', '),
@@ -159,20 +166,27 @@ export async function updateShopifyProduct(
     depthCm: number
     weightKg: number | null
     notes?: string | null
+    bodyHtml?: string | null
   }
 ): Promise<void> {
   const {
     sku, title, condition, vatApplicable, sellingPrice, productType,
-    vendor, tags, shippingTier, widthCm, heightCm, depthCm, notes,
+    vendor, tags, shippingTier, widthCm, heightCm, depthCm, notes, bodyHtml,
   } = params
 
   const fullTitle = `${title} (NCE${sku})`
 
-  const descParts: string[] = []
-  if (notes) descParts.push(notes)
-  descParts.push(title)
-  if (condition) descParts.push(`Condition: ${condition === 'new' ? 'New' : 'Used'}`)
-  descParts.push(`Dimensions: ${widthCm}W x ${heightCm}H x ${depthCm}D cm`)
+  let description: string
+  if (bodyHtml) {
+    description = bodyHtml
+  } else {
+    const descParts: string[] = []
+    if (notes) descParts.push(notes)
+    descParts.push(title)
+    if (condition) descParts.push(`Condition: ${condition === 'new' ? 'New' : 'Used'}`)
+    descParts.push(`Dimensions: ${widthCm}W x ${heightCm}H x ${depthCm}D cm`)
+    description = descParts.join('<br>')
+  }
 
   // Get existing product to find variant ID
   const existing = await shopifyFetch<{ product: ShopifyProduct }>(
@@ -183,7 +197,7 @@ export async function updateShopifyProduct(
   const productUpdate: Record<string, unknown> = {
     id: shopifyProductId,
     title: fullTitle,
-    body_html: descParts.join('<br>'),
+    body_html: description,
     vendor,
     product_type: productType,
     tags: [...tags, condition === 'new' ? 'New' : 'Used'].join(', '),

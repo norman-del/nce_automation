@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { fetchPayouts } from '@/lib/shopify/payouts'
 import { syncPayout } from '@/lib/sync/orchestrator'
 import { createServiceClient } from '@/lib/supabase/client'
+import { isShopifySyncEnabled } from '@/lib/shopify/config'
 
 export async function GET(req: NextRequest) {
   // Verify Vercel Cron secret
@@ -9,6 +10,12 @@ export async function GET(req: NextRequest) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  if (!isShopifySyncEnabled()) {
+    console.log('[cron] Shopify sync disabled — skipping payout sync')
+    return NextResponse.json({ skipped: true, reason: 'SHOPIFY_SYNC_ENABLED=false' })
+  }
+
   console.log('[cron] Starting scheduled sync')
 
   try {

@@ -4,6 +4,7 @@ import { calculateShippingTier } from '@/lib/products/shipping'
 import { deleteShopifyProduct, updateShopifyProduct } from '@/lib/shopify/products'
 import { updateQboItem } from '@/lib/qbo/items'
 import { getQboClient } from '@/lib/qbo/client'
+import { isShopifySyncEnabled } from '@/lib/shopify/config'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type QboAny = any
@@ -30,8 +31,8 @@ export async function DELETE(
 
     console.log('[products/DELETE] start', { id, sku: product.sku, shopify: product.shopify_product_id, qbo: product.qbo_item_id })
 
-    // Delete from Shopify
-    if (product.shopify_product_id) {
+    // Delete from Shopify (only if sync is enabled)
+    if (isShopifySyncEnabled() && product.shopify_product_id) {
       try {
         await deleteShopifyProduct(product.shopify_product_id)
         console.log('[products/DELETE] Shopify product deleted:', product.shopify_product_id)
@@ -168,8 +169,8 @@ export async function PATCH(
     const syncErrors: string[] = []
     const product = data
 
-    // Sync to Shopify if product has a Shopify ID
-    if (product.shopify_product_id) {
+    // Sync to Shopify if product has a Shopify ID and sync is enabled
+    if (isShopifySyncEnabled() && product.shopify_product_id) {
       try {
         await updateShopifyProduct(product.shopify_product_id, {
           sku: product.sku,
@@ -186,6 +187,7 @@ export async function PATCH(
           depthCm: product.depth_cm,
           weightKg: product.weight_kg,
           notes: product.notes,
+          bodyHtml: product.body_html,
         })
         console.log('[products/PATCH] Shopify updated:', product.sku)
       } catch (err) {

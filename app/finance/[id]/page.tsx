@@ -30,8 +30,8 @@ export default async function PayoutDetailPage({
   params: Promise<{ id: string }>
 }) {
   const staff = await getStaffUser()
-  if (!staff || staff.role !== 'admin') {
-    redirect('/')
+  if (!staff) {
+    redirect('/login')
   }
 
   const { id } = await params

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import PromotionsList from './PromotionsList'
 import ShippingRatesEditor from './ShippingRatesEditor'
+import CollectionsManager from './CollectionsManager'
 import SyncLogTable from './SyncLogTable'
 import AccountsModal from './AccountsModal'
 import DisconnectButton from './DisconnectButton'
@@ -35,16 +36,18 @@ interface Props {
   qbo: QboData | null
   logs: LogEntry[]
   initialTab?: string
+  staffRole?: 'admin' | 'staff'
 }
 
-const tabs = [
-  { key: 'connections', label: 'Connections' },
-  { key: 'promotions', label: 'Promotions' },
-  { key: 'shipping', label: 'Shipping Rates' },
-  { key: 'activity', label: 'Activity Log' },
+const allTabs = [
+  { key: 'connections', label: 'Connections', staffVisible: true },
+  { key: 'promotions', label: 'Promotions', staffVisible: false },
+  { key: 'shipping', label: 'Shipping Rates', staffVisible: false },
+  { key: 'collections', label: 'Collections', staffVisible: false },
+  { key: 'activity', label: 'Activity Log', staffVisible: false },
 ] as const
 
-type TabKey = (typeof tabs)[number]['key']
+type TabKey = (typeof allTabs)[number]['key']
 
 function formatExpiry(isoDate: string | null): { text: string; urgent: boolean } {
   if (!isoDate) return { text: 'Unknown', urgent: true }
@@ -58,9 +61,11 @@ function formatExpiry(isoDate: string | null): { text: string; urgent: boolean }
   return             { text: `Expires in ${days} days`, urgent: false }
 }
 
-export default function SettingsTabs({ shopify, qbo, logs, initialTab }: Props) {
+export default function SettingsTabs({ shopify, qbo, logs, initialTab, staffRole }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const isAdmin = staffRole === 'admin'
+  const tabs = allTabs.filter(t => isAdmin || t.staffVisible)
   const tabParam = initialTab ?? searchParams.get('tab') ?? 'connections'
   const [activeTab, setActiveTab] = useState<TabKey>(
     tabs.some(t => t.key === tabParam) ? (tabParam as TabKey) : 'connections'
@@ -96,6 +101,7 @@ export default function SettingsTabs({ shopify, qbo, logs, initialTab }: Props) 
       )}
       {activeTab === 'promotions' && <PromotionsList />}
       {activeTab === 'shipping' && <ShippingRatesEditor />}
+      {activeTab === 'collections' && <CollectionsManager />}
       {activeTab === 'activity' && <SyncLogTable logs={logs} />}
     </div>
   )

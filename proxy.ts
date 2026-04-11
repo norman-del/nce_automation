@@ -43,8 +43,35 @@ export async function proxy(request: NextRequest) {
 
   if (user && path === '/login') {
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    url.pathname = '/products'
     return NextResponse.redirect(url)
+  }
+
+  // Staff role protection — staff can only access /products and /finance
+  // Check role for any page route that isn't already staff-allowed
+  if (user && !isPublic && !path.startsWith('/api/')) {
+    const staffAllowedRoutes = ['/products', '/finance', '/settings']
+    const isStaffAllowed = staffAllowedRoutes.some(r => path.startsWith(r))
+
+    if (!isStaffAllowed) {
+      const { createClient } = await import('@supabase/supabase-js')
+      const serviceClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      )
+      const { data: staffUser } = await serviceClient
+        .from('staff_users')
+        .select('role')
+        .eq('auth_user_id', user.id)
+        .single()
+
+      if (staffUser && staffUser.role !== 'admin') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/products'
+        return NextResponse.redirect(url)
+      }
+    }
   }
 
   return supabaseResponse

@@ -88,6 +88,7 @@ export default async function ProductDetailPage({ params }: Props) {
               {product.original_rrp && <div><p className={labelCls}>Original RRP</p><p className={valueCls}>£{Number(product.original_rrp).toFixed(2)}</p></div>}
             </div>
             {product.notes && <div><p className={labelCls}>Notes</p><p className={`${valueCls} mt-1`}>{product.notes}</p></div>}
+            {product.body_html && <div><p className={labelCls}>Description</p><p className={`${valueCls} mt-1 whitespace-pre-wrap`}>{product.body_html}</p></div>}
           </div>
 
           {/* Dimensions */}

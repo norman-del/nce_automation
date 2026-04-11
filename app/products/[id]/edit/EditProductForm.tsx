@@ -22,6 +22,7 @@ interface Product {
   year_of_manufacture: number | null
   electrical_requirements: string | null
   notes: string | null
+  body_html: string | null
   width_cm: number
   height_cm: number
   depth_cm: number
@@ -57,6 +58,7 @@ export default function EditProductForm({ product, productTypes, vendors, initia
   const [yearOfManufacture, setYearOfManufacture] = useState(product.year_of_manufacture ? String(product.year_of_manufacture) : '')
   const [electricalRequirements, setElectricalRequirements] = useState(product.electrical_requirements || '')
   const [notes, setNotes] = useState(product.notes || '')
+  const [bodyHtml, setBodyHtml] = useState(product.body_html || '')
   const [widthCm, setWidthCm] = useState(String(product.width_cm))
   const [heightCm, setHeightCm] = useState(String(product.height_cm))
   const [depthCm, setDepthCm] = useState(String(product.depth_cm))
@@ -98,6 +100,7 @@ export default function EditProductForm({ product, productTypes, vendors, initia
           year_of_manufacture: yearOfManufacture ? parseInt(yearOfManufacture, 10) : null,
           electrical_requirements: electricalRequirements || null,
           notes: notes || null,
+          body_html: bodyHtml || null,
           width_cm: parseFloat(widthCm) || 0,
           height_cm: parseFloat(heightCm) || 0,
           depth_cm: parseFloat(depthCm) || 0,
@@ -197,6 +200,10 @@ export default function EditProductForm({ product, productTypes, vendors, initia
           <div>
             <label className={labelCls}>Notes</label>
             <textarea className={`${inputCls} resize-none`} rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelCls}>Description</label>
+            <textarea className={`${inputCls} resize-none`} rows={4} placeholder="Product description (shown on storefront)..." value={bodyHtml} onChange={e => setBodyHtml(e.target.value)} />
           </div>
         </fieldset>
 

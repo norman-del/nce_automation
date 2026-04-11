@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/client'
 import { calculateShippingTier } from '@/lib/products/shipping'
 import { createShopifyProduct, addProductToCollections } from '@/lib/shopify/products'
 import { createQboItem } from '@/lib/qbo/items'
+import { isShopifySyncEnabled } from '@/lib/shopify/config'
 
 // GET /api/products?status=processing&q=search&limit=50&offset=0
 export async function GET(req: NextRequest) {
@@ -70,6 +71,7 @@ interface ProductInput {
   vendor: string
   collections?: string[] | null
   tags?: string[] | null
+  body_html?: string | null
 }
 
 // POST /api/products — create one or more products (batch supported)
@@ -153,6 +155,7 @@ export async function POST(req: NextRequest) {
             vendor: input.vendor.trim(),
             collections: input.collections ?? [],
             tags: input.tags ?? [],
+            body_html: input.body_html?.trim() || null,
           })
           .select()
           .single()
@@ -160,42 +163,47 @@ export async function POST(req: NextRequest) {
         if (error) throw error
 
         // Push to Shopify as draft (non-blocking — product is saved even if Shopify fails)
-        console.log(`[products/POST] ${sku} → Shopify push starting`)
-        try {
-          const { shopifyProductId } = await createShopifyProduct({
-            sku,
-            title: input.title.trim(),
-            condition: input.condition,
-            vatApplicable: input.vat_applicable ?? false,
-            sellingPrice: input.selling_price,
-            productType: input.product_type.trim(),
-            vendor: input.vendor.trim(),
-            tags: input.tags ?? [],
-            shippingTier,
-            widthCm: input.width_cm,
-            heightCm: input.height_cm,
-            depthCm: input.depth_cm,
-            weightKg: input.weight_kg ?? null,
-            notes: input.notes?.trim() || null,
-          })
+        if (isShopifySyncEnabled()) {
+          console.log(`[products/POST] ${sku} → Shopify push starting`)
+          try {
+            const { shopifyProductId } = await createShopifyProduct({
+              sku,
+              title: input.title.trim(),
+              condition: input.condition,
+              vatApplicable: input.vat_applicable ?? false,
+              sellingPrice: input.selling_price,
+              productType: input.product_type.trim(),
+              vendor: input.vendor.trim(),
+              tags: input.tags ?? [],
+              shippingTier,
+              widthCm: input.width_cm,
+              heightCm: input.height_cm,
+              depthCm: input.depth_cm,
+              weightKg: input.weight_kg ?? null,
+              notes: input.notes?.trim() || null,
+              bodyHtml: input.body_html?.trim() || null,
+            })
 
-          // Update Supabase with Shopify ID
-          await db
-            .from('products')
-            .update({ shopify_product_id: shopifyProductId, shopify_status: 'draft' })
-            .eq('id', data.id)
+            // Update Supabase with Shopify ID
+            await db
+              .from('products')
+              .update({ shopify_product_id: shopifyProductId, shopify_status: 'draft' })
+              .eq('id', data.id)
 
-          // Add to collections if any
-          if (input.collections && input.collections.length > 0) {
-            await addProductToCollections(shopifyProductId, input.collections)
+            // Add to collections if any
+            if (input.collections && input.collections.length > 0) {
+              await addProductToCollections(shopifyProductId, input.collections)
+            }
+            console.log(`[products/POST] ${sku} → Shopify ok, productId=${shopifyProductId}`)
+          } catch (shopifyErr) {
+            console.error(`[products/POST] ${sku} → Shopify FAILED:`, String(shopifyErr))
+            await db
+              .from('products')
+              .update({ sync_error: `Shopify: ${String(shopifyErr)}` })
+              .eq('id', data.id)
           }
-          console.log(`[products/POST] ${sku} → Shopify ok, productId=${shopifyProductId}`)
-        } catch (shopifyErr) {
-          console.error(`[products/POST] ${sku} → Shopify FAILED:`, String(shopifyErr))
-          await db
-            .from('products')
-            .update({ sync_error: `Shopify: ${String(shopifyErr)}` })
-            .eq('id', data.id)
+        } else {
+          console.log(`[products/POST] ${sku} → Shopify sync disabled, skipping`)
         }
 
         // Push to QBO (non-blocking — product is saved even if QBO fails)

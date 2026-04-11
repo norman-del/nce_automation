@@ -53,8 +53,8 @@ export default async function PayoutsPage({
   searchParams: Promise<{ search?: string; filter?: string }>
 }) {
   const staff = await getStaffUser()
-  if (!staff || staff.role !== 'admin') {
-    redirect('/')
+  if (!staff) {
+    redirect('/login')
   }
 
   const { search, filter } = await searchParams

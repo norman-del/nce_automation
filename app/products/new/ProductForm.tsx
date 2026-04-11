@@ -30,6 +30,7 @@ interface ProductDraft {
   year_of_manufacture: string
   electrical_requirements: string
   notes: string
+  body_html: string
   width_cm: string
   height_cm: string
   depth_cm: string
@@ -46,7 +47,7 @@ function emptyDraft(): ProductDraft {
     sku_override: '', title: '', condition: 'used', vat_applicable: false,
     cost_price: '', selling_price: '', original_rrp: '',
     model_number: '', year_of_manufacture: '', electrical_requirements: '',
-    notes: '', width_cm: '', height_cm: '', depth_cm: '', weight_kg: '',
+    notes: '', body_html: '', width_cm: '', height_cm: '', depth_cm: '', weight_kg: '',
     supplier: null, product_type: '', vendor: '', collections: [] as { id: string; title: string }[], tags: '',
   }
 }
@@ -89,6 +90,7 @@ export default function ProductForm({ productTypes, vendors }: Props) {
       year_of_manufacture: d.year_of_manufacture ? parseInt(d.year_of_manufacture, 10) : null,
       electrical_requirements: d.electrical_requirements || null,
       notes: d.notes || null,
+      body_html: d.body_html || null,
       width_cm: parseFloat(d.width_cm) || 0,
       height_cm: parseFloat(d.height_cm) || 0,
       depth_cm: parseFloat(d.depth_cm) || 0,
@@ -303,6 +305,10 @@ function ProductCard({ draft, index, total, error, productTypes, vendors, onChan
         <div>
           <label className={labelCls}>Notes</label>
           <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Any additional info..." value={draft.notes} onChange={(e) => onChange({ notes: e.target.value })} />
+        </div>
+        <div>
+          <label className={labelCls}>Description</label>
+          <textarea className={`${inputCls} resize-none`} rows={4} placeholder="Product description (shown on storefront)..." value={draft.body_html} onChange={(e) => onChange({ body_html: e.target.value })} />
         </div>
       </fieldset>
 
