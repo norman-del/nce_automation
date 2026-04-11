@@ -32,6 +32,10 @@ export default function ProductList() {
   const [offset, setOffset] = useState(0)
   const limit = 25
 
+  // Batch retry state
+  const [retrying, setRetrying] = useState(false)
+  const [retryResult, setRetryResult] = useState<{ succeeded: number; failed: number; total: number } | null>(null)
+
   const fetchProducts = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -74,6 +78,28 @@ export default function ProductList() {
     setOffset(0)
   }, [statusFilter, search])
 
+  const failedCount = products.filter((p) => p.sync_error).length
+
+  async function handleBatchRetry() {
+    setRetrying(true)
+    setRetryResult(null)
+    try {
+      const res = await fetch('/api/products/batch-retry', { method: 'POST' })
+      const data = await res.json()
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setRetryResult({ succeeded: data.succeeded, failed: data.failed, total: data.total })
+        // Refresh the list to show updated sync status
+        fetchProducts()
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setRetrying(false)
+    }
+  }
+
   const statusBadge = (status: string) => {
     if (status === 'active') return 'bg-ok/10 text-ok border-ok/25'
     return 'bg-warn/10 text-warn border-warn/25'
@@ -108,6 +134,44 @@ export default function ProductList() {
           className="bg-surface border border-edge rounded-md px-3 py-2 text-sm text-primary placeholder:text-secondary/50 focus:outline-none focus:border-accent w-full sm:w-64"
         />
       </div>
+
+      {/* Batch retry button + result */}
+      {failedCount > 0 && !retrying && !retryResult && (
+        <div className="flex items-center gap-3 bg-warn/10 border border-warn/25 rounded-lg px-4 py-3">
+          <p className="text-sm text-warn flex-1">
+            {failedCount} product{failedCount > 1 ? 's' : ''} with sync errors on this page
+          </p>
+          <button
+            onClick={handleBatchRetry}
+            className="px-4 py-1.5 text-sm font-medium bg-accent text-white rounded-md hover:bg-accent-hi transition-colors"
+          >
+            Retry All Failed
+          </button>
+        </div>
+      )}
+      {retrying && (
+        <div className="bg-accent/10 border border-accent/25 rounded-lg px-4 py-3">
+          <p className="text-sm text-accent">Retrying failed syncs... This may take a moment.</p>
+        </div>
+      )}
+      {retryResult && (
+        <div className={`border rounded-lg px-4 py-3 flex items-center justify-between ${
+          retryResult.failed === 0
+            ? 'bg-ok/10 border-ok/25'
+            : 'bg-warn/10 border-warn/25'
+        }`}>
+          <p className={`text-sm ${retryResult.failed === 0 ? 'text-ok' : 'text-warn'}`}>
+            Retry complete: {retryResult.succeeded}/{retryResult.total} succeeded
+            {retryResult.failed > 0 && `, ${retryResult.failed} still failing`}
+          </p>
+          <button
+            onClick={() => setRetryResult(null)}
+            className="text-xs text-secondary hover:text-primary underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Error banner */}
       {error && (

@@ -73,7 +73,35 @@ export default function ProductForm({ productTypes, vendors }: Props) {
     setDrafts((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const [fieldErrors, setFieldErrors] = useState<Record<number, string[]>>({})
+
+  function validateDraft(draft: ProductDraft, index: number): string[] {
+    const missing: string[] = []
+    if (!draft.title.trim()) missing.push('Title')
+    if (!draft.cost_price || parseFloat(draft.cost_price) <= 0) missing.push('Cost Price')
+    if (!draft.selling_price || parseFloat(draft.selling_price) <= 0) missing.push('Selling Price')
+    if (!draft.width_cm || parseFloat(draft.width_cm) <= 0) missing.push('Width')
+    if (!draft.height_cm || parseFloat(draft.height_cm) <= 0) missing.push('Height')
+    if (!draft.depth_cm || parseFloat(draft.depth_cm) <= 0) missing.push('Depth')
+    if (!draft.product_type.trim()) missing.push('Product Type')
+    if (!draft.vendor.trim()) missing.push('Vendor / Brand')
+    return missing
+  }
+
   async function handleSubmit(andAddAnother: boolean) {
+    // Validate all drafts before submitting
+    const newFieldErrors: Record<number, string[]> = {}
+    let hasValidationErrors = false
+    drafts.forEach((d, i) => {
+      const missing = validateDraft(d, i)
+      if (missing.length > 0) {
+        newFieldErrors[i] = missing
+        hasValidationErrors = true
+      }
+    })
+    setFieldErrors(newFieldErrors)
+    if (hasValidationErrors) return
+
     setSaving(true)
     setErrors([])
     setSuccessCount(0)
@@ -149,9 +177,10 @@ export default function ProductForm({ productTypes, vendors }: Props) {
           index={idx}
           total={drafts.length}
           error={errors[idx] || null}
+          missingFields={fieldErrors[idx] || []}
           productTypes={productTypes}
           vendors={vendors}
-          onChange={(patch) => updateDraft(idx, patch)}
+          onChange={(patch) => { updateDraft(idx, patch); setFieldErrors((prev) => { const next = { ...prev }; delete next[idx]; return next }) }}
           onRemove={() => removeDraft(idx)}
         />
       ))}
@@ -205,13 +234,14 @@ interface CardProps {
   index: number
   total: number
   error: string | null
+  missingFields: string[]
   productTypes: string[]
   vendors: string[]
   onChange: (patch: Partial<ProductDraft>) => void
   onRemove: () => void
 }
 
-function ProductCard({ draft, index, total, error, productTypes, vendors, onChange, onRemove }: CardProps) {
+function ProductCard({ draft, index, total, error, missingFields, productTypes, vendors, onChange, onRemove }: CardProps) {
   const shippingTier = useMemo(() => {
     const w = parseFloat(draft.width_cm)
     const h = parseFloat(draft.height_cm)
@@ -221,7 +251,9 @@ function ProductCard({ draft, index, total, error, productTypes, vendors, onChan
     return calculateShippingTier(w, h, d, wt)
   }, [draft.width_cm, draft.height_cm, draft.depth_cm, draft.weight_kg])
 
+  const missingSet = new Set(missingFields)
   const inputCls = 'w-full bg-surface border border-edge rounded-md px-3 py-2 text-sm text-primary placeholder:text-secondary/50 focus:outline-none focus:border-accent'
+  const inputErr = 'w-full bg-surface border border-fail rounded-md px-3 py-2 text-sm text-primary placeholder:text-secondary/50 focus:outline-none focus:border-fail'
   const labelCls = 'block text-xs font-medium text-secondary mb-1'
 
   return (
@@ -238,6 +270,12 @@ function ProductCard({ draft, index, total, error, productTypes, vendors, onChan
         )}
       </div>
 
+      {missingFields.length > 0 && (
+        <div className="bg-fail/10 border border-fail/25 text-fail rounded-md px-3 py-2 text-sm">
+          Missing required fields: {missingFields.join(', ')}
+        </div>
+      )}
+
       {error && (
         <div className="bg-fail/10 border border-fail/25 text-fail rounded-md px-3 py-2 text-sm">{error}</div>
       )}
@@ -252,7 +290,7 @@ function ProductCard({ draft, index, total, error, productTypes, vendors, onChan
           </div>
           <div>
             <label className={labelCls}>Title *</label>
-            <input className={inputCls} placeholder="e.g. Foster Xtra Single Upright Fridge" value={draft.title} onChange={(e) => onChange({ title: e.target.value })} />
+            <input className={missingSet.has('Title') ? inputErr : inputCls} placeholder="e.g. Foster Xtra Single Upright Fridge" value={draft.title} onChange={(e) => onChange({ title: e.target.value })} />
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -272,11 +310,11 @@ function ProductCard({ draft, index, total, error, productTypes, vendors, onChan
           </div>
           <div>
             <label className={labelCls}>Cost Price (£) *</label>
-            <input className={inputCls} type="number" step="0.01" min="0" placeholder="0.00" value={draft.cost_price} onChange={(e) => onChange({ cost_price: e.target.value })} />
+            <input className={missingSet.has('Cost Price') ? inputErr : inputCls} type="number" step="0.01" min="0" placeholder="0.00" value={draft.cost_price} onChange={(e) => onChange({ cost_price: e.target.value })} />
           </div>
           <div>
             <label className={labelCls}>Selling Price (£) *</label>
-            <input className={inputCls} type="number" step="0.01" min="0" placeholder="0.00" value={draft.selling_price} onChange={(e) => onChange({ selling_price: e.target.value })} />
+            <input className={missingSet.has('Selling Price') ? inputErr : inputCls} type="number" step="0.01" min="0" placeholder="0.00" value={draft.selling_price} onChange={(e) => onChange({ selling_price: e.target.value })} />
           </div>
         </div>
       </fieldset>
@@ -318,15 +356,15 @@ function ProductCard({ draft, index, total, error, productTypes, vendors, onChan
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
             <label className={labelCls}>Width (cm) *</label>
-            <input className={inputCls} type="number" step="0.1" min="0" placeholder="0" value={draft.width_cm} onChange={(e) => onChange({ width_cm: e.target.value })} />
+            <input className={missingSet.has('Width') ? inputErr : inputCls} type="number" step="0.1" min="0" placeholder="0" value={draft.width_cm} onChange={(e) => onChange({ width_cm: e.target.value })} />
           </div>
           <div>
             <label className={labelCls}>Height (cm) *</label>
-            <input className={inputCls} type="number" step="0.1" min="0" placeholder="0" value={draft.height_cm} onChange={(e) => onChange({ height_cm: e.target.value })} />
+            <input className={missingSet.has('Height') ? inputErr : inputCls} type="number" step="0.1" min="0" placeholder="0" value={draft.height_cm} onChange={(e) => onChange({ height_cm: e.target.value })} />
           </div>
           <div>
             <label className={labelCls}>Depth (cm) *</label>
-            <input className={inputCls} type="number" step="0.1" min="0" placeholder="0" value={draft.depth_cm} onChange={(e) => onChange({ depth_cm: e.target.value })} />
+            <input className={missingSet.has('Depth') ? inputErr : inputCls} type="number" step="0.1" min="0" placeholder="0" value={draft.depth_cm} onChange={(e) => onChange({ depth_cm: e.target.value })} />
           </div>
           <div>
             <label className={labelCls}>Weight (kg)</label>
@@ -350,7 +388,7 @@ function ProductCard({ draft, index, total, error, productTypes, vendors, onChan
           <div>
             <label className={labelCls}>Product Type *</label>
             <input
-              className={inputCls}
+              className={missingSet.has('Product Type') ? inputErr : inputCls}
               list={`product-types-${index}`}
               placeholder="e.g. Fridges"
               value={draft.product_type}
@@ -363,7 +401,7 @@ function ProductCard({ draft, index, total, error, productTypes, vendors, onChan
           <div>
             <label className={labelCls}>Vendor / Brand *</label>
             <input
-              className={inputCls}
+              className={missingSet.has('Vendor / Brand') ? inputErr : inputCls}
               list={`vendors-${index}`}
               placeholder="e.g. Foster"
               value={draft.vendor}
