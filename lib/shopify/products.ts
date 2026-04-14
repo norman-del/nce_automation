@@ -11,6 +11,9 @@ interface ShopifyVariantInput {
   taxable: boolean
   weight: number
   weight_unit: 'kg'
+  inventory_management: 'shopify'
+  inventory_policy: 'deny'
+  inventory_quantity?: number
 }
 
 interface ShopifyProductInput {
@@ -98,6 +101,9 @@ export async function createShopifyProduct(params: {
         taxable: vatApplicable, // charge tax only for 20% VAT, not margin scheme
         weight: shippingTier, // 0=Parcel, 1=Single Pallet, 2=Double Pallet
         weight_unit: 'kg',
+        inventory_management: 'shopify',
+        inventory_policy: 'deny',
+        inventory_quantity: 1, // NCE sells single-piece used equipment; seed 1 unit
       },
     ],
     metafields: [
@@ -212,6 +218,9 @@ export async function updateShopifyProduct(
       taxable: vatApplicable,
       weight: shippingTier,
       weight_unit: 'kg',
+      inventory_management: 'shopify',
+      inventory_policy: 'deny',
+      // no inventory_quantity — preserves current stock count on edits
     }]
   }
 
