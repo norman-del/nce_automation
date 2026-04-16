@@ -7,6 +7,8 @@ import { getPaymentDetails } from '@/lib/stripe/payment-details'
 import { getStaffUser } from '@/lib/auth/staff'
 import OrderStatusButtons from './OrderStatusButtons'
 import ShippingForm from './ShippingForm'
+import QboSyncPanel from './QboSyncPanel'
+import { isQboSalesSyncEnabled } from '@/lib/qbo/config'
 
 interface Address {
   name?: string
@@ -87,6 +89,26 @@ export default async function OrderDetailPage({
   const [order, staff] = await Promise.all([getOrder(id), getStaffUser()])
   if (!order) notFound()
   const canRefund = staff?.role === 'admin'
+  const isAdminUser = staff?.role === 'admin'
+
+  let qboSync: {
+    status: string
+    qbo_customer_id: string | null
+    qbo_invoice_id: string | null
+    qbo_payment_id: string | null
+    payload: unknown
+    error_message: string | null
+    synced_at: string | null
+  } | null = null
+  if (isAdminUser) {
+    const db = createServiceClient()
+    const { data } = await db
+      .from('order_qbo_sync')
+      .select('status, qbo_customer_id, qbo_invoice_id, qbo_payment_id, payload, error_message, synced_at')
+      .eq('order_id', order.id)
+      .single()
+    qboSync = data ?? null
+  }
 
   const s = statusStyles[order.status] ?? statusStyles.paid
   const date = new Date(order.created_at).toLocaleDateString('en-GB', {
@@ -218,6 +240,15 @@ export default async function OrderDetailPage({
             paymentIntentId={order.stripe_payment_intent_id}
             totalPence={order.total_pence}
           />
+
+          {/* QBO sync — admin only */}
+          {isAdminUser && (
+            <QboSyncPanel
+              orderId={order.id}
+              initial={qboSync}
+              syncEnabled={isQboSalesSyncEnabled()}
+            />
+          )}
 
           {/* Notes */}
           {order.notes && (

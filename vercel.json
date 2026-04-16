@@ -4,6 +4,14 @@
     {
       "path": "/api/cron/sync",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/supplier-feeds",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/order-qbo-sync",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

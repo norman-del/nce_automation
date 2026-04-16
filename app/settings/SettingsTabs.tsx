@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import PromotionsList from './PromotionsList'
 import ShippingRatesEditor from './ShippingRatesEditor'
 import CollectionsManager from './CollectionsManager'
+import SupplierFeedsManager from './SupplierFeedsManager'
 import SyncLogTable from './SyncLogTable'
 import AccountsModal from './AccountsModal'
 import DisconnectButton from './DisconnectButton'
@@ -44,6 +45,7 @@ const allTabs = [
   { key: 'promotions', label: 'Promotions', staffVisible: false },
   { key: 'shipping', label: 'Shipping Rates', staffVisible: false },
   { key: 'collections', label: 'Collections', staffVisible: false },
+  { key: 'supplier-feeds', label: 'Supplier Feeds', staffVisible: false },
   { key: 'activity', label: 'Activity Log', staffVisible: false },
 ] as const
 
@@ -102,6 +104,7 @@ export default function SettingsTabs({ shopify, qbo, logs, initialTab, staffRole
       {activeTab === 'promotions' && <PromotionsList />}
       {activeTab === 'shipping' && <ShippingRatesEditor />}
       {activeTab === 'collections' && <CollectionsManager />}
+      {activeTab === 'supplier-feeds' && <SupplierFeedsManager />}
       {activeTab === 'activity' && <SyncLogTable logs={logs} />}
     </div>
   )
