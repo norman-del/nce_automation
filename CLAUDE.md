@@ -29,6 +29,9 @@ Both Vercel and Supabase have CLIs installed. **Always use CLI commands via Bash
 - Already authenticated and linked to project `daesvkeogxuqlrskuwpg`
 - Example: `export PATH="$HOME/scoop/shims:$PATH" && supabase db query --linked "SELECT * FROM products LIMIT 5;"`
 
+## Lessons Learned
+Before touching production Shopify/QBO data or writing any remediation script, read `docs/lessons-learned.md`. It records past incidents and the standing rules we've adopted (dry-run defaults, owner-review gates, mandatory inventory field sets).
+
 ## Hard Rules
 - NEVER store tokens in plaintext — always encrypt with AES-256-GCM
 - NEVER create duplicate journal entries — always check payout.journal_entry_id first
@@ -228,6 +231,26 @@ approvalPolicy: options.approvalPolicy ?? (sandbox === "workspace-write" || sand
 (Apply to both `buildThreadParams` and `buildResumeParams`.)
 
 The root cause: `approvalPolicy: "never"` means the app server declines all tool calls. `on-request` + `danger-full-access` sandbox matches what `codex exec --dangerously-bypass-approvals-and-sandbox` does internally.
+
+## Claude Code — Windows quirks
+
+### context7 MCP server fails to start (Windows)
+The context7 plugin's `.mcp.json` ships with `command: "npx"`, which fails on Windows because Node's `child_process.spawn` doesn't auto-resolve `.cmd` files. Patched in two files — re-apply if plugin updates overwrite:
+
+- `~/.claude/plugins/cache/claude-plugins-official/context7/unknown/.mcp.json`
+- `~/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/context7/.mcp.json`
+
+```json
+{
+  "context7": {
+    "command": "cmd",
+    "args": ["/c", "npx", "-y", "@upstash/context7-mcp"]
+  }
+}
+```
+
+### `claude update` warns "C:\Users\norma\.local\bin is not in your PATH"
+Even when `.local\bin` is in the User PATH registry, the warning fires because `~/.claude/settings.json` injects a curated `env.PATH` for every Claude subprocess that didn't include it. Fix is to keep `/c/Users/norma/.local/bin` at the front of `env.PATH` in `~/.claude/settings.json`. Don't rely on the trailing `$PATH` — it doesn't expand for non-shell child processes.
 
 ## Shopify Replacement Strategy
 
