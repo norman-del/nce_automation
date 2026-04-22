@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import PromotionsList from './PromotionsList'
 import ShippingRatesEditor from './ShippingRatesEditor'
 import CollectionsManager from './CollectionsManager'
-import SpecsFieldsManager from './SpecsFieldsManager'
 import SupplierFeedsManager from './SupplierFeedsManager'
 import SyncLogTable from './SyncLogTable'
 import AccountsModal from './AccountsModal'
@@ -48,7 +47,6 @@ const allTabs = [
   { key: 'promotions', label: 'Promotions', staffVisible: false },
   { key: 'shipping', label: 'Shipping Rates', staffVisible: false },
   { key: 'collections', label: 'Collections', staffVisible: false },
-  { key: 'specs-fields', label: 'Specs Fields', staffVisible: false },
   { key: 'supplier-feeds', label: 'Supplier Feeds', staffVisible: false },
   { key: 'activity', label: 'Activity Log', staffVisible: false },
 ] as const
@@ -127,7 +125,6 @@ export default function SettingsTabs({ shopify, qbo, logs, initialTab, staffRole
       {activeTab === 'promotions' && <PromotionsList />}
       {activeTab === 'shipping' && <ShippingRatesEditor />}
       {activeTab === 'collections' && <CollectionsManager />}
-      {activeTab === 'specs-fields' && <SpecsFieldsManager />}
       {activeTab === 'supplier-feeds' && <SupplierFeedsManager />}
       {activeTab === 'activity' && <SyncLogTable logs={logs} />}
     </div>
