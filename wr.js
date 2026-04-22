@@ -1,0 +1,1 @@
+var fs=require('fs');var t=[];t.push('test');fs.writeFileSync('C:/Users/norma/nce_automation/mobile_codex_task.json',JON.stringify(t.join('\n')));console.log('ok');

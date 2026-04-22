@@ -1,0 +1,3 @@
+product_id,sku,title,vat_applicable,qbo_item_id,current_sale,expected_sale,current_purch,expected_purch,sale_wrong,purch_wrong
+1de94e22-24ed-4878-8ab2-a0ff80b8a64b,6410,Blueseal GT46 Twin Tank Natural Gas Fryer With New Baskets,false,6524,20,18,20,9,true,true
+e3e30a2e-74dc-4cb8-b419-4bf88d7aa0d6,6396,Polar Ice Machine,false,6510,18,18,20,9,false,true

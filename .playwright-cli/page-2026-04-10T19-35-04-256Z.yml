@@ -1,0 +1,52 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - heading "NCE Operations" [level=1] [ref=e4]
+    - main [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e8]:
+          - heading "Orders" [level=2] [ref=e9]
+          - paragraph [ref=e10]: Manage customer orders
+        - generic [ref=e11]:
+          - link "All" [ref=e12] [cursor=pointer]:
+            - /url: /orders
+          - link "Paid" [ref=e13] [cursor=pointer]:
+            - /url: /orders?status=paid
+          - link "Processing" [ref=e14] [cursor=pointer]:
+            - /url: /orders?status=processing
+          - link "Shipped" [ref=e15] [cursor=pointer]:
+            - /url: /orders?status=shipped
+          - link "Delivered" [ref=e16] [cursor=pointer]:
+            - /url: /orders?status=delivered
+          - link "Cancelled" [ref=e17] [cursor=pointer]:
+            - /url: /orders?status=cancelled
+          - link "Refunded" [ref=e18] [cursor=pointer]:
+            - /url: /orders?status=refunded
+        - generic [ref=e19]:
+          - textbox "Search by order number or email" [ref=e20]
+          - button "Search" [ref=e21]
+        - generic [ref=e22]: No orders yet.
+    - navigation [ref=e23]:
+      - link "Orders" [ref=e24] [cursor=pointer]:
+        - /url: /orders
+        - img [ref=e25]
+        - generic [ref=e27]: Orders
+      - link "Products" [ref=e28] [cursor=pointer]:
+        - /url: /products
+        - img [ref=e29]
+        - generic [ref=e31]: Products
+      - link "Dashboard" [ref=e32] [cursor=pointer]:
+        - /url: /
+        - img [ref=e33]
+        - generic [ref=e35]: Dashboard
+      - link "Customers" [ref=e36] [cursor=pointer]:
+        - /url: /customers
+        - img [ref=e37]
+        - generic [ref=e39]: Customers
+      - link "Settings" [ref=e40] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e41]
+        - generic [ref=e44]: Settings
+  - button "Open Next.js Dev Tools" [ref=e50] [cursor=pointer]:
+    - img [ref=e51]
+  - alert [ref=e54]

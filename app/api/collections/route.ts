@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
     // Full list for management UI
     const { data, error } = await db
       .from('collections')
-      .select('id, shopify_id, handle, title, description, collection_type, sort_order')
+      .select('id, shopify_id, handle, title, description, collection_type, sort_order, display_order, image_url')
+      .order('display_order')
       .order('title')
 
     if (error) {

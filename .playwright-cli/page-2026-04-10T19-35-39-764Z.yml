@@ -1,0 +1,118 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - heading "NCE Operations" [level=1] [ref=e5]
+      - navigation [ref=e6]:
+        - generic [ref=e7]:
+          - link "Dashboard" [ref=e8] [cursor=pointer]:
+            - /url: /
+          - link "Orders" [ref=e9] [cursor=pointer]:
+            - /url: /orders
+          - link "Products" [ref=e10] [cursor=pointer]:
+            - /url: /products
+          - link "Customers" [ref=e11] [cursor=pointer]:
+            - /url: /customers
+          - link "Finance" [ref=e12] [cursor=pointer]:
+            - /url: /finance
+          - link "Settings" [ref=e13] [cursor=pointer]:
+            - /url: /settings
+        - generic [ref=e14]:
+          - paragraph [ref=e15]: Normanadmin
+          - button "Sign out" [ref=e16]
+      - paragraph [ref=e18]: NCE Equipment
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - heading "Dashboard" [level=2] [ref=e22]
+          - paragraph [ref=e23]: Shopify payout sync — this month
+        - generic [ref=e24]:
+          - link "Payouts this month 4 View all payouts this month" [ref=e25] [cursor=pointer]:
+            - /url: /finance
+            - paragraph [ref=e26]: Payouts this month
+            - paragraph [ref=e27]: "4"
+            - paragraph [ref=e28]: View all payouts this month
+          - link "Fees recorded £50.05 Shopify processing fees" [ref=e29] [cursor=pointer]:
+            - /url: /finance
+            - paragraph [ref=e30]: Fees recorded
+            - paragraph [ref=e31]: £50.05
+            - paragraph [ref=e32]: Shopify processing fees
+          - link "Payments applied £4003.85 Gross amounts posted to QBO" [ref=e33] [cursor=pointer]:
+            - /url: /finance
+            - paragraph [ref=e34]: Payments applied
+            - paragraph [ref=e35]: £4003.85
+            - paragraph [ref=e36]: Gross amounts posted to QBO
+          - link "Needs attention 49 Pending + error payouts — click to view" [ref=e37] [cursor=pointer]:
+            - /url: /finance?filter=attention
+            - paragraph [ref=e38]: Needs attention
+            - paragraph [ref=e39]: "49"
+            - paragraph [ref=e40]: Pending + error payouts — click to view
+        - generic [ref=e41]:
+          - paragraph [ref=e42]: Fees per payout — last 30 days
+          - paragraph [ref=e43]: Spot unusually high fee days at a glance
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - paragraph [ref=e47]: Recent payouts
+            - link "View all →" [ref=e48] [cursor=pointer]:
+              - /url: /finance
+          - table [ref=e50]:
+            - rowgroup [ref=e51]:
+              - row "Date Gross Fees Net Status" [ref=e52]:
+                - columnheader "Date" [ref=e53]
+                - columnheader "Gross" [ref=e54]
+                - columnheader "Fees" [ref=e55]
+                - columnheader "Net" [ref=e56]
+                - columnheader "Status" [ref=e57]
+                - columnheader [ref=e58]
+            - rowgroup [ref=e59]:
+              - row "2026-04-09 — — £1718.80 Synced View →" [ref=e60]:
+                - cell "2026-04-09" [ref=e61]
+                - cell "—" [ref=e62]
+                - cell "—" [ref=e63]
+                - cell "£1718.80" [ref=e64]
+                - cell "Synced" [ref=e65]:
+                  - generic [ref=e66]: Synced
+                - cell "View →" [ref=e67]:
+                  - link "View →" [ref=e68] [cursor=pointer]:
+                    - /url: /finance/d05be549-70b5-4efd-b7b8-8c46668e72a0
+              - row "2026-04-08 — — £266.22 Synced View →" [ref=e69]:
+                - cell "2026-04-08" [ref=e70]
+                - cell "—" [ref=e71]
+                - cell "—" [ref=e72]
+                - cell "£266.22" [ref=e73]
+                - cell "Synced" [ref=e74]:
+                  - generic [ref=e75]: Synced
+                - cell "View →" [ref=e76]:
+                  - link "View →" [ref=e77] [cursor=pointer]:
+                    - /url: /finance/4be15675-c59c-4bad-b991-b6d11ccdb068
+              - row "2026-04-02 £511.00 £10.47 £500.53 Synced View →" [ref=e78]:
+                - cell "2026-04-02" [ref=e79]
+                - cell "£511.00" [ref=e80]
+                - cell "£10.47" [ref=e81]
+                - cell "£500.53" [ref=e82]
+                - cell "Synced" [ref=e83]:
+                  - generic [ref=e84]: Synced
+                - cell "View →" [ref=e85]:
+                  - link "View →" [ref=e86] [cursor=pointer]:
+                    - /url: /finance/4e26d73d-88d4-4ec6-ab4c-0c891da40ce7
+              - row "2026-04-01 £1462.95 £39.58 £1423.37 Synced View →" [ref=e87]:
+                - cell "2026-04-01" [ref=e88]
+                - cell "£1462.95" [ref=e89]
+                - cell "£39.58" [ref=e90]
+                - cell "£1423.37" [ref=e91]
+                - cell "Synced" [ref=e92]:
+                  - generic [ref=e93]: Synced
+                - cell "View →" [ref=e94]:
+                  - link "View →" [ref=e95] [cursor=pointer]:
+                    - /url: /finance/8b2f0e77-0329-4409-aa1c-fa6965235750
+              - row "2026-03-30 £853.55 £18.98 £834.57 Synced View →" [ref=e96]:
+                - cell "2026-03-30" [ref=e97]
+                - cell "£853.55" [ref=e98]
+                - cell "£18.98" [ref=e99]
+                - cell "£834.57" [ref=e100]
+                - cell "Synced" [ref=e101]:
+                  - generic [ref=e102]: Synced
+                - cell "View →" [ref=e103]:
+                  - link "View →" [ref=e104] [cursor=pointer]:
+                    - /url: /finance/85363ad3-52f7-47f4-824f-ef4c477aef3a
+  - button "Open Next.js Dev Tools" [ref=e110] [cursor=pointer]:
+    - img [ref=e111]

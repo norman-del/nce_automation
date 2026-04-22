@@ -1,0 +1,549 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - heading "NCE Operations" [level=1] [ref=e5]
+      - navigation [ref=e6]:
+        - generic [ref=e7]:
+          - link "Dashboard" [ref=e8] [cursor=pointer]:
+            - /url: /
+          - link "Orders" [ref=e9] [cursor=pointer]:
+            - /url: /orders
+          - link "Products" [ref=e10] [cursor=pointer]:
+            - /url: /products
+          - link "Customers" [ref=e11] [cursor=pointer]:
+            - /url: /customers
+          - link "Finance" [ref=e12] [cursor=pointer]:
+            - /url: /finance
+          - link "Settings" [ref=e13] [cursor=pointer]:
+            - /url: /settings
+        - generic [ref=e14]:
+          - paragraph [ref=e15]: Normanadmin
+          - button "Sign out" [ref=e16]
+      - paragraph [ref=e18]: NCE Equipment
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - heading "Finance" [level=2] [ref=e23]
+            - paragraph [ref=e24]: Payout reconciliation and fee sync
+          - button "Sync Payouts" [ref=e26]
+        - generic [ref=e27]:
+          - link "All" [ref=e28] [cursor=pointer]:
+            - /url: /finance
+          - link "⚠ Needs attention" [ref=e29] [cursor=pointer]:
+            - /url: /finance?filter=attention
+        - generic [ref=e30]:
+          - textbox "Search by order number e.g. NCE1580" [ref=e31]
+          - button "Search" [ref=e32]
+        - table [ref=e35]:
+          - rowgroup [ref=e36]:
+            - row "Date Gross Fees Net Status" [ref=e37]:
+              - columnheader "Date" [ref=e38]
+              - columnheader "Gross" [ref=e39]
+              - columnheader "Fees" [ref=e40]
+              - columnheader "Net" [ref=e41]
+              - columnheader "Status" [ref=e42]
+              - columnheader [ref=e43]
+          - rowgroup [ref=e44]:
+            - row "2026-04-09 — — £1718.80 Synced View →" [ref=e45]:
+              - cell "2026-04-09" [ref=e46]
+              - cell "—" [ref=e47]
+              - cell "—" [ref=e48]
+              - cell "£1718.80" [ref=e49]
+              - cell "Synced" [ref=e50]:
+                - generic [ref=e51]: Synced
+              - cell "View →" [ref=e52]:
+                - link "View →" [ref=e53] [cursor=pointer]:
+                  - /url: /finance/d05be549-70b5-4efd-b7b8-8c46668e72a0
+            - row "2026-04-08 — — £266.22 Synced View →" [ref=e54]:
+              - cell "2026-04-08" [ref=e55]
+              - cell "—" [ref=e56]
+              - cell "—" [ref=e57]
+              - cell "£266.22" [ref=e58]
+              - cell "Synced" [ref=e59]:
+                - generic [ref=e60]: Synced
+              - cell "View →" [ref=e61]:
+                - link "View →" [ref=e62] [cursor=pointer]:
+                  - /url: /finance/4be15675-c59c-4bad-b991-b6d11ccdb068
+            - row "2026-04-02 £511.00 £10.47 £500.53 Synced View →" [ref=e63]:
+              - cell "2026-04-02" [ref=e64]
+              - cell "£511.00" [ref=e65]
+              - cell "£10.47" [ref=e66]
+              - cell "£500.53" [ref=e67]
+              - cell "Synced" [ref=e68]:
+                - generic [ref=e69]: Synced
+              - cell "View →" [ref=e70]:
+                - link "View →" [ref=e71] [cursor=pointer]:
+                  - /url: /finance/4e26d73d-88d4-4ec6-ab4c-0c891da40ce7
+            - row "2026-04-01 £1462.95 £39.58 £1423.37 Synced View →" [ref=e72]:
+              - cell "2026-04-01" [ref=e73]
+              - cell "£1462.95" [ref=e74]
+              - cell "£39.58" [ref=e75]
+              - cell "£1423.37" [ref=e76]
+              - cell "Synced" [ref=e77]:
+                - generic [ref=e78]: Synced
+              - cell "View →" [ref=e79]:
+                - link "View →" [ref=e80] [cursor=pointer]:
+                  - /url: /finance/8b2f0e77-0329-4409-aa1c-fa6965235750
+            - row "2026-03-30 £853.55 £18.98 £834.57 Synced View →" [ref=e81]:
+              - cell "2026-03-30" [ref=e82]
+              - cell "£853.55" [ref=e83]
+              - cell "£18.98" [ref=e84]
+              - cell "£834.57" [ref=e85]
+              - cell "Synced" [ref=e86]:
+                - generic [ref=e87]: Synced
+              - cell "View →" [ref=e88]:
+                - link "View →" [ref=e89] [cursor=pointer]:
+                  - /url: /finance/85363ad3-52f7-47f4-824f-ef4c477aef3a
+            - row "2026-03-27 £36.80 £0.99 £35.81 Synced View →" [ref=e90]:
+              - cell "2026-03-27" [ref=e91]
+              - cell "£36.80" [ref=e92]
+              - cell "£0.99" [ref=e93]
+              - cell "£35.81" [ref=e94]
+              - cell "Synced" [ref=e95]:
+                - generic [ref=e96]: Synced
+              - cell "View →" [ref=e97]:
+                - link "View →" [ref=e98] [cursor=pointer]:
+                  - /url: /finance/d0e18849-6967-4c00-a48b-1a6e963dcd0b
+            - row "2026-03-26 £747.95 £16.87 £315.13 Pending View →" [ref=e99]:
+              - cell "2026-03-26" [ref=e100]
+              - cell "£747.95" [ref=e101]
+              - cell "£16.87" [ref=e102]
+              - cell "£315.13" [ref=e103]
+              - cell "Pending" [ref=e104]:
+                - generic [ref=e105]: Pending
+              - cell "View →" [ref=e106]:
+                - link "View →" [ref=e107] [cursor=pointer]:
+                  - /url: /finance/bafd6954-846a-43d5-9103-141510b4dad1
+            - row "2026-03-25 £2445.35 £55.46 £2389.89 Pending View →" [ref=e108]:
+              - cell "2026-03-25" [ref=e109]
+              - cell "£2445.35" [ref=e110]
+              - cell "£55.46" [ref=e111]
+              - cell "£2389.89" [ref=e112]
+              - cell "Pending" [ref=e113]:
+                - generic [ref=e114]: Pending
+              - cell "View →" [ref=e115]:
+                - link "View →" [ref=e116] [cursor=pointer]:
+                  - /url: /finance/7e30056d-5016-425a-a254-588905e99bf1
+            - row "2026-03-24 £485.00 £9.95 £475.05 Pending View →" [ref=e117]:
+              - cell "2026-03-24" [ref=e118]
+              - cell "£485.00" [ref=e119]
+              - cell "£9.95" [ref=e120]
+              - cell "£475.05" [ref=e121]
+              - cell "Pending" [ref=e122]:
+                - generic [ref=e123]: Pending
+              - cell "View →" [ref=e124]:
+                - link "View →" [ref=e125] [cursor=pointer]:
+                  - /url: /finance/493c10ae-567d-40cd-af4d-e890afcdaf28
+            - row "2026-03-23 £75.00 £1.75 £73.25 Pending View →" [ref=e126]:
+              - cell "2026-03-23" [ref=e127]
+              - cell "£75.00" [ref=e128]
+              - cell "£1.75" [ref=e129]
+              - cell "£73.25" [ref=e130]
+              - cell "Pending" [ref=e131]:
+                - generic [ref=e132]: Pending
+              - cell "View →" [ref=e133]:
+                - link "View →" [ref=e134] [cursor=pointer]:
+                  - /url: /finance/c1a23d21-e606-4c56-82f2-4018120e5b5f
+            - row "2026-03-20 £360.00 £7.45 £352.55 Pending View →" [ref=e135]:
+              - cell "2026-03-20" [ref=e136]
+              - cell "£360.00" [ref=e137]
+              - cell "£7.45" [ref=e138]
+              - cell "£352.55" [ref=e139]
+              - cell "Pending" [ref=e140]:
+                - generic [ref=e141]: Pending
+              - cell "View →" [ref=e142]:
+                - link "View →" [ref=e143] [cursor=pointer]:
+                  - /url: /finance/2682bfe4-d6bc-4fec-9cc8-58efc583843b
+            - row "2026-03-19 £2530.95 £57.32 £2473.63 Pending View →" [ref=e144]:
+              - cell "2026-03-19" [ref=e145]
+              - cell "£2530.95" [ref=e146]
+              - cell "£57.32" [ref=e147]
+              - cell "£2473.63" [ref=e148]
+              - cell "Pending" [ref=e149]:
+                - generic [ref=e150]: Pending
+              - cell "View →" [ref=e151]:
+                - link "View →" [ref=e152] [cursor=pointer]:
+                  - /url: /finance/bbd73a41-faea-4cf1-b5ab-637bd0949ad4
+            - row "2026-03-18 £2216.95 £57.69 £2159.26 Pending View →" [ref=e153]:
+              - cell "2026-03-18" [ref=e154]
+              - cell "£2216.95" [ref=e155]
+              - cell "£57.69" [ref=e156]
+              - cell "£2159.26" [ref=e157]
+              - cell "Pending" [ref=e158]:
+                - generic [ref=e159]: Pending
+              - cell "View →" [ref=e160]:
+                - link "View →" [ref=e161] [cursor=pointer]:
+                  - /url: /finance/2dd18cee-6d50-45c4-9997-4d12f806b1de
+            - row "2026-03-17 £86.95 £1.99 £84.96 Pending View →" [ref=e162]:
+              - cell "2026-03-17" [ref=e163]
+              - cell "£86.95" [ref=e164]
+              - cell "£1.99" [ref=e165]
+              - cell "£84.96" [ref=e166]
+              - cell "Pending" [ref=e167]:
+                - generic [ref=e168]: Pending
+              - cell "View →" [ref=e169]:
+                - link "View →" [ref=e170] [cursor=pointer]:
+                  - /url: /finance/c091cb15-e9a6-4a32-bd81-e5cd6432a633
+            - row "2026-03-13 £1337.80 £27.26 £1310.54 Pending View →" [ref=e171]:
+              - cell "2026-03-13" [ref=e172]
+              - cell "£1337.80" [ref=e173]
+              - cell "£27.26" [ref=e174]
+              - cell "£1310.54" [ref=e175]
+              - cell "Pending" [ref=e176]:
+                - generic [ref=e177]: Pending
+              - cell "View →" [ref=e178]:
+                - link "View →" [ref=e179] [cursor=pointer]:
+                  - /url: /finance/13a694fe-dc28-4716-93dd-17290c8b092b
+            - row "2026-03-12 £1128.65 £23.32 £1105.33 Pending View →" [ref=e180]:
+              - cell "2026-03-12" [ref=e181]
+              - cell "£1128.65" [ref=e182]
+              - cell "£23.32" [ref=e183]
+              - cell "£1105.33" [ref=e184]
+              - cell "Pending" [ref=e185]:
+                - generic [ref=e186]: Pending
+              - cell "View →" [ref=e187]:
+                - link "View →" [ref=e188] [cursor=pointer]:
+                  - /url: /finance/83d4db5f-d79e-453d-b1df-5a63e2dfadbc
+            - row "2026-03-11 £4649.90 £94.25 £4555.65 Pending View →" [ref=e189]:
+              - cell "2026-03-11" [ref=e190]
+              - cell "£4649.90" [ref=e191]
+              - cell "£94.25" [ref=e192]
+              - cell "£4555.65" [ref=e193]
+              - cell "Pending" [ref=e194]:
+                - generic [ref=e195]: Pending
+              - cell "View →" [ref=e196]:
+                - link "View →" [ref=e197] [cursor=pointer]:
+                  - /url: /finance/982ca8da-0d03-4682-800c-997d5079796f
+            - row "2026-03-10 £522.00 £10.69 £511.31 Pending View →" [ref=e198]:
+              - cell "2026-03-10" [ref=e199]
+              - cell "£522.00" [ref=e200]
+              - cell "£10.69" [ref=e201]
+              - cell "£511.31" [ref=e202]
+              - cell "Pending" [ref=e203]:
+                - generic [ref=e204]: Pending
+              - cell "View →" [ref=e205]:
+                - link "View →" [ref=e206] [cursor=pointer]:
+                  - /url: /finance/2a7df3d5-bdbb-459e-9ee3-bb802750acdd
+            - row "2026-03-09 £805.00 £16.85 £788.15 Pending View →" [ref=e207]:
+              - cell "2026-03-09" [ref=e208]
+              - cell "£805.00" [ref=e209]
+              - cell "£16.85" [ref=e210]
+              - cell "£788.15" [ref=e211]
+              - cell "Pending" [ref=e212]:
+                - generic [ref=e213]: Pending
+              - cell "View →" [ref=e214]:
+                - link "View →" [ref=e215] [cursor=pointer]:
+                  - /url: /finance/2ae8315b-0382-460b-a03e-9abe326f77d7
+            - row "2026-03-06 £97.95 £2.21 £95.74 Pending View →" [ref=e216]:
+              - cell "2026-03-06" [ref=e217]
+              - cell "£97.95" [ref=e218]
+              - cell "£2.21" [ref=e219]
+              - cell "£95.74" [ref=e220]
+              - cell "Pending" [ref=e221]:
+                - generic [ref=e222]: Pending
+              - cell "View →" [ref=e223]:
+                - link "View →" [ref=e224] [cursor=pointer]:
+                  - /url: /finance/9e64ffec-cc3e-4248-9509-74202e91b41d
+            - row "2026-03-05 £795.00 £24.90 £770.10 Pending View →" [ref=e225]:
+              - cell "2026-03-05" [ref=e226]
+              - cell "£795.00" [ref=e227]
+              - cell "£24.90" [ref=e228]
+              - cell "£770.10" [ref=e229]
+              - cell "Pending" [ref=e230]:
+                - generic [ref=e231]: Pending
+              - cell "View →" [ref=e232]:
+                - link "View →" [ref=e233] [cursor=pointer]:
+                  - /url: /finance/3cba290f-40f1-43f4-9c08-a507c52469b4
+            - row "2026-03-04 £127.95 £2.81 £125.14 Pending View →" [ref=e234]:
+              - cell "2026-03-04" [ref=e235]
+              - cell "£127.95" [ref=e236]
+              - cell "£2.81" [ref=e237]
+              - cell "£125.14" [ref=e238]
+              - cell "Pending" [ref=e239]:
+                - generic [ref=e240]: Pending
+              - cell "View →" [ref=e241]:
+                - link "View →" [ref=e242] [cursor=pointer]:
+                  - /url: /finance/29352cb9-bea1-42ea-8693-d80e5207e3bb
+            - row "2026-03-03 £1215.00 £24.55 £1190.45 Pending View →" [ref=e243]:
+              - cell "2026-03-03" [ref=e244]
+              - cell "£1215.00" [ref=e245]
+              - cell "£24.55" [ref=e246]
+              - cell "£1190.45" [ref=e247]
+              - cell "Pending" [ref=e248]:
+                - generic [ref=e249]: Pending
+              - cell "View →" [ref=e250]:
+                - link "View →" [ref=e251] [cursor=pointer]:
+                  - /url: /finance/e6b4ba0a-c7ed-4e76-a187-4194d4d48c5d
+            - row "2026-03-02 £315.90 £6.82 £309.08 Pending View →" [ref=e252]:
+              - cell "2026-03-02" [ref=e253]
+              - cell "£315.90" [ref=e254]
+              - cell "£6.82" [ref=e255]
+              - cell "£309.08" [ref=e256]
+              - cell "Pending" [ref=e257]:
+                - generic [ref=e258]: Pending
+              - cell "View →" [ref=e259]:
+                - link "View →" [ref=e260] [cursor=pointer]:
+                  - /url: /finance/bd374adf-4b26-4dac-aba7-54a37012ec01
+            - row "2026-02-27 £802.95 £16.31 £786.64 Pending View →" [ref=e261]:
+              - cell "2026-02-27" [ref=e262]
+              - cell "£802.95" [ref=e263]
+              - cell "£16.31" [ref=e264]
+              - cell "£786.64" [ref=e265]
+              - cell "Pending" [ref=e266]:
+                - generic [ref=e267]: Pending
+              - cell "View →" [ref=e268]:
+                - link "View →" [ref=e269] [cursor=pointer]:
+                  - /url: /finance/d2090c08-0be5-4798-bddf-2b100df44ef1
+            - row "2026-02-26 £1215.00 £24.55 £1190.45 Pending View →" [ref=e270]:
+              - cell "2026-02-26" [ref=e271]
+              - cell "£1215.00" [ref=e272]
+              - cell "£24.55" [ref=e273]
+              - cell "£1190.45" [ref=e274]
+              - cell "Pending" [ref=e275]:
+                - generic [ref=e276]: Pending
+              - cell "View →" [ref=e277]:
+                - link "View →" [ref=e278] [cursor=pointer]:
+                  - /url: /finance/03707a20-041c-4647-b9ea-1b32b17e98b0
+            - row "2026-02-25 £670.00 £13.65 £656.35 Pending View →" [ref=e279]:
+              - cell "2026-02-25" [ref=e280]
+              - cell "£670.00" [ref=e281]
+              - cell "£13.65" [ref=e282]
+              - cell "£656.35" [ref=e283]
+              - cell "Pending" [ref=e284]:
+                - generic [ref=e285]: Pending
+              - cell "View →" [ref=e286]:
+                - link "View →" [ref=e287] [cursor=pointer]:
+                  - /url: /finance/02767418-ca63-429f-a48f-12d9e5da2822
+            - row "2026-02-24 £900.00 £18.25 £881.75 Pending View →" [ref=e288]:
+              - cell "2026-02-24" [ref=e289]
+              - cell "£900.00" [ref=e290]
+              - cell "£18.25" [ref=e291]
+              - cell "£881.75" [ref=e292]
+              - cell "Pending" [ref=e293]:
+                - generic [ref=e294]: Pending
+              - cell "View →" [ref=e295]:
+                - link "View →" [ref=e296] [cursor=pointer]:
+                  - /url: /finance/2edd6d03-0920-4e7b-bfd2-9e41aa3a26ee
+            - row "2026-02-23 £725.90 £15.27 £710.63 Pending View →" [ref=e297]:
+              - cell "2026-02-23" [ref=e298]
+              - cell "£725.90" [ref=e299]
+              - cell "£15.27" [ref=e300]
+              - cell "£710.63" [ref=e301]
+              - cell "Pending" [ref=e302]:
+                - generic [ref=e303]: Pending
+              - cell "View →" [ref=e304]:
+                - link "View →" [ref=e305] [cursor=pointer]:
+                  - /url: /finance/51c54319-b5d2-43fe-b2c1-4df035a71b74
+            - row "2026-02-20 £1267.95 £25.86 £1242.09 Pending View →" [ref=e306]:
+              - cell "2026-02-20" [ref=e307]
+              - cell "£1267.95" [ref=e308]
+              - cell "£25.86" [ref=e309]
+              - cell "£1242.09" [ref=e310]
+              - cell "Pending" [ref=e311]:
+                - generic [ref=e312]: Pending
+              - cell "View →" [ref=e313]:
+                - link "View →" [ref=e314] [cursor=pointer]:
+                  - /url: /finance/586ffbf2-18e3-4a09-ad7d-fd6279d48b37
+            - row "2026-02-19 £36.95 £0.99 £35.96 Pending View →" [ref=e315]:
+              - cell "2026-02-19" [ref=e316]
+              - cell "£36.95" [ref=e317]
+              - cell "£0.99" [ref=e318]
+              - cell "£35.96" [ref=e319]
+              - cell "Pending" [ref=e320]:
+                - generic [ref=e321]: Pending
+              - cell "View →" [ref=e322]:
+                - link "View →" [ref=e323] [cursor=pointer]:
+                  - /url: /finance/ebc580ef-2406-4655-a9c8-94d7fc57253f
+            - row "2026-02-18 £484.95 £10.20 £474.75 Pending View →" [ref=e324]:
+              - cell "2026-02-18" [ref=e325]
+              - cell "£484.95" [ref=e326]
+              - cell "£10.20" [ref=e327]
+              - cell "£474.75" [ref=e328]
+              - cell "Pending" [ref=e329]:
+                - generic [ref=e330]: Pending
+              - cell "View →" [ref=e331]:
+                - link "View →" [ref=e332] [cursor=pointer]:
+                  - /url: /finance/4239f6e6-8943-4092-ab5a-5733004d14cd
+            - row "2026-02-17 £3385.00 £76.10 £3308.90 Pending View →" [ref=e333]:
+              - cell "2026-02-17" [ref=e334]
+              - cell "£3385.00" [ref=e335]
+              - cell "£76.10" [ref=e336]
+              - cell "£3308.90" [ref=e337]
+              - cell "Pending" [ref=e338]:
+                - generic [ref=e339]: Pending
+              - cell "View →" [ref=e340]:
+                - link "View →" [ref=e341] [cursor=pointer]:
+                  - /url: /finance/fd03e785-fedc-458d-aa0a-abbd04eee16d
+            - row "2026-02-16 £370.00 £7.65 £362.35 Pending View →" [ref=e342]:
+              - cell "2026-02-16" [ref=e343]
+              - cell "£370.00" [ref=e344]
+              - cell "£7.65" [ref=e345]
+              - cell "£362.35" [ref=e346]
+              - cell "Pending" [ref=e347]:
+                - generic [ref=e348]: Pending
+              - cell "View →" [ref=e349]:
+                - link "View →" [ref=e350] [cursor=pointer]:
+                  - /url: /finance/7d31189e-25be-46c7-9822-d73c82221feb
+            - row "2026-02-12 £765.00 £15.80 £749.20 Pending View →" [ref=e351]:
+              - cell "2026-02-12" [ref=e352]
+              - cell "£765.00" [ref=e353]
+              - cell "£15.80" [ref=e354]
+              - cell "£749.20" [ref=e355]
+              - cell "Pending" [ref=e356]:
+                - generic [ref=e357]: Pending
+              - cell "View →" [ref=e358]:
+                - link "View →" [ref=e359] [cursor=pointer]:
+                  - /url: /finance/3dbefd84-5903-4534-83d4-0ee92727fbb4
+            - row "2026-02-11 £317.85 £7.11 £310.74 Pending View →" [ref=e360]:
+              - cell "2026-02-11" [ref=e361]
+              - cell "£317.85" [ref=e362]
+              - cell "£7.11" [ref=e363]
+              - cell "£310.74" [ref=e364]
+              - cell "Pending" [ref=e365]:
+                - generic [ref=e366]: Pending
+              - cell "View →" [ref=e367]:
+                - link "View →" [ref=e368] [cursor=pointer]:
+                  - /url: /finance/f6d82e96-6621-4fcd-85d9-b59106156430
+            - row "2026-02-10 £1750.00 £46.78 £1703.22 Pending View →" [ref=e369]:
+              - cell "2026-02-10" [ref=e370]
+              - cell "£1750.00" [ref=e371]
+              - cell "£46.78" [ref=e372]
+              - cell "£1703.22" [ref=e373]
+              - cell "Pending" [ref=e374]:
+                - generic [ref=e375]: Pending
+              - cell "View →" [ref=e376]:
+                - link "View →" [ref=e377] [cursor=pointer]:
+                  - /url: /finance/e075ae7f-948c-4536-867b-37db8cce2886
+            - row "2026-02-05 £609.95 £12.70 £597.25 Pending View →" [ref=e378]:
+              - cell "2026-02-05" [ref=e379]
+              - cell "£609.95" [ref=e380]
+              - cell "£12.70" [ref=e381]
+              - cell "£597.25" [ref=e382]
+              - cell "Pending" [ref=e383]:
+                - generic [ref=e384]: Pending
+              - cell "View →" [ref=e385]:
+                - link "View →" [ref=e386] [cursor=pointer]:
+                  - /url: /finance/1ed5a35c-9fa7-493e-9171-d0d3c884a51a
+            - row "2026-02-04 £547.70 £12.21 £535.49 Pending View →" [ref=e387]:
+              - cell "2026-02-04" [ref=e388]
+              - cell "£547.70" [ref=e389]
+              - cell "£12.21" [ref=e390]
+              - cell "£535.49" [ref=e391]
+              - cell "Pending" [ref=e392]:
+                - generic [ref=e393]: Pending
+              - cell "View →" [ref=e394]:
+                - link "View →" [ref=e395] [cursor=pointer]:
+                  - /url: /finance/9d7b3dee-92b7-48fd-8a9f-d7535b507cdb
+            - row "2026-02-03 £1173.75 £35.68 £1002.98 Pending View →" [ref=e396]:
+              - cell "2026-02-03" [ref=e397]
+              - cell "£1173.75" [ref=e398]
+              - cell "£35.68" [ref=e399]
+              - cell "£1002.98" [ref=e400]
+              - cell "Pending" [ref=e401]:
+                - generic [ref=e402]: Pending
+              - cell "View →" [ref=e403]:
+                - link "View →" [ref=e404] [cursor=pointer]:
+                  - /url: /finance/6d7e9c22-ff26-4894-8e92-cb39a26c090f
+            - row "2026-01-29 £181.75 £4.39 £177.36 Pending View →" [ref=e405]:
+              - cell "2026-01-29" [ref=e406]
+              - cell "£181.75" [ref=e407]
+              - cell "£4.39" [ref=e408]
+              - cell "£177.36" [ref=e409]
+              - cell "Pending" [ref=e410]:
+                - generic [ref=e411]: Pending
+              - cell "View →" [ref=e412]:
+                - link "View →" [ref=e413] [cursor=pointer]:
+                  - /url: /finance/6656c5e2-16c0-4e01-a9f5-f0c0fcf41988
+            - row "2026-01-28 £79.25 £2.59 £76.66 Pending View →" [ref=e414]:
+              - cell "2026-01-28" [ref=e415]
+              - cell "£79.25" [ref=e416]
+              - cell "£2.59" [ref=e417]
+              - cell "£76.66" [ref=e418]
+              - cell "Pending" [ref=e419]:
+                - generic [ref=e420]: Pending
+              - cell "View →" [ref=e421]:
+                - link "View →" [ref=e422] [cursor=pointer]:
+                  - /url: /finance/14559b73-cae6-48a8-bf24-a4b39179ad10
+            - row "2026-01-27 £570.00 £11.65 £38.35 Pending View →" [ref=e423]:
+              - cell "2026-01-27" [ref=e424]
+              - cell "£570.00" [ref=e425]
+              - cell "£11.65" [ref=e426]
+              - cell "£38.35" [ref=e427]
+              - cell "Pending" [ref=e428]:
+                - generic [ref=e429]: Pending
+              - cell "View →" [ref=e430]:
+                - link "View →" [ref=e431] [cursor=pointer]:
+                  - /url: /finance/fa066334-8b69-4cf2-b624-68c7f359fddd
+            - row "2026-01-26 £276.85 £6.29 £270.56 Pending View →" [ref=e432]:
+              - cell "2026-01-26" [ref=e433]
+              - cell "£276.85" [ref=e434]
+              - cell "£6.29" [ref=e435]
+              - cell "£270.56" [ref=e436]
+              - cell "Pending" [ref=e437]:
+                - generic [ref=e438]: Pending
+              - cell "View →" [ref=e439]:
+                - link "View →" [ref=e440] [cursor=pointer]:
+                  - /url: /finance/d5ac83c5-875b-4ae6-87ef-d02800ebc140
+            - row "2026-01-23 £143.34 £3.37 £139.97 Pending View →" [ref=e441]:
+              - cell "2026-01-23" [ref=e442]
+              - cell "£143.34" [ref=e443]
+              - cell "£3.37" [ref=e444]
+              - cell "£139.97" [ref=e445]
+              - cell "Pending" [ref=e446]:
+                - generic [ref=e447]: Pending
+              - cell "View →" [ref=e448]:
+                - link "View →" [ref=e449] [cursor=pointer]:
+                  - /url: /finance/2e64bd8d-4274-449b-8c71-62a112c81543
+            - row "2026-01-21 £577.60 £12.30 £565.30 Pending View →" [ref=e450]:
+              - cell "2026-01-21" [ref=e451]
+              - cell "£577.60" [ref=e452]
+              - cell "£12.30" [ref=e453]
+              - cell "£565.30" [ref=e454]
+              - cell "Pending" [ref=e455]:
+                - generic [ref=e456]: Pending
+              - cell "View →" [ref=e457]:
+                - link "View →" [ref=e458] [cursor=pointer]:
+                  - /url: /finance/b59fa062-bb13-4eb7-be36-620fe3669f37
+            - row "2026-01-14 £109.95 £2.70 £92.40 Pending View →" [ref=e459]:
+              - cell "2026-01-14" [ref=e460]
+              - cell "£109.95" [ref=e461]
+              - cell "£2.70" [ref=e462]
+              - cell "£92.40" [ref=e463]
+              - cell "Pending" [ref=e464]:
+                - generic [ref=e465]: Pending
+              - cell "View →" [ref=e466]:
+                - link "View →" [ref=e467] [cursor=pointer]:
+                  - /url: /finance/5a9b77b0-c3e8-4c95-8364-54074ffda778
+            - row "2026-01-13 £51.95 £1.29 £46.71 Pending View →" [ref=e468]:
+              - cell "2026-01-13" [ref=e469]
+              - cell "£51.95" [ref=e470]
+              - cell "£1.29" [ref=e471]
+              - cell "£46.71" [ref=e472]
+              - cell "Pending" [ref=e473]:
+                - generic [ref=e474]: Pending
+              - cell "View →" [ref=e475]:
+                - link "View →" [ref=e476] [cursor=pointer]:
+                  - /url: /finance/d7b4cc33-f2d0-47d8-a5ce-156b23a12180
+            - row "2026-01-12 £145.00 £3.15 £141.85 Pending View →" [ref=e477]:
+              - cell "2026-01-12" [ref=e478]
+              - cell "£145.00" [ref=e479]
+              - cell "£3.15" [ref=e480]
+              - cell "£141.85" [ref=e481]
+              - cell "Pending" [ref=e482]:
+                - generic [ref=e483]: Pending
+              - cell "View →" [ref=e484]:
+                - link "View →" [ref=e485] [cursor=pointer]:
+                  - /url: /finance/9e988688-a7b2-4a2d-ac56-cbb5676e17f5
+            - row "2026-01-09 £11.45 £0.48 £10.97 Pending View →" [ref=e486]:
+              - cell "2026-01-09" [ref=e487]
+              - cell "£11.45" [ref=e488]
+              - cell "£0.48" [ref=e489]
+              - cell "£10.97" [ref=e490]
+              - cell "Pending" [ref=e491]:
+                - generic [ref=e492]: Pending
+              - cell "View →" [ref=e493]:
+                - link "View →" [ref=e494] [cursor=pointer]:
+                  - /url: /finance/58f734c6-5c30-4d33-b7c4-5796063e7fe8
+  - button "Open Next.js Dev Tools" [ref=e500] [cursor=pointer]:
+    - img [ref=e501]

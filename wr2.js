@@ -1,0 +1,1 @@
+const fs=require('fs');const task='hello world';fs.writeFileSync('C:/Users/norma/nce_automation/mobile_codex_task.json',JSON.stringify(task));console.log('ok');

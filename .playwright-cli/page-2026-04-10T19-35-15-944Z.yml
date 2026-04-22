@@ -1,0 +1,787 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - heading "NCE Operations" [level=1] [ref=e4]
+    - main [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - generic [ref=e8]:
+            - heading "Finance" [level=2] [ref=e9]
+            - paragraph [ref=e10]: Payout reconciliation and fee sync
+          - button "Sync Payouts" [ref=e12]
+        - generic [ref=e13]:
+          - link "All" [ref=e14] [cursor=pointer]:
+            - /url: /finance
+          - link "⚠ Needs attention" [ref=e15] [cursor=pointer]:
+            - /url: /finance?filter=attention
+        - generic [ref=e16]:
+          - textbox "Search by order number e.g. NCE1580" [ref=e17]
+          - button "Search" [ref=e18]
+        - generic [ref=e19]:
+          - link "2026-04-09 Synced Net £1718.80 Fees —" [ref=e20] [cursor=pointer]:
+            - /url: /finance/d05be549-70b5-4efd-b7b8-8c46668e72a0
+            - generic [ref=e21]:
+              - generic [ref=e22]: 2026-04-09
+              - generic [ref=e23]: Synced
+            - generic [ref=e24]:
+              - generic [ref=e25]:
+                - paragraph [ref=e26]: Net
+                - paragraph [ref=e27]: £1718.80
+              - generic [ref=e28]:
+                - paragraph [ref=e29]: Fees
+                - paragraph [ref=e30]: —
+          - link "2026-04-08 Synced Net £266.22 Fees —" [ref=e31] [cursor=pointer]:
+            - /url: /finance/4be15675-c59c-4bad-b991-b6d11ccdb068
+            - generic [ref=e32]:
+              - generic [ref=e33]: 2026-04-08
+              - generic [ref=e34]: Synced
+            - generic [ref=e35]:
+              - generic [ref=e36]:
+                - paragraph [ref=e37]: Net
+                - paragraph [ref=e38]: £266.22
+              - generic [ref=e39]:
+                - paragraph [ref=e40]: Fees
+                - paragraph [ref=e41]: —
+          - link "2026-04-02 Synced Net £500.53 Fees £10.47 Gross £511.00" [ref=e42] [cursor=pointer]:
+            - /url: /finance/4e26d73d-88d4-4ec6-ab4c-0c891da40ce7
+            - generic [ref=e43]:
+              - generic [ref=e44]: 2026-04-02
+              - generic [ref=e45]: Synced
+            - generic [ref=e46]:
+              - generic [ref=e47]:
+                - paragraph [ref=e48]: Net
+                - paragraph [ref=e49]: £500.53
+              - generic [ref=e50]:
+                - paragraph [ref=e51]: Fees
+                - paragraph [ref=e52]: £10.47
+              - generic [ref=e53]:
+                - paragraph [ref=e54]: Gross
+                - paragraph [ref=e55]: £511.00
+          - link "2026-04-01 Synced Net £1423.37 Fees £39.58 Gross £1462.95" [ref=e56] [cursor=pointer]:
+            - /url: /finance/8b2f0e77-0329-4409-aa1c-fa6965235750
+            - generic [ref=e57]:
+              - generic [ref=e58]: 2026-04-01
+              - generic [ref=e59]: Synced
+            - generic [ref=e60]:
+              - generic [ref=e61]:
+                - paragraph [ref=e62]: Net
+                - paragraph [ref=e63]: £1423.37
+              - generic [ref=e64]:
+                - paragraph [ref=e65]: Fees
+                - paragraph [ref=e66]: £39.58
+              - generic [ref=e67]:
+                - paragraph [ref=e68]: Gross
+                - paragraph [ref=e69]: £1462.95
+          - link "2026-03-30 Synced Net £834.57 Fees £18.98 Gross £853.55" [ref=e70] [cursor=pointer]:
+            - /url: /finance/85363ad3-52f7-47f4-824f-ef4c477aef3a
+            - generic [ref=e71]:
+              - generic [ref=e72]: 2026-03-30
+              - generic [ref=e73]: Synced
+            - generic [ref=e74]:
+              - generic [ref=e75]:
+                - paragraph [ref=e76]: Net
+                - paragraph [ref=e77]: £834.57
+              - generic [ref=e78]:
+                - paragraph [ref=e79]: Fees
+                - paragraph [ref=e80]: £18.98
+              - generic [ref=e81]:
+                - paragraph [ref=e82]: Gross
+                - paragraph [ref=e83]: £853.55
+          - link "2026-03-27 Synced Net £35.81 Fees £0.99 Gross £36.80" [ref=e84] [cursor=pointer]:
+            - /url: /finance/d0e18849-6967-4c00-a48b-1a6e963dcd0b
+            - generic [ref=e85]:
+              - generic [ref=e86]: 2026-03-27
+              - generic [ref=e87]: Synced
+            - generic [ref=e88]:
+              - generic [ref=e89]:
+                - paragraph [ref=e90]: Net
+                - paragraph [ref=e91]: £35.81
+              - generic [ref=e92]:
+                - paragraph [ref=e93]: Fees
+                - paragraph [ref=e94]: £0.99
+              - generic [ref=e95]:
+                - paragraph [ref=e96]: Gross
+                - paragraph [ref=e97]: £36.80
+          - link "2026-03-26 Pending Net £315.13 Fees £16.87 Gross £747.95" [ref=e98] [cursor=pointer]:
+            - /url: /finance/bafd6954-846a-43d5-9103-141510b4dad1
+            - generic [ref=e99]:
+              - generic [ref=e100]: 2026-03-26
+              - generic [ref=e101]: Pending
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - paragraph [ref=e104]: Net
+                - paragraph [ref=e105]: £315.13
+              - generic [ref=e106]:
+                - paragraph [ref=e107]: Fees
+                - paragraph [ref=e108]: £16.87
+              - generic [ref=e109]:
+                - paragraph [ref=e110]: Gross
+                - paragraph [ref=e111]: £747.95
+          - link "2026-03-25 Pending Net £2389.89 Fees £55.46 Gross £2445.35" [ref=e112] [cursor=pointer]:
+            - /url: /finance/7e30056d-5016-425a-a254-588905e99bf1
+            - generic [ref=e113]:
+              - generic [ref=e114]: 2026-03-25
+              - generic [ref=e115]: Pending
+            - generic [ref=e116]:
+              - generic [ref=e117]:
+                - paragraph [ref=e118]: Net
+                - paragraph [ref=e119]: £2389.89
+              - generic [ref=e120]:
+                - paragraph [ref=e121]: Fees
+                - paragraph [ref=e122]: £55.46
+              - generic [ref=e123]:
+                - paragraph [ref=e124]: Gross
+                - paragraph [ref=e125]: £2445.35
+          - link "2026-03-24 Pending Net £475.05 Fees £9.95 Gross £485.00" [ref=e126] [cursor=pointer]:
+            - /url: /finance/493c10ae-567d-40cd-af4d-e890afcdaf28
+            - generic [ref=e127]:
+              - generic [ref=e128]: 2026-03-24
+              - generic [ref=e129]: Pending
+            - generic [ref=e130]:
+              - generic [ref=e131]:
+                - paragraph [ref=e132]: Net
+                - paragraph [ref=e133]: £475.05
+              - generic [ref=e134]:
+                - paragraph [ref=e135]: Fees
+                - paragraph [ref=e136]: £9.95
+              - generic [ref=e137]:
+                - paragraph [ref=e138]: Gross
+                - paragraph [ref=e139]: £485.00
+          - link "2026-03-23 Pending Net £73.25 Fees £1.75 Gross £75.00" [ref=e140] [cursor=pointer]:
+            - /url: /finance/c1a23d21-e606-4c56-82f2-4018120e5b5f
+            - generic [ref=e141]:
+              - generic [ref=e142]: 2026-03-23
+              - generic [ref=e143]: Pending
+            - generic [ref=e144]:
+              - generic [ref=e145]:
+                - paragraph [ref=e146]: Net
+                - paragraph [ref=e147]: £73.25
+              - generic [ref=e148]:
+                - paragraph [ref=e149]: Fees
+                - paragraph [ref=e150]: £1.75
+              - generic [ref=e151]:
+                - paragraph [ref=e152]: Gross
+                - paragraph [ref=e153]: £75.00
+          - link "2026-03-20 Pending Net £352.55 Fees £7.45 Gross £360.00" [ref=e154] [cursor=pointer]:
+            - /url: /finance/2682bfe4-d6bc-4fec-9cc8-58efc583843b
+            - generic [ref=e155]:
+              - generic [ref=e156]: 2026-03-20
+              - generic [ref=e157]: Pending
+            - generic [ref=e158]:
+              - generic [ref=e159]:
+                - paragraph [ref=e160]: Net
+                - paragraph [ref=e161]: £352.55
+              - generic [ref=e162]:
+                - paragraph [ref=e163]: Fees
+                - paragraph [ref=e164]: £7.45
+              - generic [ref=e165]:
+                - paragraph [ref=e166]: Gross
+                - paragraph [ref=e167]: £360.00
+          - link "2026-03-19 Pending Net £2473.63 Fees £57.32 Gross £2530.95" [ref=e168] [cursor=pointer]:
+            - /url: /finance/bbd73a41-faea-4cf1-b5ab-637bd0949ad4
+            - generic [ref=e169]:
+              - generic [ref=e170]: 2026-03-19
+              - generic [ref=e171]: Pending
+            - generic [ref=e172]:
+              - generic [ref=e173]:
+                - paragraph [ref=e174]: Net
+                - paragraph [ref=e175]: £2473.63
+              - generic [ref=e176]:
+                - paragraph [ref=e177]: Fees
+                - paragraph [ref=e178]: £57.32
+              - generic [ref=e179]:
+                - paragraph [ref=e180]: Gross
+                - paragraph [ref=e181]: £2530.95
+          - link "2026-03-18 Pending Net £2159.26 Fees £57.69 Gross £2216.95" [ref=e182] [cursor=pointer]:
+            - /url: /finance/2dd18cee-6d50-45c4-9997-4d12f806b1de
+            - generic [ref=e183]:
+              - generic [ref=e184]: 2026-03-18
+              - generic [ref=e185]: Pending
+            - generic [ref=e186]:
+              - generic [ref=e187]:
+                - paragraph [ref=e188]: Net
+                - paragraph [ref=e189]: £2159.26
+              - generic [ref=e190]:
+                - paragraph [ref=e191]: Fees
+                - paragraph [ref=e192]: £57.69
+              - generic [ref=e193]:
+                - paragraph [ref=e194]: Gross
+                - paragraph [ref=e195]: £2216.95
+          - link "2026-03-17 Pending Net £84.96 Fees £1.99 Gross £86.95" [ref=e196] [cursor=pointer]:
+            - /url: /finance/c091cb15-e9a6-4a32-bd81-e5cd6432a633
+            - generic [ref=e197]:
+              - generic [ref=e198]: 2026-03-17
+              - generic [ref=e199]: Pending
+            - generic [ref=e200]:
+              - generic [ref=e201]:
+                - paragraph [ref=e202]: Net
+                - paragraph [ref=e203]: £84.96
+              - generic [ref=e204]:
+                - paragraph [ref=e205]: Fees
+                - paragraph [ref=e206]: £1.99
+              - generic [ref=e207]:
+                - paragraph [ref=e208]: Gross
+                - paragraph [ref=e209]: £86.95
+          - link "2026-03-13 Pending Net £1310.54 Fees £27.26 Gross £1337.80" [ref=e210] [cursor=pointer]:
+            - /url: /finance/13a694fe-dc28-4716-93dd-17290c8b092b
+            - generic [ref=e211]:
+              - generic [ref=e212]: 2026-03-13
+              - generic [ref=e213]: Pending
+            - generic [ref=e214]:
+              - generic [ref=e215]:
+                - paragraph [ref=e216]: Net
+                - paragraph [ref=e217]: £1310.54
+              - generic [ref=e218]:
+                - paragraph [ref=e219]: Fees
+                - paragraph [ref=e220]: £27.26
+              - generic [ref=e221]:
+                - paragraph [ref=e222]: Gross
+                - paragraph [ref=e223]: £1337.80
+          - link "2026-03-12 Pending Net £1105.33 Fees £23.32 Gross £1128.65" [ref=e224] [cursor=pointer]:
+            - /url: /finance/83d4db5f-d79e-453d-b1df-5a63e2dfadbc
+            - generic [ref=e225]:
+              - generic [ref=e226]: 2026-03-12
+              - generic [ref=e227]: Pending
+            - generic [ref=e228]:
+              - generic [ref=e229]:
+                - paragraph [ref=e230]: Net
+                - paragraph [ref=e231]: £1105.33
+              - generic [ref=e232]:
+                - paragraph [ref=e233]: Fees
+                - paragraph [ref=e234]: £23.32
+              - generic [ref=e235]:
+                - paragraph [ref=e236]: Gross
+                - paragraph [ref=e237]: £1128.65
+          - link "2026-03-11 Pending Net £4555.65 Fees £94.25 Gross £4649.90" [ref=e238] [cursor=pointer]:
+            - /url: /finance/982ca8da-0d03-4682-800c-997d5079796f
+            - generic [ref=e239]:
+              - generic [ref=e240]: 2026-03-11
+              - generic [ref=e241]: Pending
+            - generic [ref=e242]:
+              - generic [ref=e243]:
+                - paragraph [ref=e244]: Net
+                - paragraph [ref=e245]: £4555.65
+              - generic [ref=e246]:
+                - paragraph [ref=e247]: Fees
+                - paragraph [ref=e248]: £94.25
+              - generic [ref=e249]:
+                - paragraph [ref=e250]: Gross
+                - paragraph [ref=e251]: £4649.90
+          - link "2026-03-10 Pending Net £511.31 Fees £10.69 Gross £522.00" [ref=e252] [cursor=pointer]:
+            - /url: /finance/2a7df3d5-bdbb-459e-9ee3-bb802750acdd
+            - generic [ref=e253]:
+              - generic [ref=e254]: 2026-03-10
+              - generic [ref=e255]: Pending
+            - generic [ref=e256]:
+              - generic [ref=e257]:
+                - paragraph [ref=e258]: Net
+                - paragraph [ref=e259]: £511.31
+              - generic [ref=e260]:
+                - paragraph [ref=e261]: Fees
+                - paragraph [ref=e262]: £10.69
+              - generic [ref=e263]:
+                - paragraph [ref=e264]: Gross
+                - paragraph [ref=e265]: £522.00
+          - link "2026-03-09 Pending Net £788.15 Fees £16.85 Gross £805.00" [ref=e266] [cursor=pointer]:
+            - /url: /finance/2ae8315b-0382-460b-a03e-9abe326f77d7
+            - generic [ref=e267]:
+              - generic [ref=e268]: 2026-03-09
+              - generic [ref=e269]: Pending
+            - generic [ref=e270]:
+              - generic [ref=e271]:
+                - paragraph [ref=e272]: Net
+                - paragraph [ref=e273]: £788.15
+              - generic [ref=e274]:
+                - paragraph [ref=e275]: Fees
+                - paragraph [ref=e276]: £16.85
+              - generic [ref=e277]:
+                - paragraph [ref=e278]: Gross
+                - paragraph [ref=e279]: £805.00
+          - link "2026-03-06 Pending Net £95.74 Fees £2.21 Gross £97.95" [ref=e280] [cursor=pointer]:
+            - /url: /finance/9e64ffec-cc3e-4248-9509-74202e91b41d
+            - generic [ref=e281]:
+              - generic [ref=e282]: 2026-03-06
+              - generic [ref=e283]: Pending
+            - generic [ref=e284]:
+              - generic [ref=e285]:
+                - paragraph [ref=e286]: Net
+                - paragraph [ref=e287]: £95.74
+              - generic [ref=e288]:
+                - paragraph [ref=e289]: Fees
+                - paragraph [ref=e290]: £2.21
+              - generic [ref=e291]:
+                - paragraph [ref=e292]: Gross
+                - paragraph [ref=e293]: £97.95
+          - link "2026-03-05 Pending Net £770.10 Fees £24.90 Gross £795.00" [ref=e294] [cursor=pointer]:
+            - /url: /finance/3cba290f-40f1-43f4-9c08-a507c52469b4
+            - generic [ref=e295]:
+              - generic [ref=e296]: 2026-03-05
+              - generic [ref=e297]: Pending
+            - generic [ref=e298]:
+              - generic [ref=e299]:
+                - paragraph [ref=e300]: Net
+                - paragraph [ref=e301]: £770.10
+              - generic [ref=e302]:
+                - paragraph [ref=e303]: Fees
+                - paragraph [ref=e304]: £24.90
+              - generic [ref=e305]:
+                - paragraph [ref=e306]: Gross
+                - paragraph [ref=e307]: £795.00
+          - link "2026-03-04 Pending Net £125.14 Fees £2.81 Gross £127.95" [ref=e308] [cursor=pointer]:
+            - /url: /finance/29352cb9-bea1-42ea-8693-d80e5207e3bb
+            - generic [ref=e309]:
+              - generic [ref=e310]: 2026-03-04
+              - generic [ref=e311]: Pending
+            - generic [ref=e312]:
+              - generic [ref=e313]:
+                - paragraph [ref=e314]: Net
+                - paragraph [ref=e315]: £125.14
+              - generic [ref=e316]:
+                - paragraph [ref=e317]: Fees
+                - paragraph [ref=e318]: £2.81
+              - generic [ref=e319]:
+                - paragraph [ref=e320]: Gross
+                - paragraph [ref=e321]: £127.95
+          - link "2026-03-03 Pending Net £1190.45 Fees £24.55 Gross £1215.00" [ref=e322] [cursor=pointer]:
+            - /url: /finance/e6b4ba0a-c7ed-4e76-a187-4194d4d48c5d
+            - generic [ref=e323]:
+              - generic [ref=e324]: 2026-03-03
+              - generic [ref=e325]: Pending
+            - generic [ref=e326]:
+              - generic [ref=e327]:
+                - paragraph [ref=e328]: Net
+                - paragraph [ref=e329]: £1190.45
+              - generic [ref=e330]:
+                - paragraph [ref=e331]: Fees
+                - paragraph [ref=e332]: £24.55
+              - generic [ref=e333]:
+                - paragraph [ref=e334]: Gross
+                - paragraph [ref=e335]: £1215.00
+          - link "2026-03-02 Pending Net £309.08 Fees £6.82 Gross £315.90" [ref=e336] [cursor=pointer]:
+            - /url: /finance/bd374adf-4b26-4dac-aba7-54a37012ec01
+            - generic [ref=e337]:
+              - generic [ref=e338]: 2026-03-02
+              - generic [ref=e339]: Pending
+            - generic [ref=e340]:
+              - generic [ref=e341]:
+                - paragraph [ref=e342]: Net
+                - paragraph [ref=e343]: £309.08
+              - generic [ref=e344]:
+                - paragraph [ref=e345]: Fees
+                - paragraph [ref=e346]: £6.82
+              - generic [ref=e347]:
+                - paragraph [ref=e348]: Gross
+                - paragraph [ref=e349]: £315.90
+          - link "2026-02-27 Pending Net £786.64 Fees £16.31 Gross £802.95" [ref=e350] [cursor=pointer]:
+            - /url: /finance/d2090c08-0be5-4798-bddf-2b100df44ef1
+            - generic [ref=e351]:
+              - generic [ref=e352]: 2026-02-27
+              - generic [ref=e353]: Pending
+            - generic [ref=e354]:
+              - generic [ref=e355]:
+                - paragraph [ref=e356]: Net
+                - paragraph [ref=e357]: £786.64
+              - generic [ref=e358]:
+                - paragraph [ref=e359]: Fees
+                - paragraph [ref=e360]: £16.31
+              - generic [ref=e361]:
+                - paragraph [ref=e362]: Gross
+                - paragraph [ref=e363]: £802.95
+          - link "2026-02-26 Pending Net £1190.45 Fees £24.55 Gross £1215.00" [ref=e364] [cursor=pointer]:
+            - /url: /finance/03707a20-041c-4647-b9ea-1b32b17e98b0
+            - generic [ref=e365]:
+              - generic [ref=e366]: 2026-02-26
+              - generic [ref=e367]: Pending
+            - generic [ref=e368]:
+              - generic [ref=e369]:
+                - paragraph [ref=e370]: Net
+                - paragraph [ref=e371]: £1190.45
+              - generic [ref=e372]:
+                - paragraph [ref=e373]: Fees
+                - paragraph [ref=e374]: £24.55
+              - generic [ref=e375]:
+                - paragraph [ref=e376]: Gross
+                - paragraph [ref=e377]: £1215.00
+          - link "2026-02-25 Pending Net £656.35 Fees £13.65 Gross £670.00" [ref=e378] [cursor=pointer]:
+            - /url: /finance/02767418-ca63-429f-a48f-12d9e5da2822
+            - generic [ref=e379]:
+              - generic [ref=e380]: 2026-02-25
+              - generic [ref=e381]: Pending
+            - generic [ref=e382]:
+              - generic [ref=e383]:
+                - paragraph [ref=e384]: Net
+                - paragraph [ref=e385]: £656.35
+              - generic [ref=e386]:
+                - paragraph [ref=e387]: Fees
+                - paragraph [ref=e388]: £13.65
+              - generic [ref=e389]:
+                - paragraph [ref=e390]: Gross
+                - paragraph [ref=e391]: £670.00
+          - link "2026-02-24 Pending Net £881.75 Fees £18.25 Gross £900.00" [ref=e392] [cursor=pointer]:
+            - /url: /finance/2edd6d03-0920-4e7b-bfd2-9e41aa3a26ee
+            - generic [ref=e393]:
+              - generic [ref=e394]: 2026-02-24
+              - generic [ref=e395]: Pending
+            - generic [ref=e396]:
+              - generic [ref=e397]:
+                - paragraph [ref=e398]: Net
+                - paragraph [ref=e399]: £881.75
+              - generic [ref=e400]:
+                - paragraph [ref=e401]: Fees
+                - paragraph [ref=e402]: £18.25
+              - generic [ref=e403]:
+                - paragraph [ref=e404]: Gross
+                - paragraph [ref=e405]: £900.00
+          - link "2026-02-23 Pending Net £710.63 Fees £15.27 Gross £725.90" [ref=e406] [cursor=pointer]:
+            - /url: /finance/51c54319-b5d2-43fe-b2c1-4df035a71b74
+            - generic [ref=e407]:
+              - generic [ref=e408]: 2026-02-23
+              - generic [ref=e409]: Pending
+            - generic [ref=e410]:
+              - generic [ref=e411]:
+                - paragraph [ref=e412]: Net
+                - paragraph [ref=e413]: £710.63
+              - generic [ref=e414]:
+                - paragraph [ref=e415]: Fees
+                - paragraph [ref=e416]: £15.27
+              - generic [ref=e417]:
+                - paragraph [ref=e418]: Gross
+                - paragraph [ref=e419]: £725.90
+          - link "2026-02-20 Pending Net £1242.09 Fees £25.86 Gross £1267.95" [ref=e420] [cursor=pointer]:
+            - /url: /finance/586ffbf2-18e3-4a09-ad7d-fd6279d48b37
+            - generic [ref=e421]:
+              - generic [ref=e422]: 2026-02-20
+              - generic [ref=e423]: Pending
+            - generic [ref=e424]:
+              - generic [ref=e425]:
+                - paragraph [ref=e426]: Net
+                - paragraph [ref=e427]: £1242.09
+              - generic [ref=e428]:
+                - paragraph [ref=e429]: Fees
+                - paragraph [ref=e430]: £25.86
+              - generic [ref=e431]:
+                - paragraph [ref=e432]: Gross
+                - paragraph [ref=e433]: £1267.95
+          - link "2026-02-19 Pending Net £35.96 Fees £0.99 Gross £36.95" [ref=e434] [cursor=pointer]:
+            - /url: /finance/ebc580ef-2406-4655-a9c8-94d7fc57253f
+            - generic [ref=e435]:
+              - generic [ref=e436]: 2026-02-19
+              - generic [ref=e437]: Pending
+            - generic [ref=e438]:
+              - generic [ref=e439]:
+                - paragraph [ref=e440]: Net
+                - paragraph [ref=e441]: £35.96
+              - generic [ref=e442]:
+                - paragraph [ref=e443]: Fees
+                - paragraph [ref=e444]: £0.99
+              - generic [ref=e445]:
+                - paragraph [ref=e446]: Gross
+                - paragraph [ref=e447]: £36.95
+          - link "2026-02-18 Pending Net £474.75 Fees £10.20 Gross £484.95" [ref=e448] [cursor=pointer]:
+            - /url: /finance/4239f6e6-8943-4092-ab5a-5733004d14cd
+            - generic [ref=e449]:
+              - generic [ref=e450]: 2026-02-18
+              - generic [ref=e451]: Pending
+            - generic [ref=e452]:
+              - generic [ref=e453]:
+                - paragraph [ref=e454]: Net
+                - paragraph [ref=e455]: £474.75
+              - generic [ref=e456]:
+                - paragraph [ref=e457]: Fees
+                - paragraph [ref=e458]: £10.20
+              - generic [ref=e459]:
+                - paragraph [ref=e460]: Gross
+                - paragraph [ref=e461]: £484.95
+          - link "2026-02-17 Pending Net £3308.90 Fees £76.10 Gross £3385.00" [ref=e462] [cursor=pointer]:
+            - /url: /finance/fd03e785-fedc-458d-aa0a-abbd04eee16d
+            - generic [ref=e463]:
+              - generic [ref=e464]: 2026-02-17
+              - generic [ref=e465]: Pending
+            - generic [ref=e466]:
+              - generic [ref=e467]:
+                - paragraph [ref=e468]: Net
+                - paragraph [ref=e469]: £3308.90
+              - generic [ref=e470]:
+                - paragraph [ref=e471]: Fees
+                - paragraph [ref=e472]: £76.10
+              - generic [ref=e473]:
+                - paragraph [ref=e474]: Gross
+                - paragraph [ref=e475]: £3385.00
+          - link "2026-02-16 Pending Net £362.35 Fees £7.65 Gross £370.00" [ref=e476] [cursor=pointer]:
+            - /url: /finance/7d31189e-25be-46c7-9822-d73c82221feb
+            - generic [ref=e477]:
+              - generic [ref=e478]: 2026-02-16
+              - generic [ref=e479]: Pending
+            - generic [ref=e480]:
+              - generic [ref=e481]:
+                - paragraph [ref=e482]: Net
+                - paragraph [ref=e483]: £362.35
+              - generic [ref=e484]:
+                - paragraph [ref=e485]: Fees
+                - paragraph [ref=e486]: £7.65
+              - generic [ref=e487]:
+                - paragraph [ref=e488]: Gross
+                - paragraph [ref=e489]: £370.00
+          - link "2026-02-12 Pending Net £749.20 Fees £15.80 Gross £765.00" [ref=e490] [cursor=pointer]:
+            - /url: /finance/3dbefd84-5903-4534-83d4-0ee92727fbb4
+            - generic [ref=e491]:
+              - generic [ref=e492]: 2026-02-12
+              - generic [ref=e493]: Pending
+            - generic [ref=e494]:
+              - generic [ref=e495]:
+                - paragraph [ref=e496]: Net
+                - paragraph [ref=e497]: £749.20
+              - generic [ref=e498]:
+                - paragraph [ref=e499]: Fees
+                - paragraph [ref=e500]: £15.80
+              - generic [ref=e501]:
+                - paragraph [ref=e502]: Gross
+                - paragraph [ref=e503]: £765.00
+          - link "2026-02-11 Pending Net £310.74 Fees £7.11 Gross £317.85" [ref=e504] [cursor=pointer]:
+            - /url: /finance/f6d82e96-6621-4fcd-85d9-b59106156430
+            - generic [ref=e505]:
+              - generic [ref=e506]: 2026-02-11
+              - generic [ref=e507]: Pending
+            - generic [ref=e508]:
+              - generic [ref=e509]:
+                - paragraph [ref=e510]: Net
+                - paragraph [ref=e511]: £310.74
+              - generic [ref=e512]:
+                - paragraph [ref=e513]: Fees
+                - paragraph [ref=e514]: £7.11
+              - generic [ref=e515]:
+                - paragraph [ref=e516]: Gross
+                - paragraph [ref=e517]: £317.85
+          - link "2026-02-10 Pending Net £1703.22 Fees £46.78 Gross £1750.00" [ref=e518] [cursor=pointer]:
+            - /url: /finance/e075ae7f-948c-4536-867b-37db8cce2886
+            - generic [ref=e519]:
+              - generic [ref=e520]: 2026-02-10
+              - generic [ref=e521]: Pending
+            - generic [ref=e522]:
+              - generic [ref=e523]:
+                - paragraph [ref=e524]: Net
+                - paragraph [ref=e525]: £1703.22
+              - generic [ref=e526]:
+                - paragraph [ref=e527]: Fees
+                - paragraph [ref=e528]: £46.78
+              - generic [ref=e529]:
+                - paragraph [ref=e530]: Gross
+                - paragraph [ref=e531]: £1750.00
+          - link "2026-02-05 Pending Net £597.25 Fees £12.70 Gross £609.95" [ref=e532] [cursor=pointer]:
+            - /url: /finance/1ed5a35c-9fa7-493e-9171-d0d3c884a51a
+            - generic [ref=e533]:
+              - generic [ref=e534]: 2026-02-05
+              - generic [ref=e535]: Pending
+            - generic [ref=e536]:
+              - generic [ref=e537]:
+                - paragraph [ref=e538]: Net
+                - paragraph [ref=e539]: £597.25
+              - generic [ref=e540]:
+                - paragraph [ref=e541]: Fees
+                - paragraph [ref=e542]: £12.70
+              - generic [ref=e543]:
+                - paragraph [ref=e544]: Gross
+                - paragraph [ref=e545]: £609.95
+          - link "2026-02-04 Pending Net £535.49 Fees £12.21 Gross £547.70" [ref=e546] [cursor=pointer]:
+            - /url: /finance/9d7b3dee-92b7-48fd-8a9f-d7535b507cdb
+            - generic [ref=e547]:
+              - generic [ref=e548]: 2026-02-04
+              - generic [ref=e549]: Pending
+            - generic [ref=e550]:
+              - generic [ref=e551]:
+                - paragraph [ref=e552]: Net
+                - paragraph [ref=e553]: £535.49
+              - generic [ref=e554]:
+                - paragraph [ref=e555]: Fees
+                - paragraph [ref=e556]: £12.21
+              - generic [ref=e557]:
+                - paragraph [ref=e558]: Gross
+                - paragraph [ref=e559]: £547.70
+          - link "2026-02-03 Pending Net £1002.98 Fees £35.68 Gross £1173.75" [ref=e560] [cursor=pointer]:
+            - /url: /finance/6d7e9c22-ff26-4894-8e92-cb39a26c090f
+            - generic [ref=e561]:
+              - generic [ref=e562]: 2026-02-03
+              - generic [ref=e563]: Pending
+            - generic [ref=e564]:
+              - generic [ref=e565]:
+                - paragraph [ref=e566]: Net
+                - paragraph [ref=e567]: £1002.98
+              - generic [ref=e568]:
+                - paragraph [ref=e569]: Fees
+                - paragraph [ref=e570]: £35.68
+              - generic [ref=e571]:
+                - paragraph [ref=e572]: Gross
+                - paragraph [ref=e573]: £1173.75
+          - link "2026-01-29 Pending Net £177.36 Fees £4.39 Gross £181.75" [ref=e574] [cursor=pointer]:
+            - /url: /finance/6656c5e2-16c0-4e01-a9f5-f0c0fcf41988
+            - generic [ref=e575]:
+              - generic [ref=e576]: 2026-01-29
+              - generic [ref=e577]: Pending
+            - generic [ref=e578]:
+              - generic [ref=e579]:
+                - paragraph [ref=e580]: Net
+                - paragraph [ref=e581]: £177.36
+              - generic [ref=e582]:
+                - paragraph [ref=e583]: Fees
+                - paragraph [ref=e584]: £4.39
+              - generic [ref=e585]:
+                - paragraph [ref=e586]: Gross
+                - paragraph [ref=e587]: £181.75
+          - link "2026-01-28 Pending Net £76.66 Fees £2.59 Gross £79.25" [ref=e588] [cursor=pointer]:
+            - /url: /finance/14559b73-cae6-48a8-bf24-a4b39179ad10
+            - generic [ref=e589]:
+              - generic [ref=e590]: 2026-01-28
+              - generic [ref=e591]: Pending
+            - generic [ref=e592]:
+              - generic [ref=e593]:
+                - paragraph [ref=e594]: Net
+                - paragraph [ref=e595]: £76.66
+              - generic [ref=e596]:
+                - paragraph [ref=e597]: Fees
+                - paragraph [ref=e598]: £2.59
+              - generic [ref=e599]:
+                - paragraph [ref=e600]: Gross
+                - paragraph [ref=e601]: £79.25
+          - link "2026-01-27 Pending Net £38.35 Fees £11.65 Gross £570.00" [ref=e602] [cursor=pointer]:
+            - /url: /finance/fa066334-8b69-4cf2-b624-68c7f359fddd
+            - generic [ref=e603]:
+              - generic [ref=e604]: 2026-01-27
+              - generic [ref=e605]: Pending
+            - generic [ref=e606]:
+              - generic [ref=e607]:
+                - paragraph [ref=e608]: Net
+                - paragraph [ref=e609]: £38.35
+              - generic [ref=e610]:
+                - paragraph [ref=e611]: Fees
+                - paragraph [ref=e612]: £11.65
+              - generic [ref=e613]:
+                - paragraph [ref=e614]: Gross
+                - paragraph [ref=e615]: £570.00
+          - link "2026-01-26 Pending Net £270.56 Fees £6.29 Gross £276.85" [ref=e616] [cursor=pointer]:
+            - /url: /finance/d5ac83c5-875b-4ae6-87ef-d02800ebc140
+            - generic [ref=e617]:
+              - generic [ref=e618]: 2026-01-26
+              - generic [ref=e619]: Pending
+            - generic [ref=e620]:
+              - generic [ref=e621]:
+                - paragraph [ref=e622]: Net
+                - paragraph [ref=e623]: £270.56
+              - generic [ref=e624]:
+                - paragraph [ref=e625]: Fees
+                - paragraph [ref=e626]: £6.29
+              - generic [ref=e627]:
+                - paragraph [ref=e628]: Gross
+                - paragraph [ref=e629]: £276.85
+          - link "2026-01-23 Pending Net £139.97 Fees £3.37 Gross £143.34" [ref=e630] [cursor=pointer]:
+            - /url: /finance/2e64bd8d-4274-449b-8c71-62a112c81543
+            - generic [ref=e631]:
+              - generic [ref=e632]: 2026-01-23
+              - generic [ref=e633]: Pending
+            - generic [ref=e634]:
+              - generic [ref=e635]:
+                - paragraph [ref=e636]: Net
+                - paragraph [ref=e637]: £139.97
+              - generic [ref=e638]:
+                - paragraph [ref=e639]: Fees
+                - paragraph [ref=e640]: £3.37
+              - generic [ref=e641]:
+                - paragraph [ref=e642]: Gross
+                - paragraph [ref=e643]: £143.34
+          - link "2026-01-21 Pending Net £565.30 Fees £12.30 Gross £577.60" [ref=e644] [cursor=pointer]:
+            - /url: /finance/b59fa062-bb13-4eb7-be36-620fe3669f37
+            - generic [ref=e645]:
+              - generic [ref=e646]: 2026-01-21
+              - generic [ref=e647]: Pending
+            - generic [ref=e648]:
+              - generic [ref=e649]:
+                - paragraph [ref=e650]: Net
+                - paragraph [ref=e651]: £565.30
+              - generic [ref=e652]:
+                - paragraph [ref=e653]: Fees
+                - paragraph [ref=e654]: £12.30
+              - generic [ref=e655]:
+                - paragraph [ref=e656]: Gross
+                - paragraph [ref=e657]: £577.60
+          - link "2026-01-14 Pending Net £92.40 Fees £2.70 Gross £109.95" [ref=e658] [cursor=pointer]:
+            - /url: /finance/5a9b77b0-c3e8-4c95-8364-54074ffda778
+            - generic [ref=e659]:
+              - generic [ref=e660]: 2026-01-14
+              - generic [ref=e661]: Pending
+            - generic [ref=e662]:
+              - generic [ref=e663]:
+                - paragraph [ref=e664]: Net
+                - paragraph [ref=e665]: £92.40
+              - generic [ref=e666]:
+                - paragraph [ref=e667]: Fees
+                - paragraph [ref=e668]: £2.70
+              - generic [ref=e669]:
+                - paragraph [ref=e670]: Gross
+                - paragraph [ref=e671]: £109.95
+          - link "2026-01-13 Pending Net £46.71 Fees £1.29 Gross £51.95" [ref=e672] [cursor=pointer]:
+            - /url: /finance/d7b4cc33-f2d0-47d8-a5ce-156b23a12180
+            - generic [ref=e673]:
+              - generic [ref=e674]: 2026-01-13
+              - generic [ref=e675]: Pending
+            - generic [ref=e676]:
+              - generic [ref=e677]:
+                - paragraph [ref=e678]: Net
+                - paragraph [ref=e679]: £46.71
+              - generic [ref=e680]:
+                - paragraph [ref=e681]: Fees
+                - paragraph [ref=e682]: £1.29
+              - generic [ref=e683]:
+                - paragraph [ref=e684]: Gross
+                - paragraph [ref=e685]: £51.95
+          - link "2026-01-12 Pending Net £141.85 Fees £3.15 Gross £145.00" [ref=e686] [cursor=pointer]:
+            - /url: /finance/9e988688-a7b2-4a2d-ac56-cbb5676e17f5
+            - generic [ref=e687]:
+              - generic [ref=e688]: 2026-01-12
+              - generic [ref=e689]: Pending
+            - generic [ref=e690]:
+              - generic [ref=e691]:
+                - paragraph [ref=e692]: Net
+                - paragraph [ref=e693]: £141.85
+              - generic [ref=e694]:
+                - paragraph [ref=e695]: Fees
+                - paragraph [ref=e696]: £3.15
+              - generic [ref=e697]:
+                - paragraph [ref=e698]: Gross
+                - paragraph [ref=e699]: £145.00
+          - link "2026-01-09 Pending Net £10.97 Fees £0.48 Gross £11.45" [ref=e700] [cursor=pointer]:
+            - /url: /finance/58f734c6-5c30-4d33-b7c4-5796063e7fe8
+            - generic [ref=e701]:
+              - generic [ref=e702]: 2026-01-09
+              - generic [ref=e703]: Pending
+            - generic [ref=e704]:
+              - generic [ref=e705]:
+                - paragraph [ref=e706]: Net
+                - paragraph [ref=e707]: £10.97
+              - generic [ref=e708]:
+                - paragraph [ref=e709]: Fees
+                - paragraph [ref=e710]: £0.48
+              - generic [ref=e711]:
+                - paragraph [ref=e712]: Gross
+                - paragraph [ref=e713]: £11.45
+    - navigation [ref=e714]:
+      - link "Orders" [ref=e715] [cursor=pointer]:
+        - /url: /orders
+        - img [ref=e716]
+        - generic [ref=e718]: Orders
+      - link "Products" [ref=e719] [cursor=pointer]:
+        - /url: /products
+        - img [ref=e720]
+        - generic [ref=e722]: Products
+      - link "Dashboard" [ref=e723] [cursor=pointer]:
+        - /url: /
+        - img [ref=e724]
+        - generic [ref=e726]: Dashboard
+      - link "Customers" [ref=e727] [cursor=pointer]:
+        - /url: /customers
+        - img [ref=e728]
+        - generic [ref=e730]: Customers
+      - link "Settings" [ref=e731] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e732]
+        - generic [ref=e735]: Settings
+  - button "Open Next.js Dev Tools" [ref=e741] [cursor=pointer]:
+    - img [ref=e742]

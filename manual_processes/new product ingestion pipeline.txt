@@ -6,3 +6,25 @@ we manually say if it's new or used (candidate to come from the ingestion proces
 Then this info is synced every hour with QBO (exisiting integration already in place), then we go to QBO manually and complement the information.
 When QBO syncs with Shopify, the only fields copied by the sync, are: Name e.g. A Board 3158 (3158 is SKU in shopify), Description e.g. New Large Oak Stain A-Board, unit price e.g. £59.50, SKU.
 Then I manually have to tick "Inclusive of VAT" in QBO, update the VAT field if it's margin scheme (for used equipment) or 20% for new equipment, update the cost field, tick the "Inclusive of purchase tax" field, update "Purchase tax" field as no VAT for used equipment or 20% for new equipment, if its a recurrent supplier I find the supplier save and close, but if its new, open "prefered supplier field" choose, add new and complete all new supplier information, save and close (this comes from the last cell in spreadsheet which is currently bundled together name and address)
+
+
+ Read docs/handoffs/product-ingestion-pipeline.md and CLAUDE.md for full context. This session
+  should:
+
+  1. Test the product ingestion pipeline end-to-end: go to /products/new, create a test product,
+  verify it lands in Supabase, Shopify (as draft), and QBO (with cost, VAT, supplier). Then upload a
+  photo and verify activation.
+
+  2. Fix any issues found during testing.
+
+  3. If testing passes: plan the existing product migration strategy (5000+ products from Shopify/CSV
+  into Supabase) and the QBO sync app deactivation (untick "create new item" in QuickBooks Online
+  Global).
+
+  Important context:
+  - Shopify access token is working and set in Vercel
+  - QBO connection: working (check token expiry)
+  - The "QuickBooks Online Global" Shopify app still has "create new item in QBO" ticked — don't
+  untick until our pipeline is validated
+  - Product types and vendors populate from Shopify API (43 types, 13 vendors)
+  - SKU sequence starts at NCE5200

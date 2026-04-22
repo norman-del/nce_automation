@@ -1,0 +1,73 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - heading "NCE Operations" [level=1] [ref=e5]
+      - navigation [ref=e6]:
+        - generic [ref=e7]:
+          - link "Dashboard" [ref=e8] [cursor=pointer]:
+            - /url: /
+          - link "Orders" [ref=e9] [cursor=pointer]:
+            - /url: /orders
+          - link "Products" [ref=e10] [cursor=pointer]:
+            - /url: /products
+          - link "Customers" [ref=e11] [cursor=pointer]:
+            - /url: /customers
+          - link "Finance" [ref=e12] [cursor=pointer]:
+            - /url: /finance
+          - link "Settings" [ref=e13] [cursor=pointer]:
+            - /url: /settings
+        - generic [ref=e14]:
+          - paragraph [ref=e15]: Normanadmin
+          - button "Sign out" [ref=e16]
+      - paragraph [ref=e18]: NCE Equipment
+    - main [ref=e19]:
+      - generic [ref=e217]:
+        - generic [ref=e218]:
+          - generic [ref=e219]:
+            - link "← Finance" [ref=e221] [cursor=pointer]:
+              - /url: /finance
+            - heading "Payout — 2026-04-02" [level=2] [ref=e222]
+            - generic [ref=e223]:
+              - generic [ref=e224]:
+                - text: "Net:"
+                - generic [ref=e225]: £500.53
+              - generic [ref=e226]:
+                - text: "Fees:"
+                - generic [ref=e227]: £10.47
+              - generic [ref=e228]:
+                - text: "Gross:"
+                - generic [ref=e229]: £511.00
+          - generic [ref=e230]:
+            - button "Re-post to QuickBooks" [ref=e231]
+            - paragraph [ref=e232]: Already posted. Re-running is safe — items already in QBO will be skipped.
+        - generic [ref=e233]:
+          - generic [ref=e234]: Journal entry
+          - generic [ref=e235]: "✓ #34449"
+        - generic [ref=e237]:
+          - generic [ref=e238]:
+            - paragraph [ref=e239]: 1 orders in this payout
+            - paragraph [ref=e240]: 1 of 1 paid in QBO
+          - table [ref=e241]:
+            - rowgroup [ref=e242]:
+              - row "Order Customer Company Gross Fee Net QBO Status" [ref=e243]:
+                - columnheader "Order" [ref=e244]
+                - columnheader "Customer" [ref=e245]
+                - columnheader "Company" [ref=e246]
+                - columnheader "Gross" [ref=e247]
+                - columnheader "Fee" [ref=e248]
+                - columnheader "Net" [ref=e249]
+                - columnheader "QBO Status" [ref=e250]
+            - rowgroup [ref=e251]:
+              - row "NCE1586 Vicki Allison Garforth Golf Club £511.00 £10.47 £500.53 Paid" [ref=e252]:
+                - cell "NCE1586" [ref=e253]
+                - cell "Vicki Allison" [ref=e254]
+                - cell "Garforth Golf Club" [ref=e255]
+                - cell "£511.00" [ref=e256]
+                - cell "£10.47" [ref=e257]
+                - cell "£500.53" [ref=e258]
+                - cell "Paid" [ref=e259]:
+                  - generic [ref=e260]: Paid
+  - button "Open Next.js Dev Tools" [ref=e110] [cursor=pointer]:
+    - img [ref=e111]
+  - alert [ref=e215]
+  - generic [ref=e216]: £0

@@ -1,0 +1,394 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]:
+        - link "NCE Nationwide Catering Equipment" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: NCE
+          - generic [ref=e8]: Nationwide Catering Equipment
+        - search [ref=e10]:
+          - generic [ref=e11]:
+            - searchbox "Search 2,700+ products…" [ref=e12]
+            - button "Submit search" [ref=e13]: Search
+        - generic [ref=e14]:
+          - link "01543 571 700" [ref=e15] [cursor=pointer]:
+            - /url: tel:01543571700
+            - img [ref=e16]
+            - generic [ref=e18]: 01543 571 700
+          - link "Chat on WhatsApp" [ref=e19] [cursor=pointer]:
+            - /url: https://wa.me/441543571700
+            - img [ref=e20]
+            - generic [ref=e23]: WhatsApp
+          - link "My account" [ref=e24] [cursor=pointer]:
+            - /url: /account
+            - img [ref=e25]
+          - link "Shopping cart, 0 items" [ref=e27] [cursor=pointer]:
+            - /url: /cart
+            - img [ref=e28]
+      - navigation "Main navigation" [ref=e30]:
+        - generic [ref=e31]:
+          - button "Cooking Equipment" [ref=e32]
+          - button "Refrigeration" [ref=e33]
+          - button "Food Preparation" [ref=e34]
+          - button "Warewashing" [ref=e35]
+          - button "Drink Equipment" [ref=e36]
+          - button "Furniture & Stainless" [ref=e37]
+          - button "Hot Holding" [ref=e38]
+          - button "Sundries" [ref=e39]
+          - button "Used Equipment" [ref=e40]
+          - link "All Products" [ref=e41] [cursor=pointer]:
+            - /url: /collections
+    - complementary "Trust signals" [ref=e42]:
+      - list [ref=e44]:
+        - listitem [ref=e45]:
+          - img [ref=e46]
+          - generic [ref=e48]: Fast UK Delivery
+        - listitem [ref=e49]:
+          - img [ref=e50]
+          - generic [ref=e52]: 14-Day Returns
+        - listitem [ref=e53]:
+          - img [ref=e54]
+          - generic [ref=e56]: Finance Available
+  - main [ref=e57]:
+    - region "Find What You Need" [ref=e58]:
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - paragraph [ref=e62]: Browse by category
+            - heading "Find What You Need" [level=2] [ref=e63]
+          - link "All categories" [ref=e64] [cursor=pointer]:
+            - /url: /collections
+            - text: All categories
+            - generic [ref=e65]: →
+        - generic [ref=e66]:
+          - link "Cooking Equipment" [ref=e67] [cursor=pointer]:
+            - /url: /collections/cooking-equipment
+            - generic [ref=e70]:
+              - heading "Cooking Equipment" [level=3] [ref=e71]
+              - paragraph [ref=e72]: Ovens, fryers, grills & ranges
+          - link "Refrigeration" [ref=e73] [cursor=pointer]:
+            - /url: /collections/refrigeration
+            - generic [ref=e76]:
+              - heading "Refrigeration" [level=3] [ref=e77]
+              - paragraph [ref=e78]: Fridges, freezers & blast chillers
+          - link "Food Preparation" [ref=e79] [cursor=pointer]:
+            - /url: /collections/food-preparation
+            - generic [ref=e82]:
+              - heading "Food Preparation" [level=3] [ref=e83]
+              - paragraph [ref=e84]: Mixers, blenders & processors
+          - link "Warewashing" [ref=e85] [cursor=pointer]:
+            - /url: /collections/warewashing
+            - generic [ref=e88]:
+              - heading "Warewashing" [level=3] [ref=e89]
+              - paragraph [ref=e90]: Dishwashers & glasswashers
+          - link "Drink Equipment" [ref=e91] [cursor=pointer]:
+            - /url: /collections/drink-equipment
+            - generic [ref=e94]:
+              - heading "Drink Equipment" [level=3] [ref=e95]
+              - paragraph [ref=e96]: Coffee, ice & beverage systems
+          - link "Furniture & Stainless" [ref=e97] [cursor=pointer]:
+            - /url: /collections/stainless-steel
+            - generic [ref=e100]:
+              - heading "Furniture & Stainless" [level=3] [ref=e101]
+              - paragraph [ref=e102]: Tables, shelving & stands
+          - link "Hot Holding" [ref=e103] [cursor=pointer]:
+            - /url: /collections/hot-holding
+            - generic [ref=e106]:
+              - heading "Hot Holding" [level=3] [ref=e107]
+              - paragraph [ref=e108]: Hotcupboards, bain maries & warmers
+          - link "Used Equipment" [ref=e109] [cursor=pointer]:
+            - /url: /collections/used
+            - generic [ref=e112]:
+              - generic [ref=e113]: Specialists
+              - heading "Used Equipment" [level=3] [ref=e114]
+              - paragraph [ref=e115]: Quality used — significant savings
+    - region "Featured Products" [ref=e116]:
+      - generic [ref=e117]:
+        - generic [ref=e118]:
+          - generic [ref=e119]:
+            - paragraph [ref=e120]: Hand-picked
+            - heading "Featured Products" [level=2] [ref=e121]
+          - link "View all →" [ref=e122] [cursor=pointer]:
+            - /url: /collections
+        - generic [ref=e123]:
+          - article [ref=e124]:
+            - link [ref=e125] [cursor=pointer]:
+              - /url: /products/lincat-silverlink-600-electric-oven-range
+              - img [ref=e127]
+              - generic [ref=e130]: New
+            - generic [ref=e131]:
+              - paragraph [ref=e132]: LIN-OE8013
+              - heading "Lincat Silverlink 600 Electric Oven Range" [level=3] [ref=e133]:
+                - link "Lincat Silverlink 600 Electric Oven Range" [ref=e134] [cursor=pointer]:
+                  - /url: /products/lincat-silverlink-600-electric-oven-range
+              - generic [ref=e135]:
+                - generic [ref=e136]:
+                  - paragraph [ref=e137]: £1,249
+                  - paragraph [ref=e138]:
+                    - text: or from
+                    - generic [ref=e139]: £105/mo
+                    - text: finance
+                - link "View" [ref=e140] [cursor=pointer]:
+                  - /url: /products/lincat-silverlink-600-electric-oven-range
+          - article [ref=e141]:
+            - link [ref=e142] [cursor=pointer]:
+              - /url: /products/foster-ep1-1-single-door-upright-fridge
+              - img [ref=e144]
+              - generic [ref=e147]: Used
+            - generic [ref=e148]:
+              - paragraph [ref=e149]: FOS-EP11
+              - heading "Foster EP1/1 Single Door Upright Fridge" [level=3] [ref=e150]:
+                - link "Foster EP1/1 Single Door Upright Fridge" [ref=e151] [cursor=pointer]:
+                  - /url: /products/foster-ep1-1-single-door-upright-fridge
+              - generic [ref=e152]:
+                - generic [ref=e153]:
+                  - paragraph [ref=e154]: £895
+                  - paragraph [ref=e155]:
+                    - text: or from
+                    - generic [ref=e156]: £75/mo
+                    - text: finance
+                - link "View" [ref=e157] [cursor=pointer]:
+                  - /url: /products/foster-ep1-1-single-door-upright-fridge
+          - article [ref=e158]:
+            - link [ref=e159] [cursor=pointer]:
+              - /url: /products/rational-scc-61-combi-steamer
+              - img [ref=e161]
+              - generic [ref=e164]: Used
+            - generic [ref=e165]:
+              - paragraph [ref=e166]: RAT-SCC61
+              - heading "Rational SCC 61 Combi Steamer" [level=3] [ref=e167]:
+                - link "Rational SCC 61 Combi Steamer" [ref=e168] [cursor=pointer]:
+                  - /url: /products/rational-scc-61-combi-steamer
+              - generic [ref=e169]:
+                - generic [ref=e170]:
+                  - paragraph [ref=e171]: £3,850
+                  - paragraph [ref=e172]:
+                    - text: or from
+                    - generic [ref=e173]: £321/mo
+                    - text: finance
+                - link "View" [ref=e174] [cursor=pointer]:
+                  - /url: /products/rational-scc-61-combi-steamer
+          - article [ref=e175]:
+            - link [ref=e176] [cursor=pointer]:
+              - /url: /products/blue-seal-evolution-4-burner-gas-range
+              - img [ref=e178]
+              - generic [ref=e181]: New
+            - generic [ref=e182]:
+              - paragraph [ref=e183]: BS-GT46
+              - heading "Blue Seal Evolution 4 Burner Gas Range" [level=3] [ref=e184]:
+                - link "Blue Seal Evolution 4 Burner Gas Range" [ref=e185] [cursor=pointer]:
+                  - /url: /products/blue-seal-evolution-4-burner-gas-range
+              - generic [ref=e186]:
+                - generic [ref=e187]:
+                  - paragraph [ref=e188]: £1,680
+                  - paragraph [ref=e189]:
+                    - text: or from
+                    - generic [ref=e190]: £140/mo
+                    - text: finance
+                - link "View" [ref=e191] [cursor=pointer]:
+                  - /url: /products/blue-seal-evolution-4-burner-gas-range
+    - region "What Makes NCE Different" [ref=e192]:
+      - generic [ref=e193]:
+        - generic [ref=e194]:
+          - paragraph [ref=e195]: Why choose us
+          - heading "What Makes NCE Different" [level=2] [ref=e196]
+          - paragraph [ref=e197]: We’re not a catalogue company. We’re specialists who understand catering equipment — and we’re always here to help you choose the right kit.
+        - generic [ref=e198]:
+          - generic [ref=e199]:
+            - img [ref=e201]
+            - heading "45 Years' Experience" [level=3] [ref=e203]
+            - paragraph [ref=e204]: A family business since 1979. We've equipped thousands of UK restaurants, hotels, schools and hospitals with the kit they need.
+            - link "Our story" [ref=e205] [cursor=pointer]:
+              - /url: /pages/about
+              - text: Our story
+              - generic [ref=e206]: →
+          - generic [ref=e207]:
+            - img [ref=e209]
+            - heading "New & Used Specialists" [level=3] [ref=e211]
+            - paragraph [ref=e212]: Nisbets only sell new. We sell quality used equipment too — professionally cleaned and inspected, with significant savings.
+            - link "Browse used equipment" [ref=e213] [cursor=pointer]:
+              - /url: /collections/used
+              - text: Browse used equipment
+              - generic [ref=e214]: →
+          - generic [ref=e215]:
+            - img [ref=e217]
+            - heading "Finance Available" [level=3] [ref=e219]
+            - paragraph [ref=e220]: Spread the cost with iWoca Pay. Get flexible finance on orders from £500, with monthly payments to suit your cash flow.
+            - link "Learn about finance" [ref=e221] [cursor=pointer]:
+              - /url: /pages/finance-by-iwoca-pay
+              - text: Learn about finance
+              - generic [ref=e222]: →
+          - generic [ref=e223]:
+            - img [ref=e225]
+            - heading "WhatsApp Us Direct" [level=3] [ref=e228]
+            - paragraph [ref=e229]: Get expert advice instantly. Message our team on WhatsApp — no hold music, no call centres. Just real people who know their kit.
+            - link "Message us now" [ref=e230] [cursor=pointer]:
+              - /url: https://wa.me/441543571700
+              - text: Message us now
+              - generic [ref=e231]: →
+    - region "Trusted Brands We Stock" [ref=e232]:
+      - generic [ref=e233]:
+        - paragraph [ref=e234]: Trusted Brands We Stock
+        - generic [ref=e235]:
+          - link "Browse Falcon products" [ref=e236] [cursor=pointer]:
+            - /url: /collections?brand=falcon
+            - text: Falcon
+          - link "Browse Lincat products" [ref=e237] [cursor=pointer]:
+            - /url: /collections?brand=lincat
+            - text: Lincat
+          - link "Browse Rational products" [ref=e238] [cursor=pointer]:
+            - /url: /collections?brand=rational
+            - text: Rational
+          - link "Browse Blue Seal products" [ref=e239] [cursor=pointer]:
+            - /url: /collections?brand=blue-seal
+            - text: Blue Seal
+          - link "Browse Foster products" [ref=e240] [cursor=pointer]:
+            - /url: /collections?brand=foster
+            - text: Foster
+          - link "Browse Hamoki products" [ref=e241] [cursor=pointer]:
+            - /url: /collections?brand=hamoki
+            - text: Hamoki
+    - region "From the Blog" [ref=e242]:
+      - generic [ref=e243]:
+        - generic [ref=e244]:
+          - generic [ref=e245]:
+            - paragraph [ref=e246]: Knowledge base
+            - heading "From the Blog" [level=2] [ref=e247]
+          - link "All articles →" [ref=e248] [cursor=pointer]:
+            - /url: /blogs/nationwide-catering-equipment-blog
+        - generic [ref=e249]:
+          - article [ref=e250]:
+            - link [ref=e251] [cursor=pointer]:
+              - /url: /blogs/nationwide-catering-equipment-blog/how-to-choose-a-commercial-oven
+              - img [ref=e253]
+            - generic [ref=e255]:
+              - generic [ref=e256]: Buying Guides
+              - generic [ref=e257]: ·
+              - time [ref=e258]: 15 March 2025
+            - heading "How to Choose a Commercial Oven for Your Restaurant" [level=3] [ref=e259]:
+              - link "How to Choose a Commercial Oven for Your Restaurant" [ref=e260] [cursor=pointer]:
+                - /url: /blogs/nationwide-catering-equipment-blog/how-to-choose-a-commercial-oven
+            - paragraph [ref=e261]: From convection to combi, we break down the key differences and help you pick the right oven for your kitchen's volume and menu.
+            - link "Read article" [ref=e262] [cursor=pointer]:
+              - /url: /blogs/nationwide-catering-equipment-blog/how-to-choose-a-commercial-oven
+              - text: Read article
+              - generic [ref=e263]: →
+          - article [ref=e264]:
+            - link [ref=e265] [cursor=pointer]:
+              - /url: /blogs/nationwide-catering-equipment-blog/benefits-of-buying-used-catering-equipment
+              - img [ref=e267]
+            - generic [ref=e269]:
+              - generic [ref=e270]: Used Equipment
+              - generic [ref=e271]: ·
+              - time [ref=e272]: 28 February 2025
+            - heading "The Benefits of Buying Used Catering Equipment" [level=3] [ref=e273]:
+              - link "The Benefits of Buying Used Catering Equipment" [ref=e274] [cursor=pointer]:
+                - /url: /blogs/nationwide-catering-equipment-blog/benefits-of-buying-used-catering-equipment
+            - paragraph [ref=e275]: Quality used equipment can save 40–70% vs new. We explain what to look for, what to avoid, and how NCE inspects every piece we sell.
+            - link "Read article" [ref=e276] [cursor=pointer]:
+              - /url: /blogs/nationwide-catering-equipment-blog/benefits-of-buying-used-catering-equipment
+              - text: Read article
+              - generic [ref=e277]: →
+          - article [ref=e278]:
+            - link [ref=e279] [cursor=pointer]:
+              - /url: /blogs/nationwide-catering-equipment-blog/finance-options-for-catering-businesses
+              - img [ref=e281]
+            - generic [ref=e283]:
+              - generic [ref=e284]: Finance
+              - generic [ref=e285]: ·
+              - time [ref=e286]: 10 February 2025
+            - heading "Finance Options for New & Growing Catering Businesses" [level=3] [ref=e287]:
+              - link "Finance Options for New & Growing Catering Businesses" [ref=e288] [cursor=pointer]:
+                - /url: /blogs/nationwide-catering-equipment-blog/finance-options-for-catering-businesses
+            - paragraph [ref=e289]: Starting out or scaling up? iWoca Pay lets you spread the cost of essential equipment so you can focus on growing your business.
+            - link "Read article" [ref=e290] [cursor=pointer]:
+              - /url: /blogs/nationwide-catering-equipment-blog/finance-options-for-catering-businesses
+              - text: Read article
+              - generic [ref=e291]: →
+  - contentinfo [ref=e292]:
+    - generic [ref=e293]:
+      - generic [ref=e294]:
+        - generic [ref=e295]:
+          - heading "About NCE" [level=3] [ref=e296]
+          - list [ref=e297]:
+            - listitem [ref=e298]:
+              - link "Our Story" [ref=e299] [cursor=pointer]:
+                - /url: /pages/about
+            - listitem [ref=e300]:
+              - link "45 Years of Experience" [ref=e301] [cursor=pointer]:
+                - /url: /pages/about
+            - listitem [ref=e302]:
+              - link "Used Equipment Specialists" [ref=e303] [cursor=pointer]:
+                - /url: /collections/used
+            - listitem [ref=e304]:
+              - link "Finance with iWoca Pay" [ref=e305] [cursor=pointer]:
+                - /url: /pages/finance-by-iwoca-pay
+            - listitem [ref=e306]:
+              - link "Blog" [ref=e307] [cursor=pointer]:
+                - /url: /blogs/nationwide-catering-equipment-blog
+        - generic [ref=e308]:
+          - heading "Shop" [level=3] [ref=e309]
+          - list [ref=e310]:
+            - listitem [ref=e311]:
+              - link "All Products" [ref=e312] [cursor=pointer]:
+                - /url: /collections
+            - listitem [ref=e313]:
+              - link "New Equipment" [ref=e314] [cursor=pointer]:
+                - /url: /collections/new
+            - listitem [ref=e315]:
+              - link "Used Equipment" [ref=e316] [cursor=pointer]:
+                - /url: /collections/used
+            - listitem [ref=e317]:
+              - link "Cooking Equipment" [ref=e318] [cursor=pointer]:
+                - /url: /collections/cooking-equipment
+            - listitem [ref=e319]:
+              - link "Refrigeration" [ref=e320] [cursor=pointer]:
+                - /url: /collections/refrigeration
+            - listitem [ref=e321]:
+              - link "Food Preparation" [ref=e322] [cursor=pointer]:
+                - /url: /collections/food-preparation
+        - generic [ref=e323]:
+          - heading "Help" [level=3] [ref=e324]
+          - list [ref=e325]:
+            - listitem [ref=e326]:
+              - link "FAQ" [ref=e327] [cursor=pointer]:
+                - /url: /pages/faq
+            - listitem [ref=e328]:
+              - link "Delivery Information" [ref=e329] [cursor=pointer]:
+                - /url: /policies/shipping-policy
+            - listitem [ref=e330]:
+              - link "Returns Policy" [ref=e331] [cursor=pointer]:
+                - /url: /policies/refund-policy
+            - listitem [ref=e332]:
+              - link "Terms of Service" [ref=e333] [cursor=pointer]:
+                - /url: /policies/terms-of-service
+            - listitem [ref=e334]:
+              - link "Privacy Policy" [ref=e335] [cursor=pointer]:
+                - /url: /policies/privacy-policy
+        - generic [ref=e336]:
+          - heading "Contact" [level=3] [ref=e337]
+          - list [ref=e338]:
+            - listitem [ref=e339]:
+              - link "Contact Us" [ref=e340] [cursor=pointer]:
+                - /url: /pages/contact
+            - listitem [ref=e341]:
+              - link "01543 571 700" [ref=e342] [cursor=pointer]:
+                - /url: tel:01543571700
+            - listitem [ref=e343]:
+              - link "WhatsApp Us" [ref=e344] [cursor=pointer]:
+                - /url: https://wa.me/441543571700
+      - generic [ref=e346]:
+        - generic [ref=e347]:
+          - paragraph [ref=e348]: NCE
+          - paragraph [ref=e349]: Nationwide Catering Equipment
+        - paragraph [ref=e350]: Family-run specialists in new & used commercial kitchen equipment. Est. 1979.
+    - generic [ref=e352]:
+      - paragraph [ref=e353]: © 2026 Nationwide Catering Equipment Ltd. All rights reserved.
+      - generic [ref=e354]:
+        - generic [ref=e355]: "We accept:"
+        - generic [ref=e356]: Visa
+        - generic [ref=e357]: Mastercard
+        - generic [ref=e358]: Amex
+        - generic [ref=e359]: iWoca Pay
+  - button "Open Next.js Dev Tools" [ref=e365] [cursor=pointer]:
+    - img [ref=e366]

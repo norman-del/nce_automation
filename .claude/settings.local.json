@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest shopify-qbo-sync --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)",
+      "Bash(npm install:*)",
+      "Bash(\"C:/Users/norma/nce_automation/shopify-qbo-sync/supabase/migrations/001_initial_schema.sql\":*)",
+      "Bash(\"C:/Users/norma/nce_automation/shopify-qbo-sync/lib/supabase/client.ts\":*)",
+      "Bash(\"C:/Users/norma/nce_automation/shopify-qbo-sync/lib/shopify/payouts.ts\":*)",
+      "Bash(\"C:/Users/norma/nce_automation/shopify-qbo-sync/lib/qbo/auth.ts\":*)",
+      "Bash(\"C:/Users/norma/nce_automation/shopify-qbo-sync/lib/qbo/journal.ts\":*)",
+      "Bash(\"C:/Users/norma/nce_automation/shopify-qbo-sync/lib/qbo/payments.ts\":*)",
+      "Bash(\"C:/Users/norma/nce_automation/shopify-qbo-sync/app/api/qbo/payment/route.ts\":*)",
+      "Bash(\"C:/Users/norma/nce_automation/shopify-qbo-sync/app/api/cron/sync/route.ts\":*)",
+      "Bash(\"C:/Users/norma/nce_automation/shopify-qbo-sync/vercel.json\":*)",
+      "Bash(npm run:*)",
+      "Bash(node -e \"console.log\\(require\\(''crypto''\\).randomBytes\\(32\\).toString\\(''hex''\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\(''crypto''\\).randomBytes\\(24\\).toString\\(''base64url''\\)\\)\")",
+      "Bash(cat:*)",
+      "Bash(\"C:/Users/norma/nce_automation/shopify-qbo-sync/.env.local\")",
+      "Bash(npx supabase:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(winget install:*)",
+      "Bash(tar -xzf supabase_win.tar.gz)",
+      "Bash(ls supabase*)",
+      "Bash(C:/Users/norma/nce_automation/supabase.exe --version 2>&1)",
+      "Bash(C:/Users/norma/nce_automation/supabase.exe link:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_1c4d035ca43b75175827cd7d2e583de19b1ef8f3 C:/Users/norma/nce_automation/supabase.exe link --project-ref daesvkeogxuqlrskuwpg)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_1c4d035ca43b75175827cd7d2e583de19b1ef8f3 C:/Users/norma/nce_automation/supabase.exe db push)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_1c4d035ca43b75175827cd7d2e583de19b1ef8f3 C:/Users/norma/nce_automation/supabase.exe db diff)",
+      "Skill(update-config)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__apply_migration",
+      "Skill(codex:rescue)",
+      "mcp__plugin_vercel_vercel__get_project",
+      "mcp__plugin_vercel_vercel__get_runtime_logs",
+      "Skill(playwright-cli)"
+    ]
+  }
+}

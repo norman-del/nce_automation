@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/client'
 import { fetchProductMetadataFromSupabase } from '@/lib/products/metadata'
 import { notFound } from 'next/navigation'
 import EditProductForm from './EditProductForm'
+import MetafieldsEditor from './MetafieldsEditor'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -49,6 +50,11 @@ export default async function EditProductPage({ params }: Props) {
         vendors={vendors}
         initialCollections={initialCollections}
       />
+
+      <div className="mt-8 bg-surface border border-edge rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-primary mb-4">Specs</h3>
+        <MetafieldsEditor productId={product.id} />
+      </div>
     </div>
   )
 }
