@@ -340,7 +340,7 @@ Before we ask Norman and Rich to QA product ingestion end-to-end (add test produ
 - [x] **Bug 1 fixed + VAT audit clean (2026-04-22).** Migration seeded mapping (standard=5, margin sale=18, margin purch=9). `findTaxCodes` replaced with DB-backed `getTaxCodeMapping`. Audit showed 43/45 correct; 2 items (NCE6410, NCE6396) remediated via `scripts/audit-qbo-vat-codes.mjs --apply`.
 - [x] **Bug 2 fixed (2026-04-22).** GraphQL `publishablePublish` via new `shopifyGraphQL` helper + `publishToAllChannels()`. Called on create AND on draft→active. Scope `write_publications` added to `shopify.app.toml` — **needs `npx shopify app deploy` + `release` + reinstall before live** (see §11).
 - [x] **Bug 3 fixed (2026-04-22).** `lib/shopify/format.ts` `plainTextToHtml()` wired into create + update. Existing descriptions will be reformatted on next staff edit (no mass-remediation script — natural drift is fine).
-- [ ] Bug 4 fixed — QBO token auto-refresh (not started)
+- [x] **Bug 4 fixed (2026-04-22).** Root cause: `intuit-oauth` v4.2.2's `client.refresh()` rejects valid tokens — confirmed by diagnostic showing raw HTTP 200 vs library "invalid". Replaced with raw fetch in `lib/qbo/auth.ts`. Hardened: 3× retry on DB save, 15-min refresh threshold, daily keepalive cron at `/api/cron/qbo-refresh`, visibility on Settings → Connections. Verified end-to-end on prod.
 - [ ] Drop-ship toggle shipped (Norman has drop-ship products to add)
 - [ ] UI banner on product form clearly says "Bridge mode — syncs to Shopify + QBO"
 
