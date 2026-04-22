@@ -59,6 +59,9 @@ Both Vercel and Supabase have CLIs installed. **Always use CLI commands via Bash
 ## Lessons Learned
 Before touching production Shopify/QBO data or writing any remediation script, read `docs/lessons-learned.md`. It records past incidents and the standing rules we've adopted (dry-run defaults, owner-review gates, mandatory inventory field sets).
 
+## Self-testing — use Playwright before asking the user
+If a change is testable in a browser (UI, OAuth flow, settings page, button click, form submit), drive it yourself with the playwright-cli skill before asking the user to test. Use Monitor on `vercel logs` in parallel to see exactly what happens server-side. Only ask the user to test things that genuinely require their account (e.g. third-party admin pages we can't auth into) or carry real-money / real-customer risk. Don't make the user click buttons you could click yourself.
+
 ## Hard Rules
 - NEVER store tokens in plaintext — always encrypt with AES-256-GCM
 - NEVER create duplicate journal entries — always check payout.journal_entry_id first
