@@ -12,7 +12,7 @@
 ## Known issues to fix next session (in order)
 
 ### Issue 1 — QBO "Refresh token: Unknown" + sync errors
-**Root cause:** QBO OAuth was last done locally via ngrok. The tokens in Supabase are stale/expired. `refresh_token_expires_at` is NULL because the last auth predates that column being added.
+**Root cause (historical):** QBO OAuth was last done locally via the now-removed ngrok tunnel. Re-auth now runs on production (`https://nce-automation.vercel.app/api/qbo/auth`). The tokens in Supabase were stale/expired. `refresh_token_expires_at` was NULL because the last auth predated that column being added.
 
 **Sync log errors:** `"The Refresh token is invalid, please Authorize again"` on the 02/04 payout — direct result of stale token.
 

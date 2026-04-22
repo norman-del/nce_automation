@@ -33,3 +33,38 @@ export async function shopifyFetch<T>(
 
   return res.json() as Promise<T>
 }
+
+// GraphQL variant for Shopify Admin API calls that REST doesn't cover cleanly
+// (e.g. publishablePublish for multi-channel publishing).
+export async function shopifyGraphQL<T>(
+  query: string,
+  variables: Record<string, unknown> = {}
+): Promise<T> {
+  const token = process.env.SHOPIFY_ACCESS_TOKEN
+  if (!token) throw new Error('SHOPIFY_ACCESS_TOKEN is not set')
+
+  const domain = process.env.SHOPIFY_STORE_DOMAIN
+  if (!domain) throw new Error('SHOPIFY_STORE_DOMAIN is not set')
+
+  const url = `https://${domain}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-Shopify-Access-Token': token,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query, variables }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Shopify GraphQL error ${res.status}: ${body}`)
+  }
+
+  const json = (await res.json()) as { data?: T; errors?: unknown }
+  if (json.errors) {
+    throw new Error(`Shopify GraphQL errors: ${JSON.stringify(json.errors)}`)
+  }
+  if (!json.data) throw new Error('Shopify GraphQL: no data returned')
+  return json.data
+}

@@ -1,4 +1,57 @@
-import { shopifyFetch } from './client'
+import { shopifyFetch, shopifyGraphQL } from './client'
+import { plainTextToHtml } from './format'
+
+/* ------------------------------------------------------------------ */
+/* Multi-channel publishing via GraphQL publishablePublish             */
+/*                                                                     */
+/* Replaces the broken REST loop that PUT'd to /product_listings       */
+/* without referencing each publication. publishablePublish is the     */
+/* modern API that actually publishes to all sales channels (Online    */
+/* Store, Shop app, POS, Google, etc.) in a single call.               */
+/* Requires the write_publications scope (see shopify.app.toml).       */
+/* ------------------------------------------------------------------ */
+
+async function publishToAllChannels(productIdNumeric: number): Promise<void> {
+  // Fetch all publications (sales channels) the store has
+  const pubResp = await shopifyFetch<{ publications: { id: number; name: string }[] }>(
+    '/publications.json'
+  )
+  const publications = pubResp.publications ?? []
+  if (publications.length === 0) {
+    console.warn('[shopify] No publications returned — nothing to publish to')
+    return
+  }
+
+  const productGid = `gid://shopify/Product/${productIdNumeric}`
+  const input = publications.map(p => ({ publicationId: `gid://shopify/Publication/${p.id}` }))
+
+  const mutation = `
+    mutation publishablePublish($id: ID!, $input: [PublicationInput!]!) {
+      publishablePublish(id: $id, input: $input) {
+        publishable { ... on Product { id } }
+        userErrors { field message }
+      }
+    }
+  `
+
+  const data = await shopifyGraphQL<{
+    publishablePublish: {
+      publishable: { id: string } | null
+      userErrors: { field: string[]; message: string }[]
+    }
+  }>(mutation, { id: productGid, input })
+
+  const errs = data.publishablePublish.userErrors
+  if (errs && errs.length) {
+    // Don't throw — individual channels may reject (e.g. GMC needs barcodes).
+    // The product is still published to the channels that accepted it.
+    console.warn(
+      `[shopify] publishablePublish had ${errs.length} user error(s) for ${productGid}:`,
+      errs.map(e => `${e.field?.join('.')}=${e.message}`).join('; ')
+    )
+  }
+  console.log(`[shopify] Published ${productGid} to ${publications.length} channel(s): ${publications.map(p => p.name).join(', ')}`)
+}
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -71,17 +124,19 @@ export async function createShopifyProduct(params: {
 
   const fullTitle = `${title} (NCE${sku})`
 
-  // Use explicit description if provided, otherwise build from specs
+  // Use explicit description if provided, otherwise build from specs.
+  // plainTextToHtml preserves paragraph breaks (\n\n) by wrapping in <p>,
+  // so the Shopify PDP renders them like the admin typed them.
   let description: string
   if (bodyHtml) {
-    description = bodyHtml
+    description = plainTextToHtml(bodyHtml)
   } else {
     const descParts: string[] = []
     if (notes) descParts.push(notes)
     descParts.push(title)
     if (condition) descParts.push(`Condition: ${condition === 'new' ? 'New' : 'Used'}`)
     descParts.push(`Dimensions: ${widthCm}W x ${heightCm}H x ${depthCm}D cm`)
-    description = descParts.join('<br>')
+    description = plainTextToHtml(descParts.join('\n\n'))
   }
 
   const product: ShopifyProductInput = {
@@ -127,25 +182,14 @@ export async function createShopifyProduct(params: {
   const productId = result.product.id
   console.log('[shopify] Product created:', sku, '→ id', productId)
 
-  // Publish to ALL sales channels
+  // Publish to all sales channels. Products are still 'draft' at this point,
+  // so channels won't actually show them until status flips to 'active' on
+  // photo upload — but registering the publication now means the flip-to-active
+  // becomes visible everywhere automatically.
   try {
-    const pubData = await shopifyFetch<{ publications: { id: number; name: string }[] }>(
-      '/publications.json'
-    )
-    console.log('[shopify] Available channels:', pubData.publications?.map(p => `${p.id}="${p.name}"`).join(', '))
-    for (const pub of pubData.publications || []) {
-      try {
-        await shopifyFetch(`/product_listings/${productId}.json`, {
-          method: 'PUT',
-          body: JSON.stringify({ product_listing: { product_id: productId } }),
-        })
-      } catch {
-        // Channel may not support this product
-      }
-    }
-    console.log('[shopify] Published to all channels')
+    await publishToAllChannels(productId)
   } catch (pubErr) {
-    console.warn('[shopify] Publishing to channels failed:', String(pubErr))
+    console.warn('[shopify] publishToAllChannels failed (non-fatal):', String(pubErr))
   }
 
   return { shopifyProductId: productId }
@@ -184,14 +228,14 @@ export async function updateShopifyProduct(
 
   let description: string
   if (bodyHtml) {
-    description = bodyHtml
+    description = plainTextToHtml(bodyHtml)
   } else {
     const descParts: string[] = []
     if (notes) descParts.push(notes)
     descParts.push(title)
     if (condition) descParts.push(`Condition: ${condition === 'new' ? 'New' : 'Used'}`)
     descParts.push(`Dimensions: ${widthCm}W x ${heightCm}H x ${depthCm}D cm`)
-    description = descParts.join('<br>')
+    description = plainTextToHtml(descParts.join('\n\n'))
   }
 
   // Get existing product to find variant ID
@@ -306,6 +350,17 @@ export async function updateProductStatus(
     method: 'PUT',
     body: JSON.stringify({ product: { id: productId, status, published: true, published_scope: 'global' } }),
   })
+
+  // Re-publish to all channels on activation — belt-and-braces for any product
+  // that was created before the publishablePublish fix landed, or for any
+  // channel that was added between creation and activation.
+  if (status === 'active') {
+    try {
+      await publishToAllChannels(productId)
+    } catch (pubErr) {
+      console.warn('[shopify] publishToAllChannels on activate failed (non-fatal):', String(pubErr))
+    }
+  }
 
   console.log(`[shopify] Product ${productId} status updated to ${status}`)
 }

@@ -8,6 +8,33 @@ Current pipelines:
 1. **Payout Fee Sync** — Shopify payout fee reconciliation with QuickBooks Online
 2. **Product Ingestion** — Single-form entry that pushes to Supabase, Shopify (draft), and QBO simultaneously
 
+## Scope: Now (Bridge) vs Strategic (Post-Shopify)
+
+**Before editing any product, inventory, order, or sync code, decide which bucket the change belongs in. Don't mix them in one commit.**
+
+Full plan, bug specs, and execution order: **`docs/plans/now-vs-strategic.md`**. Read it first.
+
+### "Now" (Bridge) — keeps the current Shopify/QBO business running
+Exists only because Shopify is still our storefront. Gated by `SHOPIFY_SYNC_ENABLED` where applicable. Decommissioned after DNS cutover + 3 months stability.
+- Product ingestion form + Shopify draft push + QBO item create — `app/products/new`, `lib/shopify/products.ts`, `lib/qbo/items.ts`
+- Product editing sync to Shopify + QBO — `updateShopifyProduct`, `updateQboItem`
+- Photo upload → Shopify CDN → draft→active flip
+- Shopify payout fee sync → QBO journal — `app/finance`, `lib/sync/payouts.ts`, `/api/cron/sync`
+
+Known bugs (see plan doc §5): QBO VAT codes not applied, Shopify multi-channel publish broken, description paragraphs collapse. Fix these before owner QA.
+
+### "Strategic" (Post-Shopify) — built Shopify-independent
+- Collection CRUD, metafield editor, supplier feed ingestion, QBO sales sync (dry-run), image hosting migration
+- eBay integration, cross-channel stock sync, drop-ship product support
+- Shipping labels (APC + Pallettrack), draft orders, returns, B2B pricing, rewards, CMS, staff invite UI
+
+### Rules
+- UI ribbon on every page ("Bridge mode" amber / "Strategic" blue) — not yet built, tracked in plan doc §9 step 6.
+- No role-based hiding (Norman and Rich must be able to QA Strategic features as they ship).
+- No duplicate Now/Strategic versions of the same screen. Single switch at cutover is `SHOPIFY_SYNC_ENABLED`.
+- Every Shopify variant write **must** set `inventory_management: 'shopify'` AND `inventory_policy: 'deny'` explicitly (see `docs/lessons-learned.md`).
+- Remediation scripts default to dry-run; `--apply` required to write.
+
 ## Tech Stack
 Next.js 16 (App Router), React 19, Supabase, Tailwind 4, node-quickbooks, intuit-oauth
 
@@ -73,6 +100,11 @@ Supabase Postgres. Migrations in supabase/migrations/.
 
 **Staff & auth:**
 - `staff_users` — staff accounts with role (admin/staff), linked to Supabase Auth via auth_user_id
+
+**Collections & metafields:**
+- `collections` — collection catalog (title, handle, description, image_url, display_order for sidebar ordering). Managed via Settings → Collections.
+- `metafield_definitions` — schema for structured product specs (key, label, field_type, unit, options, display_group, sort_order, required). Managed via Settings → Specs Fields (admin only).
+- `product_metafields` — per-product values for the definitions above. Edited on the product edit page.
 
 ## Folder Guide
 ```
@@ -147,43 +179,19 @@ Mobile tab bar: Orders, Products, Dashboard, Customers, Settings (admin)
 - When a product is created, if the supplier doesn't exist in QBO, a Vendor is created automatically
 - QBO Vendor ID cached in `suppliers.qbo_vendor_id` for reuse
 
-## ngrok (QBO OAuth only)
-ngrok is only needed when re-doing the QBO OAuth flow (tokens last 100 days, so this is rare).
-The redirect URI must be HTTPS — ngrok provides this tunnel for local dev.
+## QBO OAuth re-auth (production)
+The OAuth flow runs entirely on production at https://nce-automation.vercel.app. `QBO_REDIRECT_URI` env var in Vercel points at `/api/qbo/auth` there. No ngrok, no local tunnel.
 
-### Current fixed domain
-```
-https://tameka-beholden-alexia.ngrok-free.dev → http://localhost:3000
-```
-This is a reserved free-tier domain (doesn't change on restart).
+### Steps
+1. Go to https://nce-automation.vercel.app/settings → **Connections** tab → **Disconnect QuickBooks** → **Connect QuickBooks**
+2. Log in to Intuit and authorise
+3. Tokens are saved to Supabase automatically on callback
+4. Account mappings are set automatically by the OAuth callback (see QBO Account Mappings below) — no manual step
 
-### Start ngrok
-```bash
-ngrok http 3000
-```
-Auth token (already configured on this machine):
-```
-ngrok config add-authtoken 3BWi7Po675XO8cq0oLXWqdaN3ro_3uxLpZeiPVRz7EW3nBcuP
-```
+Refresh tokens last 100 days. Access tokens last ~1 hour and refresh silently on every API call. If the app has been idle for >100 days the refresh token itself expires and full re-auth (above) is required.
 
-### If the URL ever changes
-1. Update `QBO_REDIRECT_URI` in `.env.local`
-2. Go to https://developer.intuit.com → your app → Keys & credentials → Redirect URIs → update to the new URL
-3. Re-do QBO OAuth via /settings → Disconnect → Connect QuickBooks
-
-### QBO OAuth re-auth steps
-1. Start dev server: `npm run dev`
-2. Start ngrok: `ngrok http 3000`
-3. Confirm ngrok URL matches `QBO_REDIRECT_URI` in `.env.local`
-4. Go to http://localhost:3000/settings → Disconnect QBO → Connect QuickBooks
-5. Log in to Intuit and authorise
-6. Tokens are saved to Supabase automatically
-7. **Re-map accounts after re-auth** — mappings are tied to the QBO connection and reset on reconnect (see QBO Account Mappings below)
-
-### Warning
-Never use the QBO refresh token outside the app (e.g. in a test script) without saving
-the new refresh token back to Supabase. Intuit rotates refresh tokens on every use —
-consuming one without saving the replacement invalidates the chain and forces re-auth.
+### Warning — never refresh tokens from a standalone script
+Intuit rotates refresh tokens on every use. If a test/diagnostic script calls `oauth.refresh()` and doesn't save the new refresh token back to `qbo_connections`, the chain is invalidated and full re-auth is forced. All token refresh must go through `lib/qbo/client.ts` `getQboClient()`, which handles save-back.
 
 ## QBO Account Mappings
 These are hardcoded into the OAuth callback (`app/api/qbo/auth/route.ts`) and set automatically on every connect/reconnect. No manual mapping needed.
@@ -199,11 +207,23 @@ These are hardcoded into the OAuth callback (`app/api/qbo/auth/route.ts`) and se
 - **Strategy 4 (customer name)** is the main fallback. It uses a two-step lookup: `findCustomers` by DisplayName → `findInvoices` by customer ID. It tries company name first, then personal name — this is necessary because Shopify sometimes has the company name only in the shipping address, not the customer record, so QBO may have the person's name instead.
 - `client.query()` does NOT exist in node-quickbooks. Use `findCustomers` / `findInvoices` with criteria instead.
 
-## Codex (AI code writing)
-Codex is used to write code so Claude conserves tokens. Always delegate substantial edits to Codex via the `codex:rescue` skill.
+## Codex (optional, use sparingly)
+Codex (GPT-5.4) is available via the `codex:rescue` skill and can be useful for large,
+self-contained code edits where its tokens are essentially free. It is **not** the default
+— prefer writing code directly. Only reach for Codex when the edit is large enough that
+the token savings clearly outweigh the overhead of delegating.
 
-### How to invoke
-Use the `codex:rescue` skill. It automatically adds `--write` for edit tasks. Example:
+**Don't** auto-delegate routine edits, small fixes, refactors, or anything requiring
+back-and-forth judgement. Most work should be done directly in this chat.
+
+### Concurrency caveat
+Codex runs through a single shared broker on this machine, so only one Claude chat can
+use it at a time. Other chats on this machine may also be invoking it. If a `codex:rescue`
+call stalls or returns stale/unrelated context, the broker is likely busy or carrying
+state from another session — start a fresh `codex:rescue` invocation rather than
+retrying, and if it keeps stalling, just do the edit directly.
+
+### How to invoke (when appropriate)
 ```
 /codex:rescue Fix the bug in lib/qbo/client.ts where ...
 ```

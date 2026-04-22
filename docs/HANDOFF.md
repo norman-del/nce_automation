@@ -84,7 +84,7 @@ Every action should return a styled result, never raw JSON:
 ## Known Gotchas
 
 - **Stale journal_entry_id**: if a journal is deleted from QBO manually, DB won't know. Fix: `UPDATE payouts SET journal_entry_id = null, journal_synced_at = null WHERE payout_date = 'YYYY-MM-DD'` in Supabase SQL editor. Don't delete journals from QBO in production.
-- **QBO refresh token rotation**: never use the refresh token outside the app without saving the new one back to Supabase. See CLAUDE.md ngrok section.
+- **QBO refresh token rotation**: never use the refresh token outside the app without saving the new one back to Supabase. See CLAUDE.md § "QBO OAuth re-auth (production)".
 - **Account mappings**: stored in `qbo_connections` table. If QBO is disconnected and reconnected, mappings persist — tokens update but account IDs stay.
 - **Shopify order name**: includes `#` prefix (e.g. `#NCE1580`) — stripped before storing as `NCE1580`
 - **Payment amount**: always use gross (`txn.amount`), not net. Journal handles the fee split.
@@ -102,7 +102,7 @@ Every action should return a styled result, never raw JSON:
 | `SHOPIFY_ACCESS_TOKEN` | ✅ |
 | `QBO_CLIENT_ID` | ✅ Production |
 | `QBO_CLIENT_SECRET` | ✅ Production |
-| `QBO_REDIRECT_URI` | ✅ https://tameka-beholden-alexia.ngrok-free.app/api/qbo/auth |
+| `QBO_REDIRECT_URI` | ✅ https://nce-automation.vercel.app/api/qbo/auth (prod) |
 | `QBO_ENVIRONMENT` | ✅ production |
 | `TOKEN_ENCRYPTION_KEY` | ✅ |
 | `CRON_SECRET` | ✅ |

@@ -1,4 +1,5 @@
 import { getQboClient } from './client'
+import { createServiceClient } from '@/lib/supabase/client'
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -106,13 +107,15 @@ export async function createQboItem(params: {
   vatApplicable: boolean
   qboVendorId: string | null
 }): Promise<string> {
-  const { client: _client } = await getQboClient()
+  const { client: _client, connection } = await getQboClient()
   const client = _client as QboAny
   const { sku, title, sellingPrice, costPrice, vatApplicable, qboVendorId } = params
 
-  // Find tax codes and accounts
-  const taxCodes = await findTaxCodes()
+  const taxCodes = await getTaxCodeMapping(connection.realm_id)
   const accounts = await findAccountsByType()
+
+  const saleTaxCodeId = vatApplicable ? taxCodes.standard : taxCodes.marginSale
+  const purchaseTaxCodeId = vatApplicable ? taxCodes.standard : taxCodes.marginPurchase
 
   const itemData: Record<string, unknown> = {
     Name: `${title} (NCE${sku})`.slice(0, 100), // QBO has 100 char limit on Name
@@ -126,18 +129,24 @@ export async function createQboItem(params: {
     // Asset account for stock
     AssetAccountRef: { value: accounts.asset || '1' },
 
-    // Sales info — always VAT inclusive
+    // Sales — price is VAT inclusive
     UnitPrice: sellingPrice,
     IncomeAccountRef: { value: accounts.income || '1' },
     SalesTaxIncluded: true,
-    SalesTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
+    SalesTaxCodeRef: { value: saleTaxCodeId },
 
-    // Purchase info — always VAT inclusive
+    // Purchase — price is VAT inclusive
     PurchaseDesc: title,
     PurchaseCost: costPrice,
     ExpenseAccountRef: { value: accounts.expense || '1' },
-    PurchaseTaxIncluded: true,
-    PurchaseTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
+  }
+
+  // Margin-scheme items have no reclaimable purchase VAT in UK. If no purchase
+  // code is configured (marginPurchase null), omit both fields entirely —
+  // setting a sales-only code on the purchase side causes QBO to silently drop it.
+  if (purchaseTaxCodeId) {
+    itemData.PurchaseTaxIncluded = true
+    itemData.PurchaseTaxCodeRef = { value: purchaseTaxCodeId }
   }
 
   if (qboVendorId) {
@@ -182,7 +191,7 @@ export async function updateQboItem(params: {
   vatApplicable: boolean
   qboVendorId: string | null
 }): Promise<void> {
-  const { client: _client } = await getQboClient()
+  const { client: _client, connection } = await getQboClient()
   const client = _client as QboAny
   const { qboItemId, sku, title, sellingPrice, costPrice, vatApplicable, qboVendorId } = params
 
@@ -194,7 +203,9 @@ export async function updateQboItem(params: {
     })
   })
 
-  const taxCodes = await findTaxCodes()
+  const taxCodes = await getTaxCodeMapping(connection.realm_id)
+  const saleTaxCodeId = vatApplicable ? taxCodes.standard : taxCodes.marginSale
+  const purchaseTaxCodeId = vatApplicable ? taxCodes.standard : taxCodes.marginPurchase
 
   const itemUpdate: Record<string, unknown> = {
     Id: qboItemId,
@@ -206,9 +217,12 @@ export async function updateQboItem(params: {
     PurchaseDesc: title,
     PurchaseCost: costPrice,
     SalesTaxIncluded: true,
-    SalesTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
-    PurchaseTaxIncluded: true,
-    PurchaseTaxCodeRef: { value: vatApplicable ? taxCodes.standardRated : taxCodes.margin },
+    SalesTaxCodeRef: { value: saleTaxCodeId },
+  }
+
+  if (purchaseTaxCodeId) {
+    itemUpdate.PurchaseTaxIncluded = true
+    itemUpdate.PurchaseTaxCodeRef = { value: purchaseTaxCodeId }
   }
 
   if (qboVendorId) {
@@ -239,65 +253,56 @@ export async function updateQboItem(params: {
 }
 
 /* ------------------------------------------------------------------ */
-/* Find UK VAT tax codes                                               */
+/* Get UK VAT tax code mapping from qbo_connections                    */
+/*                                                                     */
+/* Source of truth is the qbo_connections row for the active realm.    */
+/* Replaces the old name-matching heuristic which picked inactive codes*/
+/* (e.g. "20.0% ECG") before the correct active ones ("20.0% S").      */
 /* ------------------------------------------------------------------ */
 
-interface TaxCodeResult {
-  standardRated: string
-  standardRatedName: string
-  margin: string
-  marginName: string
+interface TaxCodeMapping {
+  standard: string
+  marginSale: string
+  marginPurchase: string | null
 }
 
-let cachedTaxCodes: TaxCodeResult | null = null
+const mappingCache = new Map<string, TaxCodeMapping>()
 
-async function findTaxCodes(): Promise<TaxCodeResult> {
-  if (cachedTaxCodes) return cachedTaxCodes
+async function getTaxCodeMapping(realmId: string): Promise<TaxCodeMapping> {
+  const cached = mappingCache.get(realmId)
+  if (cached) return cached
 
-  const { client: _c } = await getQboClient()
-  const client = _c as QboAny
+  const db = createServiceClient()
+  const { data, error } = await db
+    .from('qbo_connections')
+    .select('vat_standard_tax_code_id, vat_margin_sale_tax_code_id, vat_margin_purchase_tax_code_id')
+    .eq('realm_id', realmId)
+    .single()
 
-  const result = await new Promise<{ Id: string; Name: string }[]>((resolve, reject) => {
-    client.findTaxCodes(
-      {},
-      (err: unknown, data: { QueryResponse: { TaxCode?: { Id: string; Name: string }[] } }) => {
-        if (err) reject(err)
-        else resolve(data.QueryResponse.TaxCode || [])
-      }
-    )
-  })
-
-  console.log('[qbo-items] Available tax codes:', result.map(tc => `${tc.Id}="${tc.Name}"`).join(', '))
-
-  let standardRated: string | null = null
-  let standardRatedName = ''
-  let margin: string | null = null
-  let marginName = ''
-
-  for (const tc of result) {
-    const name = tc.Name.toLowerCase()
-    if (name.includes('20')) {
-      standardRated = tc.Id
-      standardRatedName = tc.Name
-    }
-    if (name.includes('margin')) {
-      margin = tc.Id
-      marginName = tc.Name
-    }
-  }
-
-  if (!standardRated) console.error('[qbo-items] WARNING: No 20% tax code found!')
-  if (!margin) console.error('[qbo-items] WARNING: No Margin tax code found!')
-  console.log('[qbo-items] Selected tax codes — standard:', standardRated, `"${standardRatedName}"`, ', margin:', margin, `"${marginName}"`)
-  if (!standardRated || !margin) {
+  if (error) {
     throw new Error(
-      `QBO tax codes not found. Available: ${result.map(tc => `${tc.Id}="${tc.Name}"`).join(', ')}. ` +
-      `Need a "20%" code and a "Margin" code.`
+      `QBO tax code mapping lookup failed for realm ${realmId}: ${error.message}. ` +
+      `Ensure migration 20260422120000_qbo_vat_tax_code_mapping.sql has been applied.`
     )
   }
 
-  cachedTaxCodes = { standardRated, standardRatedName, margin, marginName }
-  return cachedTaxCodes
+  if (!data.vat_standard_tax_code_id || !data.vat_margin_sale_tax_code_id) {
+    throw new Error(
+      `QBO tax code mapping is not set for realm ${realmId}. ` +
+      `Hit GET /api/qbo/debug/tax-codes (admin) to list available codes, then ` +
+      `update qbo_connections.vat_standard_tax_code_id and vat_margin_sale_tax_code_id. ` +
+      `See docs/plans/now-vs-strategic.md §5 Bug 1.`
+    )
+  }
+
+  const mapping: TaxCodeMapping = {
+    standard: data.vat_standard_tax_code_id,
+    marginSale: data.vat_margin_sale_tax_code_id,
+    marginPurchase: data.vat_margin_purchase_tax_code_id,
+  }
+  console.log(`[qbo-items] Tax code mapping for realm ${realmId}:`, mapping)
+  mappingCache.set(realmId, mapping)
+  return mapping
 }
 
 /* ------------------------------------------------------------------ */
