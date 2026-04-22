@@ -24,7 +24,7 @@ async function getSettingsData() {
       db
         .from('qbo_connections')
         .select(
-          'company_name, token_expires_at, refresh_token_expires_at, shopify_fees_account_id, bank_account_id'
+          'company_name, token_expires_at, refresh_token_expires_at, shopify_fees_account_id, bank_account_id, updated_at, last_refreshed_by'
         )
         .limit(1)
         .single(),
@@ -42,6 +42,8 @@ async function getSettingsData() {
         refresh_token_expires_at: string | null
         shopify_fees_account_id: string | null
         bank_account_id: string | null
+        updated_at: string | null
+        last_refreshed_by: string | null
       } | null,
       logs: (logsRes.data ?? []) as LogEntry[],
     }

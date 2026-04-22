@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import PromotionsList from './PromotionsList'
 import ShippingRatesEditor from './ShippingRatesEditor'
 import CollectionsManager from './CollectionsManager'
+import SpecsFieldsManager from './SpecsFieldsManager'
 import SupplierFeedsManager from './SupplierFeedsManager'
 import SyncLogTable from './SyncLogTable'
 import AccountsModal from './AccountsModal'
@@ -25,6 +26,8 @@ interface QboData {
   refresh_token_expires_at: string | null
   shopify_fees_account_id: string | null
   bank_account_id: string | null
+  updated_at: string | null
+  last_refreshed_by: string | null
 }
 
 interface ShopifyData {
@@ -45,6 +48,7 @@ const allTabs = [
   { key: 'promotions', label: 'Promotions', staffVisible: false },
   { key: 'shipping', label: 'Shipping Rates', staffVisible: false },
   { key: 'collections', label: 'Collections', staffVisible: false },
+  { key: 'specs-fields', label: 'Specs Fields', staffVisible: false },
   { key: 'supplier-feeds', label: 'Supplier Feeds', staffVisible: false },
   { key: 'activity', label: 'Activity Log', staffVisible: false },
 ] as const
@@ -61,6 +65,25 @@ function formatExpiry(isoDate: string | null): { text: string; urgent: boolean }
   if (days === 1) return { text: 'Expires tomorrow', urgent: true  }
   if (days <= 7)  return { text: `Expires in ${days} days`, urgent: true  }
   return             { text: `Expires in ${days} days`, urgent: false }
+}
+
+function formatAccessTokenStatus(isoDate: string | null): { text: string; tone: 'ok' | 'warn' | 'error' } {
+  if (!isoDate) return { text: 'Unknown', tone: 'error' }
+  const minutesLeft = Math.round((new Date(isoDate).getTime() - Date.now()) / 60000)
+  if (minutesLeft < 0)   return { text: `Expired ${Math.abs(minutesLeft)} min ago — auto-refresh on next call`, tone: 'warn' }
+  if (minutesLeft < 15)  return { text: `Expires in ${minutesLeft} min — will auto-refresh`,                    tone: 'warn' }
+  return                       { text: `Valid for ${minutesLeft} min`,                                          tone: 'ok'   }
+}
+
+function formatRelativeTime(isoDate: string | null): string {
+  if (!isoDate) return 'never'
+  const minutes = Math.round((Date.now() - new Date(isoDate).getTime()) / 60000)
+  if (minutes < 1)    return 'just now'
+  if (minutes < 60)   return `${minutes} min ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24)     return `${hours} hr ago`
+  const days = Math.round(hours / 24)
+  return `${days} day${days === 1 ? '' : 's'} ago`
 }
 
 export default function SettingsTabs({ shopify, qbo, logs, initialTab, staffRole }: Props) {
@@ -104,6 +127,7 @@ export default function SettingsTabs({ shopify, qbo, logs, initialTab, staffRole
       {activeTab === 'promotions' && <PromotionsList />}
       {activeTab === 'shipping' && <ShippingRatesEditor />}
       {activeTab === 'collections' && <CollectionsManager />}
+      {activeTab === 'specs-fields' && <SpecsFieldsManager />}
       {activeTab === 'supplier-feeds' && <SupplierFeedsManager />}
       {activeTab === 'activity' && <SyncLogTable logs={logs} />}
     </div>
@@ -170,13 +194,29 @@ function ConnectionsTab({ shopify, qbo }: { shopify: ShopifyData | null; qbo: Qb
 
             {(() => {
               const expiry = formatExpiry(qbo.refresh_token_expires_at)
+              const access = formatAccessTokenStatus(qbo.token_expires_at)
+              const accessClass =
+                access.tone === 'ok' ? 'text-ok' : access.tone === 'warn' ? 'text-warn' : 'text-err'
               return (
-                <p className="flex items-center gap-2">
-                  <span>Refresh token:</span>
-                  <span className={`font-medium ${expiry.urgent ? 'text-warn' : 'text-ok'}`}>
-                    {expiry.text}
-                  </span>
-                </p>
+                <>
+                  <p className="flex items-center gap-2">
+                    <span>Refresh token:</span>
+                    <span className={`font-medium ${expiry.urgent ? 'text-warn' : 'text-ok'}`}>
+                      {expiry.text}
+                    </span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span>Access token:</span>
+                    <span className={`font-medium ${accessClass}`}>{access.text}</span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span>Last refresh:</span>
+                    <span className="text-primary">
+                      {formatRelativeTime(qbo.updated_at)}
+                      {qbo.last_refreshed_by ? ` (${qbo.last_refreshed_by})` : ' (manual reconnect)'}
+                    </span>
+                  </p>
+                </>
               )
             })()}
 

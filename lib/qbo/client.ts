@@ -52,9 +52,11 @@ const INSTANCE_ID = process.env.VERCEL
   ? `vercel-${(process.env.VERCEL_DEPLOYMENT_ID ?? '').slice(0, 8)}`
   : 'local'
 
-const FIVE_MINUTES_MS = 5 * 60 * 1000
+const REFRESH_THRESHOLD_MS = 15 * 60 * 1000 // refresh if <15 min left
 const POLL_INTERVAL_MS = 500
 const MAX_POLL_ATTEMPTS = 40 // 20 seconds max wait
+const SAVE_RETRY_ATTEMPTS = 3
+const SAVE_RETRY_BACKOFF_MS = 250
 
 async function getValidToken(connection: QboConnection): Promise<{
   accessToken: string
@@ -65,7 +67,7 @@ async function getValidToken(connection: QboConnection): Promise<{
   console.log(`[qbo:${INSTANCE_ID}] Token expires at:`, expiresAt.toISOString(),
     '— time left:', Math.round(timeLeft / 1000), 's')
 
-  if (timeLeft >= FIVE_MINUTES_MS) {
+  if (timeLeft >= REFRESH_THRESHOLD_MS) {
     return { accessToken: decrypt(connection.access_token_encrypted), connection }
   }
 
@@ -118,22 +120,42 @@ async function doRefreshAndSave(connection: QboConnection): Promise<{
 
   console.log(`[qbo:${INSTANCE_ID}] Refreshed OK, new expiry:`, refreshed.expiresAt.toISOString())
 
-  // Save new tokens + release lock atomically
+  // Save new tokens + release lock atomically.
+  // CRITICAL: if Intuit issued new tokens but our DB save fails, the chain dies
+  // (the old refresh token is single-use and now consumed). Retry the save aggressively
+  // — transient DB errors must not lose tokens we already received.
   const newAccessEnc = encrypt(refreshed.accessToken)
   const newRefreshEnc = encrypt(refreshed.refreshToken)
+  const refreshTokenExpiresAtISO = new Date(Date.now() + 100 * 24 * 60 * 60 * 1000).toISOString()
 
-  const { error: saveErr } = await db.rpc('save_refreshed_qbo_token', {
-    conn_id: connection.id,
-    new_access_token_encrypted: newAccessEnc,
-    new_refresh_token_encrypted: newRefreshEnc,
-    new_token_expires_at: refreshed.expiresAt.toISOString(),
-    new_refresh_token_expires_at: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000).toISOString(),
-    refreshed_by: INSTANCE_ID,
-  })
+  let saveErr: { message: string } | null = null
+  for (let attempt = 1; attempt <= SAVE_RETRY_ATTEMPTS; attempt++) {
+    const result = await db.rpc('save_refreshed_qbo_token', {
+      conn_id: connection.id,
+      new_access_token_encrypted: newAccessEnc,
+      new_refresh_token_encrypted: newRefreshEnc,
+      new_token_expires_at: refreshed.expiresAt.toISOString(),
+      new_refresh_token_expires_at: refreshTokenExpiresAtISO,
+      refreshed_by: INSTANCE_ID,
+    })
+    saveErr = result.error
+    if (!saveErr) break
+    console.warn(
+      `[qbo:${INSTANCE_ID}] save_refreshed_qbo_token attempt ${attempt}/${SAVE_RETRY_ATTEMPTS} failed:`,
+      saveErr.message
+    )
+    if (attempt < SAVE_RETRY_ATTEMPTS) {
+      await new Promise(r => setTimeout(r, SAVE_RETRY_BACKOFF_MS * attempt))
+    }
+  }
 
   if (saveErr) {
-    console.error(`[qbo:${INSTANCE_ID}] CRITICAL: Refreshed but failed to save:`, saveErr.message)
-    // Still return the token for this request — but the next request will break
+    // All retries exhausted. Refresh token chain is now broken — Intuit invalidated
+    // the old one when it issued these new ones, but we couldn't persist them.
+    console.error(
+      `[qbo:${INSTANCE_ID}] CRITICAL: Refreshed but ${SAVE_RETRY_ATTEMPTS} save attempts failed. Chain broken.`,
+      saveErr.message
+    )
     throw new Error(`Token refreshed but save failed — re-connect via Settings. (${saveErr.message})`)
   }
 
@@ -142,7 +164,7 @@ async function doRefreshAndSave(connection: QboConnection): Promise<{
     access_token_encrypted: newAccessEnc,
     refresh_token_encrypted: newRefreshEnc,
     token_expires_at: refreshed.expiresAt.toISOString(),
-    refresh_token_expires_at: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000).toISOString(),
+    refresh_token_expires_at: refreshTokenExpiresAtISO,
     updated_at: new Date().toISOString(),
     last_refreshed_by: INSTANCE_ID,
   }
@@ -163,7 +185,7 @@ async function pollForFreshToken(connId: string): Promise<{
     }
 
     const timeLeft = new Date(fresh.token_expires_at).getTime() - Date.now()
-    if (timeLeft >= FIVE_MINUTES_MS) {
+    if (timeLeft >= REFRESH_THRESHOLD_MS) {
       console.log(`[qbo:${INSTANCE_ID}] Fresh token available after ${(i + 1) * POLL_INTERVAL_MS}ms wait`)
       return { accessToken: decrypt(fresh.access_token_encrypted), connection: fresh }
     }
