@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createServiceClient } from '@/lib/supabase/client'
 import { getStaffUser } from '@/lib/auth/staff'
+import { getQboClient } from '@/lib/qbo/client'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import ConnectedBanner from './ConnectedBanner'
@@ -19,6 +20,18 @@ interface LogEntry {
 async function getSettingsData() {
   try {
     const db = createServiceClient()
+
+    // Opportunistically refresh the QBO token if it's within 15 min of expiry.
+    // getQboClient() no-ops when the token is still fresh (pure DB read) and
+    // uses a CAS lock when a refresh is needed, so repeated settings-page
+    // loads can't flood Intuit. Swallow errors — rendering the page must
+    // not fail just because refresh failed; the error is already logged.
+    try {
+      await getQboClient()
+    } catch {
+      // ignore — status row below will still show the (stale) state
+    }
+
     const [shopifyRes, qboRes, logsRes] = await Promise.all([
       db.from('shopify_connections').select('store_domain, created_at').limit(1).single(),
       db

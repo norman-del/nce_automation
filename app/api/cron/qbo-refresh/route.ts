@@ -13,7 +13,8 @@ type QboAny = {
 }
 
 /**
- * Keep-alive cron — fires every 30 minutes.
+ * Keep-alive cron — fires once daily at 13:00 UTC (see vercel.json).
+ * Hobby plan caps us at 2 crons; the other slot is the payout sync.
  *
  * Calls getQboClient() (which auto-refreshes the access token if it's
  * within 15 min of expiry) and then makes one trivial read so we know
