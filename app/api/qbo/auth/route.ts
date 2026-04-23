@@ -43,6 +43,19 @@ export async function GET(req: NextRequest) {
 
     const db = createServiceClient()
 
+    // Seed VAT tax code mapping only if currently NULL — never overwrite values
+    // that have been manually tuned via Settings. See docs/plans/now-vs-strategic.md §5 Bug 1.
+    const existing = await db
+      .from('qbo_connections')
+      .select('vat_standard_tax_code_id, vat_margin_sale_tax_code_id, vat_margin_purchase_tax_code_id')
+      .eq('realm_id', tokens.realmId)
+      .maybeSingle()
+
+    const vatSeed: Record<string, string> = {}
+    if (!existing.data?.vat_standard_tax_code_id) vatSeed.vat_standard_tax_code_id = '5'
+    if (!existing.data?.vat_margin_sale_tax_code_id) vatSeed.vat_margin_sale_tax_code_id = '18'
+    if (!existing.data?.vat_margin_purchase_tax_code_id) vatSeed.vat_margin_purchase_tax_code_id = '9'
+
     const { error } = await db.from('qbo_connections').upsert(
       {
         realm_id: tokens.realmId,
@@ -55,6 +68,7 @@ export async function GET(req: NextRequest) {
         updated_at: new Date().toISOString(),
         shopify_fees_account_id: '133',
         bank_account_id: '1150040008',
+        ...vatSeed,
       },
       { onConflict: 'realm_id' }
     )

@@ -155,24 +155,48 @@ export async function createQboItem(params: {
 
   console.log('[qbo-items] Creating inventory item:', sku, JSON.stringify(itemData, null, 0))
 
-  const created = await new Promise<QboItem>((resolve, reject) => {
-    client.createItem(
-      itemData,
-      (err: unknown, item: QboItem) => {
-        if (err) {
-          // Extract QBO error detail from Axios response
-          const axErr = err as { response?: { data?: unknown }; message?: string }
-          const detail = axErr.response?.data
-            ? JSON.stringify(axErr.response.data)
-            : axErr.message || String(err)
-          console.error('[qbo-items] createItem FAILED:', detail)
-          reject(new Error(`QBO createItem: ${detail}`))
-        } else {
-          resolve(item)
+  let created: QboItem
+  try {
+    created = await new Promise<QboItem>((resolve, reject) => {
+      client.createItem(
+        itemData,
+        (err: unknown, item: QboItem) => {
+          if (err) {
+            const axErr = err as { response?: { data?: unknown }; message?: string }
+            const detail = axErr.response?.data
+              ? JSON.stringify(axErr.response.data)
+              : axErr.message || String(err)
+            console.error('[qbo-items] createItem FAILED:', detail)
+            reject(new Error(`QBO createItem: ${detail}`))
+          } else {
+            resolve(item)
+          }
         }
+      )
+    })
+  } catch (err) {
+    // Self-heal: QBO error 6240 "Duplicate Name Exists" means a previous attempt
+    // created the item but failed to save the ID back to Supabase. Look it up by
+    // SKU (unique per product) and return that ID so retry-sync is idempotent.
+    const msg = err instanceof Error ? err.message : String(err)
+    if (msg.includes('6240') || msg.includes('Duplicate Name Exists')) {
+      console.log('[qbo-items] Duplicate detected, looking up existing item by SKU:', sku)
+      const existing = await new Promise<QboItem[]>((resolve, reject) => {
+        client.findItems(
+          { Sku: sku },
+          (e: unknown, result: { QueryResponse: { Item?: QboItem[] } }) => {
+            if (e) reject(e)
+            else resolve(result.QueryResponse.Item || [])
+          }
+        )
+      })
+      if (existing.length > 0) {
+        console.log('[qbo-items] Linked existing QBO item for SKU', sku, '→ id', existing[0].Id)
+        return existing[0].Id
       }
-    )
-  })
+    }
+    throw err
+  }
 
   console.log('[qbo-items] Item created:', sku, '→ QBO id', created.Id)
   return created.Id
