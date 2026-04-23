@@ -16,14 +16,22 @@ async function publishToAllChannels(productIdNumeric: number): Promise<void> {
   const pubResp = await shopifyFetch<{ publications: { id: number; name: string }[] }>(
     '/publications.json'
   )
-  const publications = pubResp.publications ?? []
-  if (publications.length === 0) {
+  const rawPublications = pubResp.publications ?? []
+  if (rawPublications.length === 0) {
     console.warn('[shopify] No publications returned — nothing to publish to')
     return
   }
 
+  // Dedupe by id — REST /publications.json can return the same channel twice
+  // (e.g. two POS entries, three Google & YouTube entries).
+  const seen = new Set<number>()
+  const publications = rawPublications.filter(p => {
+    if (seen.has(p.id)) return false
+    seen.add(p.id)
+    return true
+  })
+
   const productGid = `gid://shopify/Product/${productIdNumeric}`
-  const input = publications.map(p => ({ publicationId: `gid://shopify/Publication/${p.id}` }))
 
   const mutation = `
     mutation publishablePublish($id: ID!, $input: [PublicationInput!]!) {
@@ -34,23 +42,37 @@ async function publishToAllChannels(productIdNumeric: number): Promise<void> {
     }
   `
 
-  const data = await shopifyGraphQL<{
-    publishablePublish: {
-      publishable: { id: string } | null
-      userErrors: { field: string[]; message: string }[]
+  // Call per-publication. publishablePublish stops applying inputs after the
+  // first userError, so batching fails silently when any channel is invalid
+  // (e.g. Shopify Inbox isn't a valid product publication target — it errors
+  // and blocks every channel listed after it in the input array).
+  const published: string[] = []
+  const skipped: string[] = []
+  for (const p of publications) {
+    try {
+      const data = await shopifyGraphQL<{
+        publishablePublish: {
+          publishable: { id: string } | null
+          userErrors: { field: string[]; message: string }[]
+        }
+      }>(mutation, {
+        id: productGid,
+        input: [{ publicationId: `gid://shopify/Publication/${p.id}` }],
+      })
+      const errs = data.publishablePublish.userErrors
+      if (errs && errs.length) {
+        skipped.push(`${p.name}(${errs.map(e => e.message).join(';')})`)
+      } else {
+        published.push(p.name)
+      }
+    } catch (e) {
+      skipped.push(`${p.name}(${String(e)})`)
     }
-  }>(mutation, { id: productGid, input })
-
-  const errs = data.publishablePublish.userErrors
-  if (errs && errs.length) {
-    // Don't throw — individual channels may reject (e.g. GMC needs barcodes).
-    // The product is still published to the channels that accepted it.
-    console.warn(
-      `[shopify] publishablePublish had ${errs.length} user error(s) for ${productGid}:`,
-      errs.map(e => `${e.field?.join('.')}=${e.message}`).join('; ')
-    )
   }
-  console.log(`[shopify] Published ${productGid} to ${publications.length} channel(s): ${publications.map(p => p.name).join(', ')}`)
+  console.log(
+    `[shopify] Published ${productGid} to ${published.length}/${publications.length} channel(s): ${published.join(', ')}` +
+      (skipped.length ? ` | skipped: ${skipped.join(', ')}` : '')
+  )
 }
 
 /* ------------------------------------------------------------------ */
