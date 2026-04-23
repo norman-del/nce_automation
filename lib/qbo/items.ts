@@ -25,6 +25,7 @@ type QboAny = any
 
 export async function findOrCreateQboVendor(supplier: {
   name: string
+  company_name?: string | null
   contact_name: string | null
   phone: string | null
   email: string | null
@@ -57,6 +58,10 @@ export async function findOrCreateQboVendor(supplier: {
     DisplayName: supplier.name,
   }
 
+  if (supplier.company_name) {
+    vendorData.CompanyName = supplier.company_name
+  }
+
   if (supplier.contact_name) {
     const parts = supplier.contact_name.trim().split(/\s+/)
     vendorData.GivenName = parts[0]
@@ -82,17 +87,43 @@ export async function findOrCreateQboVendor(supplier: {
     }
   }
 
-  const created = await new Promise<QboVendor>((resolve, reject) => {
-    client.createVendor(
-      vendorData,
-      (err: unknown, vendor: QboVendor) => {
-        if (err) reject(err)
-        else resolve(vendor)
+  try {
+    const created = await new Promise<QboVendor>((resolve, reject) => {
+      client.createVendor(
+        vendorData,
+        (err: unknown, vendor: QboVendor) => {
+          if (err) reject(err)
+          else resolve(vendor)
+        }
+      )
+    })
+    return created.Id
+  } catch (err) {
+    // Self-heal: QBO error 6240 "Duplicate Name Exists" — another path
+    // created the vendor but we didn't find it on the first lookup (e.g.
+    // case difference, trailing whitespace). Re-query and link.
+    const msg = err instanceof Error ? err.message : String(err)
+    const detail = (err as { response?: { data?: unknown } }).response?.data
+      ? JSON.stringify((err as { response: { data: unknown } }).response.data)
+      : msg
+    if (detail.includes('6240') || detail.includes('Duplicate Name Exists')) {
+      console.log('[qbo-items] Vendor duplicate detected, re-fetching by DisplayName:', supplier.name)
+      const refetch = await new Promise<QboVendor[]>((resolve, reject) => {
+        client.findVendors(
+          { DisplayName: supplier.name },
+          (e: unknown, result: { QueryResponse: { Vendor?: QboVendor[] } }) => {
+            if (e) reject(e)
+            else resolve(result.QueryResponse.Vendor || [])
+          }
+        )
+      })
+      if (refetch.length > 0) {
+        console.log('[qbo-items] Linked existing QBO vendor for', supplier.name, '→ id', refetch[0].Id)
+        return refetch[0].Id
       }
-    )
-  })
-
-  return created.Id
+    }
+    throw err
+  }
 }
 
 /* ------------------------------------------------------------------ */
