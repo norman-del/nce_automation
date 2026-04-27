@@ -74,9 +74,10 @@ export default function PhotoUpload({ productId, hasShopifyId, onActivated }: Pr
     const totals = { uploaded: 0, errors: [] as string[], activated: false }
     setProgress({ done: 0, total: files.length })
 
-    // Concurrency pool: upload N files in parallel. 3 keeps the network busy
-    // without overwhelming Shopify's rate limit on the per-image endpoint.
-    const CONCURRENCY = 3
+    // Concurrency pool: upload N files in parallel. 6 is the sweet spot —
+    // Shopify's per-image endpoint tolerates it fine and the browser-side
+    // resize keeps each request small enough.
+    const CONCURRENCY = 6
     const queue = Array.from(files)
     let done = 0
     const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
