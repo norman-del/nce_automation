@@ -33,6 +33,13 @@ interface Product {
   tags: string[]
   qbo_vendor_id: string | null
   qbo_vendor_name: string | null
+  shopify_delivery_profile_id: string | null
+}
+
+interface DeliveryProfile {
+  id: string
+  name: string
+  default: boolean
 }
 
 interface Props {
@@ -40,9 +47,10 @@ interface Props {
   productTypes: string[]
   vendors: string[]
   initialCollections: { id: string; title: string }[]
+  deliveryProfiles: DeliveryProfile[]
 }
 
-export default function EditProductForm({ product, productTypes, vendors, initialCollections }: Props) {
+export default function EditProductForm({ product, productTypes, vendors, initialCollections, deliveryProfiles }: Props) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -70,6 +78,7 @@ export default function EditProductForm({ product, productTypes, vendors, initia
   const [supplier, setSupplier] = useState<QboVendor | null>(
     product.qbo_vendor_id ? { id: product.qbo_vendor_id, name: product.qbo_vendor_name || '' } : null
   )
+  const [deliveryProfileId, setDeliveryProfileId] = useState(product.shopify_delivery_profile_id || '')
 
   const shippingTier = useMemo(() => {
     const w = parseFloat(widthCm)
@@ -111,6 +120,7 @@ export default function EditProductForm({ product, productTypes, vendors, initia
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
           qbo_vendor_id: supplier?.id || null,
           qbo_vendor_name: supplier?.name || null,
+          shopify_delivery_profile_id: deliveryProfileId || null,
         }),
       })
 
@@ -232,6 +242,26 @@ export default function EditProductForm({ product, productTypes, vendors, initia
             <div className="flex items-center gap-2 text-sm">
               <span className="text-secondary">Shipping tier:</span>
               <span className={`font-medium ${SHIPPING_COLORS[shippingTier]}`}>{SHIPPING_LABELS[shippingTier]}</span>
+            </div>
+          )}
+          {deliveryProfiles.length > 0 && (
+            <div>
+              <label className={labelCls}>Shopify Delivery Profile</label>
+              <select
+                className={inputCls}
+                value={deliveryProfileId}
+                onChange={(e) => setDeliveryProfileId(e.target.value)}
+              >
+                <option value="">— Use default (assign manually later) —</option>
+                {deliveryProfiles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}{p.default ? ' (store default)' : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-secondary">
+                Picks which Shopify shipping profile this product belongs to (e.g. Pallet, Small Courier, Free Shipping).
+              </p>
             </div>
           )}
         </fieldset>

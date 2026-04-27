@@ -6,6 +6,7 @@ import {
   addProductToCollections,
   skuExistsInShopify,
   findMaxShopifySkuNumber,
+  assignVariantToDeliveryProfile,
 } from '@/lib/shopify/products'
 import { createQboItem } from '@/lib/qbo/items'
 import { isShopifySyncEnabled } from '@/lib/shopify/config'
@@ -126,6 +127,7 @@ interface ProductInput {
   collections?: string[] | null
   tags?: string[] | null
   body_html?: string | null
+  shopify_delivery_profile_id?: string | null
 }
 
 // POST /api/products — create one or more products (batch supported)
@@ -208,6 +210,7 @@ export async function POST(req: NextRequest) {
             collections: input.collections ?? [],
             tags: input.tags ?? [],
             body_html: input.body_html?.trim() || null,
+            shopify_delivery_profile_id: input.shopify_delivery_profile_id || null,
           })
           .select()
           .single()
@@ -218,7 +221,7 @@ export async function POST(req: NextRequest) {
         if (isShopifySyncEnabled()) {
           console.log(`[products/POST] ${sku} → Shopify push starting`)
           try {
-            const { shopifyProductId } = await createShopifyProduct({
+            const { shopifyProductId, shopifyVariantId } = await createShopifyProduct({
               sku,
               title: input.title.trim(),
               condition: input.condition,
@@ -246,6 +249,24 @@ export async function POST(req: NextRequest) {
             if (input.collections && input.collections.length > 0) {
               await addProductToCollections(shopifyProductId, input.collections)
             }
+
+            // Attach to chosen delivery profile so Rich doesn't have to do it
+            // manually in Shopify admin. Best-effort — a missing scope or bad
+            // profile id shouldn't block product creation.
+            if (input.shopify_delivery_profile_id && shopifyVariantId) {
+              try {
+                await assignVariantToDeliveryProfile(
+                  input.shopify_delivery_profile_id,
+                  shopifyVariantId
+                )
+              } catch (profileErr) {
+                console.warn(
+                  `[products/POST] ${sku} → delivery profile assignment failed (non-fatal):`,
+                  String(profileErr)
+                )
+              }
+            }
+
             console.log(`[products/POST] ${sku} → Shopify ok, productId=${shopifyProductId}`)
           } catch (shopifyErr) {
             console.error(`[products/POST] ${sku} → Shopify FAILED:`, String(shopifyErr))

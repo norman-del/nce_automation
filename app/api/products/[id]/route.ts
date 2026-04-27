@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/client'
 import { calculateShippingTier } from '@/lib/products/shipping'
-import { deleteShopifyProduct, updateShopifyProduct } from '@/lib/shopify/products'
+import {
+  deleteShopifyProduct,
+  updateShopifyProduct,
+  assignVariantToDeliveryProfile,
+  fetchFirstVariantId,
+} from '@/lib/shopify/products'
 import { updateQboItem } from '@/lib/qbo/items'
 import { getQboClient } from '@/lib/qbo/client'
 import { isShopifySyncEnabled } from '@/lib/shopify/config'
@@ -193,6 +198,26 @@ export async function PATCH(
       } catch (err) {
         syncErrors.push(`Shopify: ${String(err)}`)
         console.error('[products/PATCH] Shopify sync failed:', String(err))
+      }
+
+      // If the delivery profile selection changed (or was set for the first
+      // time), move the variant into the new profile. Best-effort; a missing
+      // scope or stale profile id shouldn't fail the entire save.
+      if (
+        body.shopify_delivery_profile_id !== undefined &&
+        body.shopify_delivery_profile_id !== current.shopify_delivery_profile_id &&
+        body.shopify_delivery_profile_id
+      ) {
+        try {
+          const variantId = await fetchFirstVariantId(product.shopify_product_id)
+          if (variantId) {
+            await assignVariantToDeliveryProfile(body.shopify_delivery_profile_id, variantId)
+            console.log('[products/PATCH] delivery profile updated:', product.sku)
+          }
+        } catch (err) {
+          syncErrors.push(`Delivery profile: ${String(err)}`)
+          console.warn('[products/PATCH] delivery profile assignment failed:', String(err))
+        }
       }
     }
 

@@ -18,6 +18,12 @@ const SHIPPING_COLORS: Record<number, string> = {
   2: 'text-fail',
 }
 
+interface DeliveryProfile {
+  id: string
+  name: string
+  default: boolean
+}
+
 interface ProductDraft {
   sku_override: string
   title: string
@@ -40,6 +46,7 @@ interface ProductDraft {
   vendor: string
   collections: { id: string; title: string }[]
   tags: string
+  shopify_delivery_profile_id: string
 }
 
 function emptyDraft(): ProductDraft {
@@ -49,15 +56,17 @@ function emptyDraft(): ProductDraft {
     model_number: '', year_of_manufacture: '', electrical_requirements: '',
     notes: '', body_html: '', width_cm: '', height_cm: '', depth_cm: '', weight_kg: '',
     supplier: null, product_type: '', vendor: '', collections: [] as { id: string; title: string }[], tags: '',
+    shopify_delivery_profile_id: '',
   }
 }
 
 interface Props {
   productTypes: string[]
   vendors: string[]
+  deliveryProfiles: DeliveryProfile[]
 }
 
-export default function ProductForm({ productTypes, vendors }: Props) {
+export default function ProductForm({ productTypes, vendors, deliveryProfiles }: Props) {
   const router = useRouter()
   const [drafts, setDrafts] = useState<ProductDraft[]>([emptyDraft()])
   const [saving, setSaving] = useState(false)
@@ -129,6 +138,7 @@ export default function ProductForm({ productTypes, vendors }: Props) {
       vendor: d.vendor,
       collections: d.collections.map((c) => c.id),
       tags: d.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      shopify_delivery_profile_id: d.shopify_delivery_profile_id || null,
     }))
 
     try {
@@ -180,6 +190,7 @@ export default function ProductForm({ productTypes, vendors }: Props) {
           missingFields={fieldErrors[idx] || []}
           productTypes={productTypes}
           vendors={vendors}
+          deliveryProfiles={deliveryProfiles}
           onChange={(patch) => { updateDraft(idx, patch); setFieldErrors((prev) => { const next = { ...prev }; delete next[idx]; return next }) }}
           onRemove={() => removeDraft(idx)}
         />
@@ -237,11 +248,12 @@ interface CardProps {
   missingFields: string[]
   productTypes: string[]
   vendors: string[]
+  deliveryProfiles: DeliveryProfile[]
   onChange: (patch: Partial<ProductDraft>) => void
   onRemove: () => void
 }
 
-function ProductCard({ draft, index, total, error, missingFields, productTypes, vendors, onChange, onRemove }: CardProps) {
+function ProductCard({ draft, index, total, error, missingFields, productTypes, vendors, deliveryProfiles, onChange, onRemove }: CardProps) {
   const shippingTier = useMemo(() => {
     const w = parseFloat(draft.width_cm)
     const h = parseFloat(draft.height_cm)
@@ -377,6 +389,26 @@ function ProductCard({ draft, index, total, error, missingFields, productTypes, 
             <span className={`font-medium ${SHIPPING_COLORS[shippingTier]}`}>
               {SHIPPING_LABELS[shippingTier]}
             </span>
+          </div>
+        )}
+        {deliveryProfiles.length > 0 && (
+          <div>
+            <label className={labelCls}>Shopify Delivery Profile</label>
+            <select
+              className={inputCls}
+              value={draft.shopify_delivery_profile_id}
+              onChange={(e) => onChange({ shopify_delivery_profile_id: e.target.value })}
+            >
+              <option value="">— Use default (assign manually later) —</option>
+              {deliveryProfiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}{p.default ? ' (store default)' : ''}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-secondary">
+              Picks which Shopify shipping profile this product belongs to (e.g. Pallet, Small Courier, Free Shipping).
+            </p>
           </div>
         )}
       </fieldset>

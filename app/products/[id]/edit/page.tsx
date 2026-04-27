@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 
 import { createServiceClient } from '@/lib/supabase/client'
 import { fetchProductMetadataFromSupabase } from '@/lib/products/metadata'
+import { fetchDeliveryProfiles } from '@/lib/shopify/products'
+import { isShopifySyncEnabled } from '@/lib/shopify/config'
 import { notFound } from 'next/navigation'
 import EditProductForm from './EditProductForm'
 import MetafieldsEditor from './MetafieldsEditor'
@@ -22,7 +24,10 @@ export default async function EditProductPage({ params }: Props) {
 
   if (error || !product) notFound()
 
-  const { productTypes, vendors } = await fetchProductMetadataFromSupabase()
+  const [{ productTypes, vendors }, deliveryProfiles] = await Promise.all([
+    fetchProductMetadataFromSupabase(),
+    isShopifySyncEnabled() ? fetchDeliveryProfiles() : Promise.resolve([]),
+  ])
 
   // Resolve collection IDs to { id, title } for the typeahead
   const collectionIds: string[] = product.collections || []
@@ -49,6 +54,7 @@ export default async function EditProductPage({ params }: Props) {
         productTypes={productTypes}
         vendors={vendors}
         initialCollections={initialCollections}
+        deliveryProfiles={deliveryProfiles}
       />
 
       <div className="mt-8 bg-surface border border-edge rounded-lg p-6">

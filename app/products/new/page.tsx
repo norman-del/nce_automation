@@ -2,9 +2,14 @@ export const dynamic = 'force-dynamic'
 
 import ProductForm from './ProductForm'
 import { fetchProductMetadataFromSupabase } from '@/lib/products/metadata'
+import { fetchDeliveryProfiles } from '@/lib/shopify/products'
+import { isShopifySyncEnabled } from '@/lib/shopify/config'
 
 export default async function NewProductPage() {
-  const { productTypes, vendors } = await fetchProductMetadataFromSupabase()
+  const [{ productTypes, vendors }, deliveryProfiles] = await Promise.all([
+    fetchProductMetadataFromSupabase(),
+    isShopifySyncEnabled() ? fetchDeliveryProfiles() : Promise.resolve([]),
+  ])
 
   return (
     <div>
@@ -17,6 +22,7 @@ export default async function NewProductPage() {
       <ProductForm
         productTypes={productTypes}
         vendors={vendors}
+        deliveryProfiles={deliveryProfiles}
       />
     </div>
   )

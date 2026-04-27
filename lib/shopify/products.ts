@@ -138,7 +138,7 @@ export async function createShopifyProduct(params: {
   weightKg: number | null
   notes?: string | null
   bodyHtml?: string | null
-}): Promise<{ shopifyProductId: number }> {
+}): Promise<{ shopifyProductId: number; shopifyVariantId: number | null }> {
   const {
     sku, title, condition, vatApplicable, sellingPrice, productType,
     vendor, tags, shippingTier, widthCm, heightCm, depthCm, notes, bodyHtml,
@@ -214,7 +214,8 @@ export async function createShopifyProduct(params: {
     console.warn('[shopify] publishToAllChannels failed (non-fatal):', String(pubErr))
   }
 
-  return { shopifyProductId: productId }
+  const variantId = result.product.variants?.[0]?.id ?? null
+  return { shopifyProductId: productId, shopifyVariantId: variantId }
 }
 
 /* ------------------------------------------------------------------ */
@@ -385,6 +386,81 @@ export async function updateProductStatus(
   }
 
   console.log(`[shopify] Product ${productId} status updated to ${status}`)
+}
+
+/* ------------------------------------------------------------------ */
+/* Delivery profiles                                                   */
+/*                                                                     */
+/* Every Shopify store has one or more "delivery profiles" — named     */
+/* groupings that determine which shipping rates apply to a product.   */
+/* NCE has five (next-day pallet, small courier, contact-us, large     */
+/* courier, free). Until now, every newly-created product landed in    */
+/* the default profile and Rich had to open Shopify admin and move it  */
+/* manually. These helpers list profiles and attach a variant to one.  */
+/* Requires read_shipping + write_shipping scopes.                     */
+/* ------------------------------------------------------------------ */
+
+export interface DeliveryProfile {
+  id: string // GraphQL GID, e.g. "gid://shopify/DeliveryProfile/12345"
+  name: string
+  default: boolean
+}
+
+export async function fetchDeliveryProfiles(): Promise<DeliveryProfile[]> {
+  const query = `
+    query {
+      deliveryProfiles(first: 50) {
+        edges { node { id name default } }
+      }
+    }
+  `
+  try {
+    const data = await shopifyGraphQL<{
+      deliveryProfiles: { edges: { node: DeliveryProfile }[] }
+    }>(query)
+    return data.deliveryProfiles.edges.map((e) => e.node)
+  } catch (e) {
+    console.error('[shopify] fetchDeliveryProfiles failed:', String(e))
+    return []
+  }
+}
+
+// Fetch the first variant ID for a product. Used during edits where we want
+// to (re)assign the product to a delivery profile but only have the product ID.
+export async function fetchFirstVariantId(productId: number): Promise<number | null> {
+  const result = await shopifyFetch<{ product: { variants: { id: number }[] } }>(
+    `/products/${productId}.json?fields=id,variants`
+  )
+  return result.product.variants?.[0]?.id ?? null
+}
+
+export async function assignVariantToDeliveryProfile(
+  profileId: string,
+  variantId: number
+): Promise<void> {
+  const variantGid = `gid://shopify/ProductVariant/${variantId}`
+  const mutation = `
+    mutation moveVariant($id: ID!, $profile: DeliveryProfileInput!) {
+      deliveryProfileUpdate(id: $id, profile: $profile) {
+        profile { id name }
+        userErrors { field message }
+      }
+    }
+  `
+  const data = await shopifyGraphQL<{
+    deliveryProfileUpdate: {
+      profile: { id: string; name: string } | null
+      userErrors: { field: string[]; message: string }[]
+    }
+  }>(mutation, {
+    id: profileId,
+    profile: { variantsToAssociate: [variantGid] },
+  })
+  const errs = data.deliveryProfileUpdate.userErrors
+  if (errs && errs.length) {
+    throw new Error(`deliveryProfileUpdate: ${errs.map((e) => e.message).join('; ')}`)
+  }
+  console.log(`[shopify] Variant ${variantId} attached to delivery profile ${profileId}`)
 }
 
 /* ------------------------------------------------------------------ */
