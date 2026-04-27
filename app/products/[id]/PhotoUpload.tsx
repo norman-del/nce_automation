@@ -74,17 +74,28 @@ export default function PhotoUpload({ productId, hasShopifyId, onActivated }: Pr
     const totals = { uploaded: 0, errors: [] as string[], activated: false }
     setProgress({ done: 0, total: files.length })
 
-    for (let i = 0; i < files.length; i++) {
-      try {
-        const r = await uploadOne(files[i])
-        totals.uploaded += r.uploaded
-        totals.errors.push(...r.errors)
-        if (r.activated) totals.activated = true
-      } catch (e) {
-        totals.errors.push(`${files[i].name}: ${String(e instanceof Error ? e.message : e)}`)
+    // Concurrency pool: upload N files in parallel. 3 keeps the network busy
+    // without overwhelming Shopify's rate limit on the per-image endpoint.
+    const CONCURRENCY = 3
+    const queue = Array.from(files)
+    let done = 0
+    const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+      while (queue.length > 0) {
+        const file = queue.shift()
+        if (!file) return
+        try {
+          const r = await uploadOne(file)
+          totals.uploaded += r.uploaded
+          totals.errors.push(...r.errors)
+          if (r.activated) totals.activated = true
+        } catch (e) {
+          totals.errors.push(`${file.name}: ${String(e instanceof Error ? e.message : e)}`)
+        }
+        done += 1
+        setProgress({ done, total: files.length })
       }
-      setProgress({ done: i + 1, total: files.length })
-    }
+    })
+    await Promise.all(workers)
 
     setResult(totals)
     if (totals.activated) onActivated()
