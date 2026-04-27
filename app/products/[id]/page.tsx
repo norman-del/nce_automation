@@ -4,9 +4,12 @@ import { createServiceClient } from '@/lib/supabase/client'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import PhotoUploadWrapper from './PhotoUploadWrapper'
+import PhotoGallery, { type GalleryImage } from './PhotoGallery'
 import RetrySyncButton from './RetrySyncButton'
 import DeleteProductButton from './DeleteProductButton'
 import StockManager from './StockManager'
+import { listProductImages } from '@/lib/shopify/products'
+import { isShopifySyncEnabled } from '@/lib/shopify/config'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -31,6 +34,30 @@ export default async function ProductDetailPage({ params }: Props) {
     .select('*')
     .eq('product_id', id)
     .order('position')
+
+  // For the live thumbnail gallery we need URLs, which our product_images table
+  // doesn't store for Shopify-hosted images. Fetch the current image list from
+  // Shopify and merge with our DB rows so the file_name we recorded shows up
+  // alongside the CDN src.
+  let galleryImages: GalleryImage[] = []
+  if (isShopifySyncEnabled() && product.shopify_product_id) {
+    try {
+      const shopifyImages = await listProductImages(product.shopify_product_id)
+      const dbByShopifyId = new Map(
+        (images ?? [])
+          .filter((i) => i.shopify_image_id)
+          .map((i) => [Number(i.shopify_image_id), i.file_name as string])
+      )
+      galleryImages = shopifyImages.map((img) => ({
+        shopifyImageId: img.id,
+        src: img.src,
+        fileName: dbByShopifyId.get(img.id) || `image-${img.id}.jpg`,
+        position: img.position,
+      }))
+    } catch (e) {
+      console.warn('[product/page] listProductImages failed:', String(e))
+    }
+  }
 
   const labelCls = 'text-xs text-secondary'
   const valueCls = 'text-sm text-primary'
@@ -178,24 +205,14 @@ export default async function ProductDetailPage({ params }: Props) {
           <div className="bg-surface border border-edge rounded-lg p-5 space-y-3">
             <h3 className="text-xs font-semibold text-accent uppercase tracking-wide">Photos</h3>
 
-            {images && images.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {images.map((img: { id: string; file_name: string }) => (
-                  <div key={img.id} className="bg-overlay border border-edge rounded-md p-2 text-center">
-                    <p className="text-xs text-secondary truncate">{img.file_name}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+            <PhotoGallery productId={product.id} initial={galleryImages} />
 
-            {product.status === 'processing' && (
-              <PhotoUploadWrapper
-                productId={product.id}
-                hasShopifyId={!!product.shopify_product_id}
-              />
-            )}
+            <PhotoUploadWrapper
+              productId={product.id}
+              hasShopifyId={!!product.shopify_product_id}
+            />
 
-            {product.status === 'active' && images?.length === 0 && (
+            {galleryImages.length === 0 && product.status === 'active' && (
               <p className="text-xs text-secondary">No images recorded</p>
             )}
           </div>

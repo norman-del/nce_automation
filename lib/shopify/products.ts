@@ -360,6 +360,40 @@ export async function uploadProductImage(
   return { shopifyImageId: result.image.id }
 }
 
+// Fetch the current image list (id, position, src) for a Shopify product.
+// Sorted by position ascending.
+export async function listProductImages(
+  productId: number
+): Promise<{ id: number; position: number; src: string }[]> {
+  const result = await shopifyFetch<{
+    images: { id: number; position: number; src: string }[]
+  }>(`/products/${productId}/images.json`)
+  return (result.images ?? []).slice().sort((a, b) => a.position - b.position)
+}
+
+// Update the position of one image. Shopify shifts other images automatically
+// when positions collide, but we always pass the full target order in our
+// reorder endpoint so callers shouldn't see surprising shuffles.
+export async function updateProductImagePosition(
+  productId: number,
+  imageId: number,
+  position: number
+): Promise<void> {
+  await shopifyFetch(`/products/${productId}/images/${imageId}.json`, {
+    method: 'PUT',
+    body: JSON.stringify({ image: { id: imageId, position } }),
+  })
+}
+
+export async function deleteProductImage(
+  productId: number,
+  imageId: number
+): Promise<void> {
+  await shopifyFetch(`/products/${productId}/images/${imageId}.json`, {
+    method: 'DELETE',
+  })
+}
+
 /* ------------------------------------------------------------------ */
 /* Set product status (draft → active)                                 */
 /* ------------------------------------------------------------------ */
