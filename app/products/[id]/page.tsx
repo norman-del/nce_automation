@@ -46,14 +46,21 @@ export default async function ProductDetailPage({ params }: Props) {
       const dbByShopifyId = new Map(
         (images ?? [])
           .filter((i) => i.shopify_image_id)
-          .map((i) => [Number(i.shopify_image_id), i.file_name as string])
+          .map((i) => [
+            Number(i.shopify_image_id),
+            { fileName: i.file_name as string, altText: (i.alt_text as string | null) ?? null },
+          ])
       )
-      galleryImages = shopifyImages.map((img) => ({
-        shopifyImageId: img.id,
-        src: img.src,
-        fileName: dbByShopifyId.get(img.id) || `image-${img.id}.jpg`,
-        position: img.position,
-      }))
+      galleryImages = shopifyImages.map((img) => {
+        const meta = dbByShopifyId.get(img.id)
+        return {
+          shopifyImageId: img.id,
+          src: img.src,
+          fileName: meta?.fileName || `image-${img.id}.jpg`,
+          altText: meta?.altText ?? null,
+          position: img.position,
+        }
+      })
     } catch (e) {
       console.warn('[product/page] listProductImages failed:', String(e))
     }

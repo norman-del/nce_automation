@@ -7,6 +7,7 @@ export interface GalleryImage {
   shopifyImageId: number
   src: string
   fileName: string
+  altText: string | null
   position: number
 }
 
@@ -69,6 +70,32 @@ export default function PhotoGallery({ productId, initial }: Props) {
     setOverIdx(null)
   }
 
+  async function persistAltText(idx: number, value: string) {
+    const img = images[idx]
+    const trimmed = value.trim()
+    const next = trimmed === '' ? null : trimmed
+    // Don't fire a request if nothing changed.
+    if ((img.altText ?? null) === next) return
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/products/${productId}/images/${img.shopifyImageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alt_text: next }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || `Save failed (${res.status})`)
+      }
+      setImages((prev) => prev.map((p, i) => (i === idx ? { ...p, altText: next } : p)))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handleDelete(idx: number) {
     const img = images[idx]
     if (!confirm(`Delete "${img.fileName}"? This removes it from Shopify too.`)) return
@@ -124,7 +151,7 @@ export default function PhotoGallery({ productId, initial }: Props) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.src}
-                alt={img.fileName}
+                alt={img.altText || img.fileName}
                 className="w-full aspect-square object-cover"
                 draggable={false}
               />
@@ -153,6 +180,29 @@ export default function PhotoGallery({ productId, initial }: Props) {
             </div>
           )
         })}
+      </div>
+
+      {/* Alt text editor — one row per image. Saves on blur. */}
+      <div className="space-y-2">
+        <p className="text-xs text-secondary">
+          Alt text (per image) — used for SEO and screen readers. Leave blank to fall back to the product title.
+        </p>
+        {images.map((img, idx) => (
+          <div key={`alt-${img.shopifyImageId}`} className="flex items-start gap-2">
+            <span className="mt-1 px-1.5 py-0.5 text-[10px] font-medium bg-overlay border border-edge rounded text-secondary shrink-0">
+              {idx + 1}
+            </span>
+            <input
+              type="text"
+              defaultValue={img.altText ?? ''}
+              placeholder="e.g. Stainless steel commercial fryer, front view"
+              maxLength={250}
+              disabled={saving}
+              onBlur={(e) => void persistAltText(idx, e.currentTarget.value)}
+              className="flex-1 px-2 py-1 text-xs bg-overlay border border-edge rounded text-primary placeholder:text-secondary/60 focus:outline-none focus:border-accent disabled:opacity-50"
+            />
+          </div>
+        ))}
       </div>
 
       {/* Mobile fallback: up/down arrows for non-touch-drag environments */}
