@@ -63,3 +63,16 @@ All 54 rows have `stock_quantity = 0`. Combined with `processing` status, the pi
 4. **Process fix:** whatever path creates `processing` rows is allowing a NULL handle. A `NOT NULL` constraint can't be added safely until the 54 existing rows are resolved, but adding handle-generation to the intake form (or a `BEFORE INSERT` trigger that calls `slugify(title)`) would stop the bleeding.
 
 No automated fix has been applied. This is a recon report only.
+
+## Resolution — 2026-04-28
+
+- **Deleted:** the Claude test row (`id=50e8e0e6-746e-497c-b8ca-abeba26a0f6b`,
+  vendor `Claude`, title "Claude Test Product (PLZ DELETE)") was hard-deleted
+  from `products` via the Supabase REST API using the service role key.
+  Post-delete `SELECT count(*) FROM products WHERE vendor='Claude' AND title ILIKE '%Claude Test%'`
+  returns `0`. The Shopify draft (`shopify_product_id=10636859900237`) and the
+  QBO item (`qbo_item_id=6537`) referenced by this row are out of scope for
+  nce-site automation cleanup and were not touched here.
+- **Outstanding:** the remaining 53 NULL-handle rows (recommendations 2–4
+  above) are still pending owner decision.
+
