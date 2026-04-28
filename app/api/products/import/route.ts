@@ -27,6 +27,7 @@ interface ImportRow {
   handle?: string | null
   body_html?: string | null
   status?: string
+  free_delivery_included?: boolean
 }
 
 const REQUIRED_FIELDS = ['sku', 'title', 'condition', 'cost_price', 'selling_price', 'width_cm', 'height_cm', 'depth_cm', 'product_type', 'vendor'] as const
@@ -133,6 +134,7 @@ export async function POST(req: NextRequest) {
         handle: row.handle || null,
         body_html: row.body_html || null,
         status,
+        free_delivery_included: row.free_delivery_included ?? false,
       })
     }
 

@@ -47,6 +47,7 @@ interface ProductDraft {
   collections: { id: string; title: string }[]
   tags: string
   shopify_delivery_profile_id: string
+  free_delivery_included: boolean
 }
 
 function emptyDraft(): ProductDraft {
@@ -57,6 +58,7 @@ function emptyDraft(): ProductDraft {
     notes: '', body_html: '', width_cm: '', height_cm: '', depth_cm: '', weight_kg: '',
     supplier: null, product_type: '', vendor: '', collections: [] as { id: string; title: string }[], tags: '',
     shopify_delivery_profile_id: '',
+    free_delivery_included: false,
   }
 }
 
@@ -139,6 +141,7 @@ export default function ProductForm({ productTypes, vendors, deliveryProfiles }:
       collections: d.collections.map((c) => c.id),
       tags: d.tags.split(',').map((t) => t.trim()).filter(Boolean),
       shopify_delivery_profile_id: d.shopify_delivery_profile_id || null,
+      free_delivery_included: d.free_delivery_included,
     }))
 
     try {
@@ -411,6 +414,18 @@ function ProductCard({ draft, index, total, error, missingFields, productTypes, 
             </p>
           </div>
         )}
+        <label className="flex items-center gap-2 text-sm text-primary cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={draft.free_delivery_included}
+            onChange={(e) => onChange({ free_delivery_included: e.target.checked })}
+            className="h-4 w-4 rounded border-edge bg-surface text-accent focus:ring-accent"
+          />
+          Delivery included in price
+          <span className="text-xs text-secondary">
+            (storefront suppresses shipping charge + shows a free-delivery badge)
+          </span>
+        </label>
       </fieldset>
 
       {/* Classification */}

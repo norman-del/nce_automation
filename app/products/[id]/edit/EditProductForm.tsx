@@ -34,6 +34,7 @@ interface Product {
   qbo_vendor_id: string | null
   qbo_vendor_name: string | null
   shopify_delivery_profile_id: string | null
+  free_delivery_included: boolean
 }
 
 interface DeliveryProfile {
@@ -79,6 +80,7 @@ export default function EditProductForm({ product, productTypes, vendors, initia
     product.qbo_vendor_id ? { id: product.qbo_vendor_id, name: product.qbo_vendor_name || '' } : null
   )
   const [deliveryProfileId, setDeliveryProfileId] = useState(product.shopify_delivery_profile_id || '')
+  const [freeDeliveryIncluded, setFreeDeliveryIncluded] = useState(!!product.free_delivery_included)
 
   const shippingTier = useMemo(() => {
     const w = parseFloat(widthCm)
@@ -121,6 +123,7 @@ export default function EditProductForm({ product, productTypes, vendors, initia
           qbo_vendor_id: supplier?.id || null,
           qbo_vendor_name: supplier?.name || null,
           shopify_delivery_profile_id: deliveryProfileId || null,
+          free_delivery_included: freeDeliveryIncluded,
         }),
       })
 
@@ -264,6 +267,18 @@ export default function EditProductForm({ product, productTypes, vendors, initia
               </p>
             </div>
           )}
+          <label className="flex items-center gap-2 text-sm text-primary cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={freeDeliveryIncluded}
+              onChange={(e) => setFreeDeliveryIncluded(e.target.checked)}
+              className="h-4 w-4 rounded border-edge bg-surface text-accent focus:ring-accent"
+            />
+            Delivery included in price
+            <span className="text-xs text-secondary">
+              (storefront suppresses shipping charge + shows a free-delivery badge)
+            </span>
+          </label>
         </fieldset>
 
         {/* Classification */}

@@ -27,6 +27,7 @@ const PRODUCT_FIELDS: readonly { key: string; label: string; required: boolean }
   { key: 'body_html', label: 'Description HTML', required: false },
   { key: 'shopify_product_id', label: 'Shopify Product ID', required: false },
   { key: 'qbo_item_id', label: 'QBO Item ID', required: false },
+  { key: 'free_delivery_included', label: 'Free Delivery Included', required: false },
 ]
 
 type FieldKey = string
@@ -80,6 +81,9 @@ function autoMap(headers: string[]): Record<number, FieldKey | ''> {
     shopifyid: 'shopify_product_id',
     qboitemid: 'qbo_item_id',
     qboid: 'qbo_item_id',
+    freedeliveryincluded: 'free_delivery_included',
+    freedelivery: 'free_delivery_included',
+    deliveryincluded: 'free_delivery_included',
   }
 
   const used = new Set<FieldKey>()
@@ -188,7 +192,7 @@ export default function CsvImporter() {
         let val: unknown = row[colIdx] ?? ''
 
         // Type coercion
-        if (field === 'vat_applicable') {
+        if (field === 'vat_applicable' || field === 'free_delivery_included') {
           const v = String(val).toLowerCase()
           val = v === 'true' || v === 'yes' || v === '1' || v === 'y'
         } else if (['cost_price', 'selling_price', 'original_rrp', 'width_cm', 'height_cm', 'depth_cm', 'weight_kg'].includes(field)) {
