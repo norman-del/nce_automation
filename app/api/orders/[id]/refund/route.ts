@@ -73,6 +73,49 @@ export async function POST(
       amount: order.total_pence,
     })
 
+    // Fire-and-forget: notify nce-site to send the refund email. Best-effort —
+    // a Resend hiccup must not stall or fail the refund flow.
+    const siteUrl = process.env.NCE_SITE_URL
+    const internalKey = process.env.INTERNAL_API_KEY
+    if (siteUrl && internalKey) {
+      const refundAmountPence = refund.amount ?? order.total_pence
+      fetch(`${siteUrl}/api/email/refund`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': internalKey,
+        },
+        body: JSON.stringify({ orderId: id, refundAmount: refundAmountPence }),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}))
+            console.warn('[orders/refund] refund email trigger failed:', body.error ?? res.status)
+            try {
+              await db.from('sync_log').insert({
+                action: 'nce_site_refund_email',
+                status: 'error',
+                details: { order_id: id, http_status: res.status, error: body.error ?? null },
+              })
+            } catch {
+              // ignore secondary logging failure
+            }
+          }
+        })
+        .catch(async (err) => {
+          console.warn('[orders/refund] refund email trigger request failed:', String(err))
+          try {
+            await db.from('sync_log').insert({
+              action: 'nce_site_refund_email',
+              status: 'error',
+              details: { order_id: id, error: String(err) },
+            })
+          } catch {
+            // ignore secondary logging failure
+          }
+        })
+    }
+
     return NextResponse.json({ ok: true, refund_id: refund.id })
   } catch (e) {
     const errorMsg = String(e)

@@ -51,6 +51,51 @@ export async function PATCH(
 
     if (updateError) throw updateError
 
+    // Fire-and-forget: notify nce-site to send the cancellation email when the
+    // order has just transitioned into 'cancelled'. Best-effort — a Resend
+    // hiccup must not stall or fail the status update.
+    if (newStatus === 'cancelled') {
+      const siteUrl = process.env.NCE_SITE_URL
+      const internalKey = process.env.INTERNAL_API_KEY
+      if (siteUrl && internalKey) {
+        fetch(`${siteUrl}/api/email/cancelled`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': internalKey,
+          },
+          body: JSON.stringify({ orderId: id }),
+        })
+          .then(async (res) => {
+            if (!res.ok) {
+              const body = await res.json().catch(() => ({}))
+              console.warn('[orders/status] cancellation email trigger failed:', body.error ?? res.status)
+              try {
+                await db.from('sync_log').insert({
+                  action: 'nce_site_cancelled_email',
+                  status: 'error',
+                  details: { order_id: id, http_status: res.status, error: body.error ?? null },
+                })
+              } catch {
+                // ignore secondary logging failure
+              }
+            }
+          })
+          .catch(async (err) => {
+            console.warn('[orders/status] cancellation email trigger request failed:', String(err))
+            try {
+              await db.from('sync_log').insert({
+                action: 'nce_site_cancelled_email',
+                status: 'error',
+                details: { order_id: id, error: String(err) },
+              })
+            } catch {
+              // ignore secondary logging failure
+            }
+          })
+      }
+    }
+
     return NextResponse.json({ ok: true, status: newStatus })
   } catch (e) {
     console.error('[orders/status] error:', e)

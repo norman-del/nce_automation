@@ -315,6 +315,50 @@ export async function POST(req: NextRequest) {
             .eq('id', data.id)
         }
 
+        // Fire-and-forget: notify nce-site chatbot to re-index this product.
+        // Best-effort — embedding gateway hiccups must not stall product save.
+        // Requires a `handle` (nce-site keys product chunks by handle).
+        const siteUrl = process.env.NCE_SITE_URL
+        const internalKey = process.env.INTERNAL_API_KEY
+        if (siteUrl && internalKey && data.handle) {
+          const productHandle = data.handle as string
+          fetch(`${siteUrl}/api/chat/reindex`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': internalKey,
+            },
+            body: JSON.stringify({ kind: 'product', id: productHandle }),
+          })
+            .then(async (res) => {
+              if (!res.ok) {
+                const respBody = await res.json().catch(() => ({}))
+                console.warn('[products/POST] chat reindex trigger failed:', respBody.error ?? res.status)
+                try {
+                  await db.from('sync_log').insert({
+                    action: 'nce_site_chat_reindex',
+                    status: 'error',
+                    details: { product_id: data.id, handle: productHandle, http_status: res.status, error: respBody.error ?? null },
+                  })
+                } catch {
+                  // ignore secondary logging failure
+                }
+              }
+            })
+            .catch(async (err) => {
+              console.warn('[products/POST] chat reindex trigger request failed:', String(err))
+              try {
+                await db.from('sync_log').insert({
+                  action: 'nce_site_chat_reindex',
+                  status: 'error',
+                  details: { product_id: data.id, handle: productHandle, error: String(err) },
+                })
+              } catch {
+                // ignore secondary logging failure
+              }
+            })
+        }
+
         results.push({ sku, id: data.id })
       } catch (itemError) {
         results.push({
