@@ -27,12 +27,16 @@ function searchInvoices(client: any, criteria: { field: string; value: string; o
 /**
  * Find a QBO invoice that corresponds to a Shopify order.
  *
- * Tries three strategies in order:
- * 1. PONumber field — Shopify-QBO connector stores the order ref here
- * 2. Date range (±3 days) + gross amount match — catches cases where PONumber isn't set
- * 3. Customer name contains order number — last resort text search
+ * Identity-anchored match only: resolves the customer in QBO by company/personal
+ * name, then looks for an unpaid invoice belonging to that customer with the
+ * matching gross amount. If the customer has exactly one unpaid invoice, that
+ * one wins even without an amount match.
  *
- * Returns the matched invoice and which strategy found it (logged to console for visibility).
+ * If the customer can't be resolved, the function returns null and the
+ * transaction is surfaced as `no_invoice` for manual handling. We deliberately
+ * do NOT fall back to date+amount matching — that previously caused a £620
+ * Shopify payment (NCE1610, Pear Tree) to be posted against an unrelated
+ * in-store invoice of the same amount belonging to a different customer.
  */
 export async function findInvoiceForOrder({
   orderNumber,
@@ -47,71 +51,15 @@ export async function findInvoiceForOrder({
   companyName?: string | null
   customerName?: string | null
 }): Promise<QboInvoice | null> {
-  const { client } = await getQboClient()
-
-  // Strategy 1: PONumber match (standard Shopify-QBO connector behaviour)
-  try {
-    const results = await searchInvoices(client, [
-      { field: 'PONumber', value: orderNumber },
-    ])
-    if (results.length > 0) {
-      console.log(`[invoice-match] Strategy 1 (PONumber) matched ${orderNumber} → QBO invoice ${results[0].Id}`)
-      return results[0]
-    }
-  } catch (e) {
-    console.warn(`[invoice-match] Strategy 1 (PONumber) failed: ${e}`)
-  }
-
-  // Strategy 2: Date range ± 3 days, filter client-side by gross amount
-  try {
-    const d = new Date(payoutDate)
-    const from = new Date(d)
-    from.setDate(from.getDate() - 3)
-    const to = new Date(d)
-    to.setDate(to.getDate() + 3)
-
-    const results = await searchInvoices(client, [
-      { field: 'TxnDate', value: from.toISOString().split('T')[0], operator: '>=' },
-      { field: 'TxnDate', value: to.toISOString().split('T')[0], operator: '<=' },
-    ])
-
-    // Match by gross amount within 1p tolerance (floating point safety)
-    const amountMatch = results.find(
-      (inv) => Math.abs(Number(inv.TotalAmt) - grossAmount) < 0.02
-    )
-    if (amountMatch) {
-      console.log(`[invoice-match] Strategy 2 (date+amount) matched ${orderNumber} → QBO invoice ${amountMatch.Id} (£${amountMatch.TotalAmt})`)
-      return amountMatch
-    }
-  } catch (e) {
-    console.warn(`[invoice-match] Strategy 2 (date+amount) failed: ${e}`)
-  }
-
-  // Strategy 3: Search by order number in CustomerMemo or PrivateNote (text search)
-  try {
-    const results = await searchInvoices(client, [
-      { field: 'CustomerMemo', value: `%${orderNumber}%`, operator: 'LIKE' },
-    ])
-    if (results.length > 0) {
-      console.log(`[invoice-match] Strategy 3 (CustomerMemo) matched ${orderNumber} → QBO invoice ${results[0].Id}`)
-      return results[0]
-    }
-  } catch (e) {
-    console.warn(`[invoice-match] Strategy 3 (CustomerMemo) failed or unsupported: ${e}`)
-  }
-
-  // Strategy 4: Find customer by name, then find their unpaid invoices by customer ID
-  // Tries company name first, then falls back to personal name — handles cases where
-  // the company name is only in the Shopify shipping address and QBO has the person's name
   const namesToTry = [companyName, customerName].filter(Boolean) as string[]
   for (const nameToSearch of namesToTry) {
     try {
-      const { client: client4 } = await getQboClient()
+      const { client } = await getQboClient()
 
       type CustomerResponse = { QueryResponse: { Customer?: Array<{ Id: string; DisplayName: string }> } }
       const customers = await new Promise<Array<{ Id: string; DisplayName: string }>>((resolve, reject) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(client4 as any).findCustomers(
+        ;(client as any).findCustomers(
           [{ field: 'DisplayName', value: nameToSearch, operator: 'LIKE' }],
           (err: unknown, data: CustomerResponse) => {
             if (err) return reject(err)
@@ -122,7 +70,7 @@ export async function findInvoiceForOrder({
 
       if (customers.length > 0) {
         const customerId = customers[0].Id
-        const invoices = await searchInvoices(client4, [
+        const invoices = await searchInvoices(client, [
           { field: 'CustomerRef', value: customerId },
         ])
         const unpaid = invoices.filter((inv) => Number(inv.Balance) > 0)
@@ -131,16 +79,16 @@ export async function findInvoiceForOrder({
         )
         const match = amountMatch ?? (unpaid.length === 1 ? unpaid[0] : null)
         if (match) {
-          console.log(`[invoice-match] Strategy 4 (customer name) matched ${orderNumber} → QBO invoice ${match.Id} via "${nameToSearch}"`)
+          console.log(`[invoice-match] matched ${orderNumber} → QBO invoice ${match.Id} via customer "${nameToSearch}"`)
           return match
         }
       }
     } catch (e) {
-      console.warn(`[invoice-match] Strategy 4 (customer name) failed for "${nameToSearch}": ${e}`)
+      console.warn(`[invoice-match] customer-name lookup failed for "${nameToSearch}": ${e}`)
     }
   }
 
-  console.warn(`[invoice-match] No match found for order ${orderNumber} (£${grossAmount} on ${payoutDate})`)
+  console.warn(`[invoice-match] No match found for order ${orderNumber} (£${grossAmount} on ${payoutDate}) — customer not resolved or no matching unpaid invoice`)
   return null
 }
 

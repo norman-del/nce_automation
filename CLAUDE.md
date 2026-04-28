@@ -205,9 +205,9 @@ These are hardcoded into the OAuth callback (`app/api/qbo/auth/route.ts`) and se
 | Bank / Receipt account | Shopify Receipt Account | 1150040008 | Bank |
 
 ## Invoice Matching — Known Behaviours
-- **Strategies 1 (PONumber) and 3 (CustomerMemo)** always return HTTP 400 from QBO — these fields are not queryable via node-quickbooks criteria. They can be removed in future.
-- **Strategy 2 (date+amount)** works when the QBO invoice date is within ±3 days of the payout date.
-- **Strategy 4 (customer name)** is the main fallback. It uses a two-step lookup: `findCustomers` by DisplayName → `findInvoices` by customer ID. It tries company name first, then personal name — this is necessary because Shopify sometimes has the company name only in the shipping address, not the customer record, so QBO may have the person's name instead.
+- **Customer-name match is the only strategy.** Two-step lookup: `findCustomers` by DisplayName → `findInvoices` by customer ID. Tries company name first, then personal name — Shopify sometimes has the company name only in the shipping address, not the customer record, so QBO may have the person's name instead. If the customer can't be resolved, the transaction is surfaced as `no_invoice` for manual handling.
+- **Do not reintroduce a date+amount fallback.** It previously matched a Shopify £620 payment (NCE1610, Pear Tree) against an unrelated in-store invoice of the same amount belonging to a different customer ("The Rum Life"). Identity must anchor every match.
+- PONumber and CustomerMemo searches always returned HTTP 400 from QBO via node-quickbooks — those fields are not queryable through the criteria API. Removed.
 - `client.query()` does NOT exist in node-quickbooks. Use `findCustomers` / `findInvoices` with criteria instead.
 
 ## Codex (optional, use sparingly)
