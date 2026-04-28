@@ -275,7 +275,7 @@ export default function WarrantyTemplatesManager() {
       )}
 
       <div className="bg-surface border border-edge rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
+        <table data-testid="warranty-templates-table" className="w-full text-sm">
           <thead className="bg-overlay">
             <tr className="text-left">
               <th className="px-4 py-2 text-xs font-medium text-secondary">Code</th>
@@ -322,6 +322,276 @@ export default function WarrantyTemplatesManager() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <BulkAssignPanel templates={templates} onApplied={fetchTemplates} />
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Bulk-assign warranty (WP-7 nice-to-have)
+// ──────────────────────────────────────────────────────────────────────────
+
+interface PreviewResponse {
+  count: number
+  samples: Array<{
+    id: string
+    sku: string | null
+    title: string | null
+    vendor: string | null
+    condition: string | null
+    warranty_term_code: string | null
+  }>
+  capped: boolean
+  max: number
+}
+
+function BulkAssignPanel({
+  templates,
+  onApplied,
+}: {
+  templates: WarrantyTemplate[]
+  onApplied: () => void | Promise<void>
+}) {
+  const [vendor, setVendor] = useState('')
+  const [condition, setCondition] = useState<'' | 'new' | 'used'>('')
+  const [currentCode, setCurrentCode] = useState<string>('ANY') // 'ANY' | 'NULL' | <code>
+  const [applyCode, setApplyCode] = useState<string>('')
+  const [preview, setPreview] = useState<PreviewResponse | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [applied, setApplied] = useState<string | null>(null)
+
+  const activeTemplates = templates.filter((t) => t.active)
+
+  function buildBody() {
+    return {
+      vendor: vendor.trim() || undefined,
+      condition: condition || undefined,
+      currentCode, // 'ANY' | 'NULL' | <code>
+      applyCode,
+    }
+  }
+
+  async function runPreview() {
+    setBusy(true)
+    setErr(null)
+    setApplied(null)
+    setPreview(null)
+    try {
+      if (!applyCode) throw new Error('Choose a warranty code to apply')
+      const res = await fetch('/api/warranty-templates/bulk-assign?preview=true', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildBody()),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? `Preview failed (${res.status})`)
+      setPreview(data as PreviewResponse)
+    } catch (e) {
+      setErr(String(e instanceof Error ? e.message : e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function runApply() {
+    if (!preview) return
+    if (
+      !confirm(
+        `Apply warranty "${applyCode}" to ${preview.count} product(s)? This cannot be undone in bulk.`
+      )
+    )
+      return
+    setBusy(true)
+    setErr(null)
+    setApplied(null)
+    try {
+      const res = await fetch('/api/warranty-templates/bulk-assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildBody()),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? `Apply failed (${res.status})`)
+      setApplied(`Updated ${data.updated} product(s) → ${data.warranty_term_code}`)
+      setPreview(null)
+      await onApplied()
+    } catch (e) {
+      setErr(String(e instanceof Error ? e.message : e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div
+      data-testid="bulk-assign-panel"
+      className="bg-surface border border-edge rounded-lg p-5 space-y-4"
+    >
+      <div>
+        <h3 className="text-sm font-semibold text-primary">Bulk-assign warranty</h3>
+        <p className="mt-1 text-xs text-secondary">
+          Apply a warranty code to all matching products in one step. Preview first to see
+          how many rows will change. Capped at 5,000 rows per operation.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelCls}>Vendor (exact, case-insensitive)</label>
+          <input
+            data-testid="bulk-vendor"
+            className={inputCls}
+            placeholder="e.g. Combisteel (leave blank for any)"
+            value={vendor}
+            onChange={(e) => {
+              setVendor(e.target.value)
+              setPreview(null)
+            }}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Condition</label>
+          <select
+            data-testid="bulk-condition"
+            className={inputCls}
+            value={condition}
+            onChange={(e) => {
+              setCondition(e.target.value as '' | 'new' | 'used')
+              setPreview(null)
+            }}
+          >
+            <option value="">Any</option>
+            <option value="new">New</option>
+            <option value="used">Used</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Currently has</label>
+          <select
+            data-testid="bulk-current-code"
+            className={inputCls}
+            value={currentCode}
+            onChange={(e) => {
+              setCurrentCode(e.target.value)
+              setPreview(null)
+            }}
+          >
+            <option value="ANY">Any (will overwrite)</option>
+            <option value="NULL">No warranty set</option>
+            {templates.map((t) => (
+              <option key={t.code} value={t.code}>
+                = {t.code}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Apply warranty code *</label>
+          <select
+            data-testid="bulk-apply-code"
+            className={inputCls}
+            value={applyCode}
+            onChange={(e) => {
+              setApplyCode(e.target.value)
+              setPreview(null)
+            }}
+          >
+            <option value="">Choose a template…</option>
+            {activeTemplates.map((t) => (
+              <option key={t.code} value={t.code}>
+                {t.code} — {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {err && (
+        <div className="bg-fail/10 border border-fail/25 text-fail rounded-md px-4 py-3 text-sm">
+          {err}
+        </div>
+      )}
+      {applied && (
+        <div className="bg-ok/10 border border-ok/25 text-ok rounded-md px-4 py-3 text-sm">
+          {applied}
+        </div>
+      )}
+
+      {preview && (
+        <div
+          data-testid="bulk-preview-result"
+          className="bg-overlay border border-edge rounded-md p-4 space-y-3"
+        >
+          <p className="text-sm text-primary">
+            <span data-testid="bulk-preview-count" className="font-semibold">
+              {preview.count}
+            </span>{' '}
+            product{preview.count === 1 ? '' : 's'} match this filter.
+            {preview.capped && (
+              <span className="ml-2 text-fail">
+                Exceeds {preview.max}-row cap — narrow the filter before applying.
+              </span>
+            )}
+          </p>
+          {preview.samples.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="text-secondary">
+                  <tr className="text-left">
+                    <th className="px-2 py-1">SKU</th>
+                    <th className="px-2 py-1">Title</th>
+                    <th className="px-2 py-1">Vendor</th>
+                    <th className="px-2 py-1">Cond.</th>
+                    <th className="px-2 py-1">Current</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.samples.map((s) => (
+                    <tr key={s.id} className="border-t border-edge">
+                      <td className="px-2 py-1 font-mono">{s.sku ?? '—'}</td>
+                      <td className="px-2 py-1 text-primary">{s.title ?? '—'}</td>
+                      <td className="px-2 py-1 text-secondary">{s.vendor ?? '—'}</td>
+                      <td className="px-2 py-1 text-secondary">{s.condition ?? '—'}</td>
+                      <td className="px-2 py-1 text-secondary">
+                        {s.warranty_term_code ?? '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {preview.count > preview.samples.length && (
+                <p className="mt-2 text-xs text-secondary">
+                  Showing first {preview.samples.length} of {preview.count}.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center gap-3 border-t border-edge pt-3">
+        <button
+          data-testid="bulk-preview-btn"
+          onClick={runPreview}
+          disabled={busy || !applyCode}
+          className="px-4 py-2 bg-overlay text-primary text-sm font-medium rounded-md hover:bg-edge disabled:opacity-50 transition-colors"
+        >
+          {busy ? 'Working…' : 'Preview'}
+        </button>
+        <button
+          data-testid="bulk-apply-btn"
+          onClick={runApply}
+          disabled={busy || !preview || preview.count === 0 || preview.capped}
+          className="px-4 py-2 bg-accent text-white text-sm font-medium rounded-md hover:bg-accent-hi disabled:opacity-50 transition-colors"
+        >
+          Apply
+        </button>
+        <span className="text-xs text-secondary">
+          Apply is enabled only after a successful preview.
+        </span>
       </div>
     </div>
   )
