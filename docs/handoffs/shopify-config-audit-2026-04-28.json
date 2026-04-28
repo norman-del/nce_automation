@@ -1,0 +1,929 @@
+{
+  "generated_at": "2026-04-28T08:35:07.477Z",
+  "store": "80a273-f0.myshopify.com",
+  "api_version": "2024-10",
+  "sections": {
+    "shop": {
+      "ok": true,
+      "name": "Nationwide Catering Equipment",
+      "primary_domain": "nationwidecatering.co.uk",
+      "myshopify_domain": "80a273-f0.myshopify.com",
+      "plan": "basic",
+      "plan_display": "Basic",
+      "country_code": "GB",
+      "currency": "GBP",
+      "timezone": "Europe/London",
+      "weight_unit": "kg",
+      "enabled_presentment_currencies": [
+        "GBP"
+      ],
+      "has_storefront": true,
+      "has_discounts": false,
+      "has_gift_cards": false,
+      "checkout_api_supported": true,
+      "multi_location_enabled": true,
+      "transactional_sms_disabled": false,
+      "setup_required": false
+    },
+    "locations": {
+      "ok": false,
+      "status": 403,
+      "body": "{\"error\":\"[API] This action requires merchant approval for read_locations scope.\"}"
+    },
+    "publications": {
+      "ok": true,
+      "items": [
+        {
+          "id": "gid://shopify/Publication/194413920589",
+          "name": "Online Store",
+          "supportsFuturePublishing": true
+        },
+        {
+          "id": "gid://shopify/Publication/194413953357",
+          "name": "Point of Sale",
+          "supportsFuturePublishing": false
+        },
+        {
+          "id": "gid://shopify/Publication/194413986125",
+          "name": "Shop",
+          "supportsFuturePublishing": false
+        },
+        {
+          "id": "gid://shopify/Publication/272911302989",
+          "name": "Google & YouTube",
+          "supportsFuturePublishing": true
+        }
+      ]
+    },
+    "delivery_profiles": {
+      "ok": false,
+      "status": 200,
+      "errors": [
+        {
+          "message": "Query cost is 1556, which exceeds the single query max cost limit (1000).\n\nSee https://shopify.dev/docs/api/usage/rate-limits for more information on how the\ncost of a query is calculated.\n\nTo query larger amounts of data with fewer limits, bulk operations should be used instead.\nSee https://shopify.dev/docs/api/usage/bulk-operations/queries for usage details.\n",
+          "extensions": {
+            "code": "MAX_COST_EXCEEDED",
+            "cost": 1556,
+            "maxCost": 1000,
+            "documentation": "https://shopify.dev/api/usage/rate-limits"
+          }
+        }
+      ],
+      "body": "{\"errors\":[{\"message\":\"Query cost is 1556, which exceeds the single query max cost limit (1000).\\n\\nSee https://shopify.dev/docs/api/usage/rate-limits for more information on how the\\ncost of a query is calculated.\\n\\nTo query larger amounts of data with fewer limits, bulk operations should be used instead.\\nSee https://shopify.dev/docs/api/usage/bulk-operations/queries for usage details.\\n\",\"extensions\":{\"code\":\"MAX_COST_EXCEEDED\",\"cost\":1556,\"maxCost\":1000,\"documentation\":\"https://shopify.dev/api/usage/rate-limits\"}}]}"
+    },
+    "carrier_services": {
+      "ok": true,
+      "items": [
+        {
+          "id": 78654603597,
+          "name": "dpd_uk",
+          "active": true,
+          "service_discovery": true,
+          "carrier_service_type": "legacy",
+          "admin_graphql_api_id": "gid://shopify/DeliveryCarrierService/78654603597"
+        },
+        {
+          "id": 78654570829,
+          "name": "hermes_uk",
+          "active": true,
+          "service_discovery": true,
+          "carrier_service_type": "legacy",
+          "admin_graphql_api_id": "gid://shopify/DeliveryCarrierService/78654570829"
+        },
+        {
+          "id": 90095681869,
+          "name": "royal_mail",
+          "active": true,
+          "service_discovery": true,
+          "carrier_service_type": "legacy",
+          "admin_graphql_api_id": "gid://shopify/DeliveryCarrierService/90095681869"
+        },
+        {
+          "id": 83279577421,
+          "name": "yodel",
+          "active": true,
+          "service_discovery": true,
+          "carrier_service_type": "legacy",
+          "admin_graphql_api_id": "gid://shopify/DeliveryCarrierService/83279577421"
+        }
+      ]
+    },
+    "fulfillment_services": {
+      "ok": false,
+      "status": 403,
+      "body": "{\"errors\":\"[API] This action requires merchant approval for read_fulfillments scope.\"}"
+    },
+    "products_summary": {
+      "ok": true,
+      "total_count": 2757,
+      "sample_size": 250,
+      "distinct_types_in_sample": 44,
+      "distinct_vendors_in_sample": 15,
+      "distinct_tags_in_sample": 74,
+      "status_breakdown_in_sample": {
+        "active": 223,
+        "draft": 27
+      }
+    },
+    "custom_collections": {
+      "ok": true,
+      "count": 58
+    },
+    "smart_collections": {
+      "ok": true,
+      "count": 10
+    },
+    "product_metafield_definitions": {
+      "ok": true,
+      "items": [
+        {
+          "id": "gid://shopify/MetafieldDefinition/80349954381",
+          "name": "Dimensions",
+          "namespace": "custom",
+          "key": "dimensions",
+          "type": {
+            "name": "single_line_text_field"
+          },
+          "description": ""
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/81146839373",
+          "name": "Search product boosts",
+          "namespace": "shopify--discovery--product_search_boost",
+          "key": "queries",
+          "type": {
+            "name": "list.single_line_text_field"
+          },
+          "description": "List of search queries for which a product gets higher rank in search results"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/81146872141",
+          "name": "Related products",
+          "namespace": "shopify--discovery--product_recommendation",
+          "key": "related_products",
+          "type": {
+            "name": "list.product_reference"
+          },
+          "description": "List of related products"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/81146904909",
+          "name": "Related products settings",
+          "namespace": "shopify--discovery--product_recommendation",
+          "key": "related_products_display",
+          "type": {
+            "name": "single_line_text_field"
+          },
+          "description": "Determines how related products are displayed along with algorithmic product recommendations"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/81146937677",
+          "name": "Complementary products",
+          "namespace": "shopify--discovery--product_recommendation",
+          "key": "complementary_products",
+          "type": {
+            "name": "list.product_reference"
+          },
+          "description": "List of complementary products"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/83046498637",
+          "name": "Condition",
+          "namespace": "custom",
+          "key": "condition-new-used",
+          "type": {
+            "name": "list.single_line_text_field"
+          },
+          "description": ""
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/86072492365",
+          "name": "Color",
+          "namespace": "shopify",
+          "key": "color-pattern",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Defines the primary color or pattern, such as blue or striped"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/114563842381",
+          "name": "Furniture/Fixture material",
+          "namespace": "shopify",
+          "key": "furniture-fixture-material",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Identifies the main material used in furniture or fixtures, like wood or metal"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/114563875149",
+          "name": "Shape",
+          "namespace": "shopify",
+          "key": "shape",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Describes the geometric form or shape of a product, such as round or heart"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/115174637901",
+          "name": "Power source",
+          "namespace": "shopify",
+          "key": "power-source",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the power source a product uses to operate, such as solar or batteries"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/120136663373",
+          "name": "Handle color",
+          "namespace": "shopify",
+          "key": "handle-color",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the color of a product's handle, such as black or blue"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154074939725",
+          "name": "Google: Custom Product",
+          "namespace": "mm-google-shopping",
+          "key": "custom_product",
+          "type": {
+            "name": "boolean"
+          },
+          "description": "Use to indicate whether or not the unique product identifiers (UPIs) GTIN, MPN, and brand are available for your product."
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/175085650253",
+          "name": "Theme Label",
+          "namespace": "theme",
+          "key": "label",
+          "type": {
+            "name": "single_line_text_field"
+          },
+          "description": ""
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/175732949325",
+          "name": "Mounting type",
+          "namespace": "shopify",
+          "key": "mounting-type",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies how a product is installed or attached, such as clip-on or suction cup"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/177377804621",
+          "name": "Material",
+          "namespace": "shopify",
+          "key": "material",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Defines a product's primary material, such as cotton or wool"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/180553089357",
+          "name": "Compatible recipes",
+          "namespace": "shopify",
+          "key": "compatible-recipes",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the recipes suitable for the product, typically for ice cream makers; e.g. sorbet, gelato"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/183727259981",
+          "name": "Suitable location",
+          "namespace": "shopify",
+          "key": "suitable-location",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Indicates the ideal placement for the product in the home, e.g. bedroom, patio "
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/185161253197",
+          "name": "Blade material",
+          "namespace": "shopify",
+          "key": "blade-material",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the material used in a blade's construction, such as steel or aluminum"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/188210184525",
+          "name": "Board mounting type",
+          "namespace": "shopify",
+          "key": "board-mounting-type",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the setup style of presentation boards, such as portable or easel-backed"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/188210217293",
+          "name": "Frame design",
+          "namespace": "shopify",
+          "key": "frame-design",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Describes the style or material of a product's frame, such as metal or wood"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/189688643917",
+          "name": "Disposable glove features",
+          "namespace": "shopify",
+          "key": "disposable-glove-features",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Identifies special characteristics of disposable gloves, like long cuff or powder-free"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/191405982029",
+          "name": "Furniture/Fixture features",
+          "namespace": "shopify",
+          "key": "furniture-fixture-features",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Highlights special characteristics of furniture or fixtures, like adjustable shelves or built-in mirror"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/191409586509",
+          "name": "Coffee input type",
+          "namespace": "shopify",
+          "key": "coffee-input-type",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Identifies the coffee format, e.g. pods, beans"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/191502811469",
+          "name": "Age group",
+          "namespace": "shopify",
+          "key": "age-group",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Defines the target age range for a product, such as adults or kids"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/191507235149",
+          "name": "Tool/Utensil material",
+          "namespace": "shopify",
+          "key": "tool-utensil-material",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Identifies the main material used in a tool or utensil, like stainless steel or teak wood"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/191576179021",
+          "name": "Cookware/Bakeware material",
+          "namespace": "shopify",
+          "key": "cookware-bakeware-material",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Identifies the main material used in cookware or bakeware, like stainless steel or ceramic"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/191577358669",
+          "name": "Compatible stove top type",
+          "namespace": "shopify",
+          "key": "compatible-stove-top-type",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Identifies the type of stove tops the product can be used with, such as gas or induction"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/223242027341",
+          "name": "Handle material",
+          "namespace": "shopify",
+          "key": "handle-material",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the material used in the product's handle, like bamboo or plastic"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/227156296013",
+          "name": "Sink type",
+          "namespace": "shopify",
+          "key": "sink-type",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the design of kitchen or utility sinks, such as half bowl"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/229328322893",
+          "name": "Energy efficiency class",
+          "namespace": "shopify",
+          "key": "energy-efficiency-class",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Defines the energy efficiency rating of a product, e.g. A+++"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/230182453581",
+          "name": "Shelf material",
+          "namespace": "shopify",
+          "key": "shelf-material",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Identifies the type of material used in shelf construction, like wood or metal"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/246658826573",
+          "name": "Tabletop material",
+          "namespace": "shopify",
+          "key": "tabletop-material",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Identifies the composition of the tabletop surface, e.g. plywood, concrete"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/263585825101",
+          "name": "Cleaning instructions",
+          "namespace": "shopify",
+          "key": "cleaning-instructions",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Guides on the recommended cleaning method, such as dishwasher safe or hand wash only"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/263586480461",
+          "name": "Tableware material",
+          "namespace": "shopify",
+          "key": "tableware-material",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the composition of tableware, such as bone china or earthenware"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/264611594573",
+          "name": "Suitable space",
+          "namespace": "shopify",
+          "key": "suitable-space",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Defines the ideal location for product use, e.g. indoors, above ground"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/264611627341",
+          "name": "Display technology",
+          "namespace": "shopify",
+          "key": "display-technology",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Defines the type of screen technology used in a product, e.g. LED, e-ink"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/264611660109",
+          "name": "Portability",
+          "namespace": "shopify",
+          "key": "portability",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the ease of moving or carrying a product, typically for breast pumps; e.g. portable, compact size"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/264611692877",
+          "name": "Open/Closed sign design",
+          "namespace": "shopify",
+          "key": "open-closed-sign-design",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the style of an open/closed sign, e.g. opening hours, custom"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/264616051021",
+          "name": "Warning category",
+          "namespace": "shopify",
+          "key": "warning-category",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Classifies the category of security or safety signs, e.g. prohibition, warning"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/269699711309",
+          "name": "Units of measurement",
+          "namespace": "shopify",
+          "key": "units-of-measurement",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the measurement system used for the product, e.g. millimeters (mm), Fahrenheit (°F)"
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/311153787213",
+          "name": "Orientation",
+          "namespace": "shopify",
+          "key": "orientation",
+          "type": {
+            "name": "list.metaobject_reference"
+          },
+          "description": "Specifies the product's intended positioning, e.g. horizontal, vertical"
+        }
+      ]
+    },
+    "variant_metafield_definitions": {
+      "ok": true,
+      "items": [
+        {
+          "id": "gid://shopify/MetafieldDefinition/154074972493",
+          "name": "Google: Custom Label 4",
+          "namespace": "mm-google-shopping",
+          "key": "custom_label_4",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154075005261",
+          "name": "Google: Custom Label 3",
+          "namespace": "mm-google-shopping",
+          "key": "custom_label_3",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154075038029",
+          "name": "Google: Custom Label 2",
+          "namespace": "mm-google-shopping",
+          "key": "custom_label_2",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154075070797",
+          "name": "Google: Custom Label 1",
+          "namespace": "mm-google-shopping",
+          "key": "custom_label_1",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154075103565",
+          "name": "Google: Custom Label 0",
+          "namespace": "mm-google-shopping",
+          "key": "custom_label_0",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154075136333",
+          "name": "Google: Size System",
+          "namespace": "mm-google-shopping",
+          "key": "size_system",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154075169101",
+          "name": "Google: Size Type",
+          "namespace": "mm-google-shopping",
+          "key": "size_type",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154075201869",
+          "name": "Google: MPN",
+          "namespace": "mm-google-shopping",
+          "key": "mpn",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154075234637",
+          "name": "Google: Gender",
+          "namespace": "mm-google-shopping",
+          "key": "gender",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154075267405",
+          "name": "Google: Condition",
+          "namespace": "mm-google-shopping",
+          "key": "condition",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        },
+        {
+          "id": "gid://shopify/MetafieldDefinition/154075300173",
+          "name": "Google: Age Group",
+          "namespace": "mm-google-shopping",
+          "key": "age_group",
+          "type": {
+            "name": "single_line_text_field"
+          }
+        }
+      ]
+    },
+    "metaobject_definitions": {
+      "ok": false,
+      "status": 200,
+      "errors": [
+        {
+          "message": "Access denied for metaobjectDefinitions field.",
+          "locations": [
+            {
+              "line": 1,
+              "column": 3
+            }
+          ],
+          "extensions": {
+            "code": "ACCESS_DENIED",
+            "documentation": "https://shopify.dev/api/usage/access-scopes"
+          },
+          "path": [
+            "metaobjectDefinitions"
+          ]
+        }
+      ],
+      "body": "{\"errors\":[{\"message\":\"Access denied for metaobjectDefinitions field.\",\"locations\":[{\"line\":1,\"column\":3}],\"extensions\":{\"code\":\"ACCESS_DENIED\",\"documentation\":\"https://shopify.dev/api/usage/access-scopes\"},\"path\":[\"metaobjectDefinitions\"]}],\"data\":null,\"extensions\":{\"cost\":{\"requestedQueryCost\":23,\"actualQueryCost\":2,\"throttleStatus\":{\"maximumAvailable\":2000,\"currentlyAvailable\":1998,\"restoreRate\":100}}}}"
+    },
+    "webhooks": {
+      "ok": true,
+      "items": []
+    },
+    "product_listings_count": {
+      "ok": false,
+      "status": 404,
+      "body": "{\"errors\":\"Not Found\"}"
+    },
+    "orders_snapshot": {
+      "ok": true,
+      "last_30d_count": 32,
+      "by_financial_status": {
+        "paid": 32
+      },
+      "by_fulfillment_status": {
+        "null": 1,
+        "fulfilled": 31
+      },
+      "by_source_name": {
+        "web": 32
+      },
+      "by_payment_gateway": {
+        "null": 32
+      },
+      "last_30d_gross_gbp": 16953
+    },
+    "installed_apps_attempt": {
+      "ok": false,
+      "status": 200,
+      "errors": [
+        {
+          "message": "Field 'apps' doesn't exist on type 'QueryRoot'",
+          "locations": [
+            {
+              "line": 1,
+              "column": 3
+            }
+          ],
+          "path": [
+            "query",
+            "apps"
+          ],
+          "extensions": {
+            "code": "undefinedField",
+            "typeName": "QueryRoot",
+            "fieldName": "apps"
+          }
+        }
+      ],
+      "body": "{\"errors\":[{\"message\":\"Field 'apps' doesn't exist on type 'QueryRoot'\",\"locations\":[{\"line\":1,\"column\":3}],\"path\":[\"query\",\"apps\"],\"extensions\":{\"code\":\"undefinedField\",\"typeName\":\"QueryRoot\",\"fieldName\":\"apps\"}}]}"
+    },
+    "discounts_attempt": {
+      "ok": false,
+      "status": 403,
+      "body": "{\"errors\":\"[API] This action requires merchant approval for read_price_rules scope.\"}"
+    },
+    "customers_attempt": {
+      "ok": false,
+      "status": 403,
+      "body": "{\"errors\":\"[API] This action requires merchant approval for read_customers scope.\"}"
+    },
+    "themes_attempt": {
+      "ok": true,
+      "status": 200,
+      "data": {
+        "themes": [
+          {
+            "id": 159402819917,
+            "name": "Dawn",
+            "created_at": "2024-03-16T12:28:03+00:00",
+            "updated_at": "2026-03-04T13:17:47+00:00",
+            "role": "unpublished",
+            "theme_store_id": 887,
+            "previewable": true,
+            "processing": false,
+            "admin_graphql_api_id": "gid://shopify/Theme/159402819917"
+          },
+          {
+            "id": 159405736269,
+            "name": "Refresh",
+            "created_at": "2024-03-16T14:03:38+00:00",
+            "updated_at": "2026-03-04T13:17:47+00:00",
+            "role": "unpublished",
+            "theme_store_id": 1567,
+            "previewable": true,
+            "processing": false,
+            "admin_graphql_api_id": "gid://shopify/Theme/159405736269"
+          },
+          {
+            "id": 162178793805,
+            "name": "Enterprise",
+            "created_at": "2024-06-14T18:50:55+01:00",
+            "updated_at": "2026-03-04T13:17:47+00:00",
+            "role": "demo",
+            "theme_store_id": 1657,
+            "previewable": true,
+            "processing": false,
+            "admin_graphql_api_id": "gid://shopify/Theme/162178793805"
+          },
+          {
+            "id": 170100031821,
+            "name": "Updated copy of Enterprise",
+            "created_at": "2024-09-19T14:04:49+01:00",
+            "updated_at": "2026-04-01T15:07:14+01:00",
+            "role": "main",
+            "theme_store_id": 1657,
+            "previewable": true,
+            "processing": false,
+            "admin_graphql_api_id": "gid://shopify/Theme/170100031821"
+          },
+          {
+            "id": 170225402189,
+            "name": "Honey",
+            "created_at": "2024-09-23T09:03:47+01:00",
+            "updated_at": "2024-09-23T09:04:25+01:00",
+            "role": "demo",
+            "theme_store_id": 2160,
+            "previewable": true,
+            "processing": false,
+            "admin_graphql_api_id": "gid://shopify/Theme/170225402189"
+          },
+          {
+            "id": 170225664333,
+            "name": "Local",
+            "created_at": "2024-09-23T09:11:13+01:00",
+            "updated_at": "2024-09-23T09:11:39+01:00",
+            "role": "demo",
+            "theme_store_id": 1651,
+            "previewable": true,
+            "processing": false,
+            "admin_graphql_api_id": "gid://shopify/Theme/170225664333"
+          },
+          {
+            "id": 170597089613,
+            "name": "Enterprise - RealAgency dev",
+            "created_at": "2024-10-03T05:36:06+01:00",
+            "updated_at": "2026-03-12T20:35:44+00:00",
+            "role": "unpublished",
+            "theme_store_id": 1657,
+            "previewable": true,
+            "processing": false,
+            "admin_graphql_api_id": "gid://shopify/Theme/170597089613"
+          }
+        ]
+      }
+    },
+    "markets_attempt": {
+      "ok": false,
+      "status": 200,
+      "errors": [
+        {
+          "message": "Access denied for markets field. Required access: `read_markets` for queries and both `read_markets` as well as `write_markets` for mutations.",
+          "locations": [
+            {
+              "line": 1,
+              "column": 3
+            }
+          ],
+          "extensions": {
+            "code": "ACCESS_DENIED",
+            "documentation": "https://shopify.dev/api/usage/access-scopes",
+            "requiredAccess": "`read_markets` for queries and both `read_markets` as well as `write_markets` for mutations."
+          },
+          "path": [
+            "markets"
+          ]
+        }
+      ],
+      "body": "{\"errors\":[{\"message\":\"Access denied for markets field. Required access: `read_markets` for queries and both `read_markets` as well as `write_markets` for mutations.\",\"locations\":[{\"line\":1,\"column\":3}],\"extensions\":{\"code\":\"ACCESS_DENIED\",\"documentation\":\"https://shopify.dev/api/usage/access-scopes\",\"requiredAccess\":\"`read_markets` for queries and both `read_markets` as well as `write_markets` for mutations.\"},\"path\":[\"markets\"]}],\"data\":null,\"extensions\":{\"cost\":{\"requestedQueryCost\":56,\"actualQueryCost\":2,\"throttleStatus\":{\"maximumAvailable\":2000,\"currentlyAvailable\":1998,\"restoreRate\":100}}}}"
+    },
+    "files_attempt": {
+      "ok": true,
+      "data": {
+        "files": {
+          "edges": [
+            {
+              "node": {
+                "id": "gid://shopify/MediaImage/48223451316557",
+                "alt": "",
+                "fileStatus": "READY"
+              }
+            },
+            {
+              "node": {
+                "id": "gid://shopify/MediaImage/48223451349325",
+                "alt": "",
+                "fileStatus": "READY"
+              }
+            },
+            {
+              "node": {
+                "id": "gid://shopify/MediaImage/48223451382093",
+                "alt": "",
+                "fileStatus": "READY"
+              }
+            },
+            {
+              "node": {
+                "id": "gid://shopify/MediaImage/48223451414861",
+                "alt": "",
+                "fileStatus": "READY"
+              }
+            },
+            {
+              "node": {
+                "id": "gid://shopify/MediaImage/48223457476941",
+                "alt": "",
+                "fileStatus": "READY"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "returns_attempt": {
+      "ok": false,
+      "status": 200,
+      "errors": [
+        {
+          "message": "Field 'returns' doesn't exist on type 'QueryRoot'",
+          "locations": [
+            {
+              "line": 1,
+              "column": 3
+            }
+          ],
+          "path": [
+            "query",
+            "returns"
+          ],
+          "extensions": {
+            "code": "undefinedField",
+            "typeName": "QueryRoot",
+            "fieldName": "returns"
+          }
+        }
+      ],
+      "body": "{\"errors\":[{\"message\":\"Field 'returns' doesn't exist on type 'QueryRoot'\",\"locations\":[{\"line\":1,\"column\":3}],\"path\":[\"query\",\"returns\"],\"extensions\":{\"code\":\"undefinedField\",\"typeName\":\"QueryRoot\",\"fieldName\":\"returns\"}}]}"
+    },
+    "marketing_events_attempt": {
+      "ok": false,
+      "status": 403,
+      "body": "{\"errors\":\"[API] This action requires merchant approval for read_marketing_events scope.\"}"
+    },
+    "gift_cards_attempt": {
+      "ok": false,
+      "status": 403,
+      "body": "{\"errors\":\"[API] This action requires merchant approval for read_gift_cards scope.\"}"
+    }
+  }
+}

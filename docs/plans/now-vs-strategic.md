@@ -7,7 +7,7 @@ This is the single source of truth for how nce_automation is split between:
 - **Now (Bridge)** — keeps the current Shopify/QBO business running until DNS cutover
 - **Strategic (Post-Shopify)** — the stack that takes over at cutover
 
-Related: `docs/handoffs/shopify-replacement-2026-04-10.md`, `docs/lessons-learned.md`, `../nce-site/docs/PRD.md`.
+Related: `docs/handoffs/shopify-replacement-2026-04-10.md`, `docs/handoffs/shopify-admin-audit-2026-04-28.md`, `docs/lessons-learned.md`, `../nce-site/docs/PRD.md`.
 
 ---
 
@@ -267,6 +267,7 @@ Research summary from 2026-04-22:
 - Every listing = NCE price × 1.15 (covers eBay's ~15% fees). Store as computed field on product, not manually entered.
 - Fixed-price only, no auctions.
 - Shipping: £9.95 courier (parcel, tier 0), £75 pallet (tiers 1–2). Map to eBay `fulfillmentPolicy` templates — one per shipping tier.
+- **Delivery pricing direction:** NCE is phasing out "delivery included" listings — all new and updated listings should use delivery cost on top, not free shipping. Do not build a "free shipping" path.
 - ~225 active listings typical — only higher-value items go on eBay.
 
 ### Sprint breakdown
