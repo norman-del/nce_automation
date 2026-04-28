@@ -191,7 +191,7 @@ export async function createShopifyProduct(params: {
       // Condition metafield — used by Shopify for product condition display
       { namespace: 'custom', key: 'condition-new-used', value: JSON.stringify([condition === 'used' ? 'Used \u2013 Good' : 'New']), type: 'list.single_line_text_field' },
       // Dimensions metafield
-      { namespace: 'custom', key: 'dimensions', value: `${widthCm}x${depthCm}x${heightCm}cm`, type: 'single_line_text_field' },
+      { namespace: 'custom', key: 'dimensions', value: `${widthCm}cm width x ${heightCm}cm height x ${depthCm}cm depth`, type: 'single_line_text_field' },
     ],
   }
 
