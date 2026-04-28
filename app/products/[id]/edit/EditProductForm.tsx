@@ -1,10 +1,19 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import SupplierTypeahead, { type QboVendor } from '../../new/SupplierTypeahead'
 import CollectionTypeahead from '../../new/CollectionTypeahead'
 import { calculateShippingTier } from '@/lib/products/shipping'
+
+interface WarrantyTemplate {
+  code: string
+  label: string
+  applies_to_condition: 'new' | 'used' | null
+  default_for_vendor: string | null
+  active: boolean
+  display_order: number
+}
 
 const SHIPPING_LABELS: Record<number, string> = { 0: 'Parcel', 1: 'Single Pallet', 2: 'Double Pallet' }
 const SHIPPING_COLORS: Record<number, string> = { 0: 'text-ok', 1: 'text-warn', 2: 'text-fail' }
@@ -35,6 +44,7 @@ interface Product {
   qbo_vendor_name: string | null
   shopify_delivery_profile_id: string | null
   free_delivery_included: boolean
+  warranty_term_code: string | null
 }
 
 interface DeliveryProfile {
@@ -81,6 +91,25 @@ export default function EditProductForm({ product, productTypes, vendors, initia
   )
   const [deliveryProfileId, setDeliveryProfileId] = useState(product.shopify_delivery_profile_id || '')
   const [freeDeliveryIncluded, setFreeDeliveryIncluded] = useState(!!product.free_delivery_included)
+  const [warrantyTermCode, setWarrantyTermCode] = useState(product.warranty_term_code ?? '')
+  const [warrantyTemplates, setWarrantyTemplates] = useState<WarrantyTemplate[]>([])
+
+  useEffect(() => {
+    fetch('/api/warranty-templates')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: WarrantyTemplate[]) => setWarrantyTemplates(data))
+      .catch(() => setWarrantyTemplates([]))
+  }, [])
+
+  // On the edit form we never auto-preselect — the row already has a value
+  // (or an explicit NULL). Show all templates that match the current
+  // condition, plus any inactive one currently assigned (so the dropdown
+  // doesn't go blank when an admin deactivates a template).
+  const eligibleWarranties = warrantyTemplates.filter(
+    (t) =>
+      (t.active || t.code === warrantyTermCode) &&
+      (t.applies_to_condition === null || t.applies_to_condition === condition)
+  )
 
   const shippingTier = useMemo(() => {
     const w = parseFloat(widthCm)
@@ -124,6 +153,7 @@ export default function EditProductForm({ product, productTypes, vendors, initia
           qbo_vendor_name: supplier?.name || null,
           shopify_delivery_profile_id: deliveryProfileId || null,
           free_delivery_included: freeDeliveryIncluded,
+          warranty_term_code: warrantyTermCode || null,
         }),
       })
 
@@ -310,6 +340,21 @@ export default function EditProductForm({ product, productTypes, vendors, initia
           <div>
             <label className={labelCls}>Tags</label>
             <input className={inputCls} value={tags} onChange={e => setTags(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelCls}>Warranty</label>
+            <select
+              className={inputCls}
+              value={warrantyTermCode}
+              onChange={(e) => setWarrantyTermCode(e.target.value)}
+            >
+              <option value="">— None —</option>
+              {eligibleWarranties.map((t) => (
+                <option key={t.code} value={t.code}>
+                  {t.label}{t.active ? '' : ' (inactive)'}
+                </option>
+              ))}
+            </select>
           </div>
         </fieldset>
 

@@ -129,6 +129,7 @@ interface ProductInput {
   body_html?: string | null
   shopify_delivery_profile_id?: string | null
   free_delivery_included?: boolean
+  warranty_term_code?: string | null
 }
 
 // POST /api/products — create one or more products (batch supported)
@@ -213,6 +214,7 @@ export async function POST(req: NextRequest) {
             body_html: input.body_html?.trim() || null,
             shopify_delivery_profile_id: input.shopify_delivery_profile_id || null,
             free_delivery_included: input.free_delivery_included ?? false,
+            warranty_term_code: input.warranty_term_code || null,
             // TODO(WP-6): during the cutover window, mirror this flag onto the
             // Shopify product (tag or metafield) so the live store renders the
             // same shipping behaviour. See PRD §3.10 WP-6 — automation half.

@@ -6,6 +6,7 @@ import PromotionsList from './PromotionsList'
 import ShippingRatesEditor from './ShippingRatesEditor'
 import CollectionsManager from './CollectionsManager'
 import SupplierFeedsManager from './SupplierFeedsManager'
+import WarrantyTemplatesManager from './WarrantyTemplatesManager'
 import SyncLogTable from './SyncLogTable'
 import AccountsModal from './AccountsModal'
 import DisconnectButton from './DisconnectButton'
@@ -48,6 +49,7 @@ const allTabs = [
   { key: 'shipping', label: 'Shipping Rates', staffVisible: false },
   { key: 'collections', label: 'Collections', staffVisible: false },
   { key: 'supplier-feeds', label: 'Supplier Feeds', staffVisible: false },
+  { key: 'warranty-templates', label: 'Warranty Templates', staffVisible: false },
   { key: 'activity', label: 'Activity Log', staffVisible: false },
 ] as const
 
@@ -126,6 +128,7 @@ export default function SettingsTabs({ shopify, qbo, logs, initialTab, staffRole
       {activeTab === 'shipping' && <ShippingRatesEditor />}
       {activeTab === 'collections' && <CollectionsManager />}
       {activeTab === 'supplier-feeds' && <SupplierFeedsManager />}
+      {activeTab === 'warranty-templates' && <WarrantyTemplatesManager />}
       {activeTab === 'activity' && <SyncLogTable logs={logs} />}
     </div>
   )

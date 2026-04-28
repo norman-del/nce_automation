@@ -1,10 +1,19 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import SupplierTypeahead, { type QboVendor } from './SupplierTypeahead'
 import CollectionTypeahead from './CollectionTypeahead'
 import { calculateShippingTier } from '@/lib/products/shipping'
+
+interface WarrantyTemplate {
+  code: string
+  label: string
+  applies_to_condition: 'new' | 'used' | null
+  default_for_vendor: string | null
+  active: boolean
+  display_order: number
+}
 
 const SHIPPING_LABELS: Record<number, string> = {
   0: 'Parcel',
@@ -48,6 +57,8 @@ interface ProductDraft {
   tags: string
   shopify_delivery_profile_id: string
   free_delivery_included: boolean
+  warranty_term_code: string
+  warranty_user_set: boolean
 }
 
 function emptyDraft(): ProductDraft {
@@ -59,6 +70,8 @@ function emptyDraft(): ProductDraft {
     supplier: null, product_type: '', vendor: '', collections: [] as { id: string; title: string }[], tags: '',
     shopify_delivery_profile_id: '',
     free_delivery_included: false,
+    warranty_term_code: '',
+    warranty_user_set: false,
   }
 }
 
@@ -74,9 +87,40 @@ export default function ProductForm({ productTypes, vendors, deliveryProfiles }:
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<(string | null)[]>([])
   const [successCount, setSuccessCount] = useState(0)
+  const [warrantyTemplates, setWarrantyTemplates] = useState<WarrantyTemplate[]>([])
+
+  useEffect(() => {
+    fetch('/api/warranty-templates')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: WarrantyTemplate[]) => setWarrantyTemplates(data.filter((t) => t.active)))
+      .catch(() => setWarrantyTemplates([]))
+  }, [])
 
   function updateDraft(index: number, patch: Partial<ProductDraft>) {
-    setDrafts((prev) => prev.map((d, i) => (i === index ? { ...d, ...patch } : d)))
+    setDrafts((prev) =>
+      prev.map((d, i) => {
+        if (i !== index) return d
+        const next = { ...d, ...patch }
+        // Auto-preselect warranty template when vendor or condition changes
+        // and the user hasn't manually set one yet. Only fires on a fresh
+        // form (warranty_user_set=false). Match priority: vendor + condition,
+        // then condition only.
+        if (
+          (patch.vendor !== undefined || patch.condition !== undefined) &&
+          !next.warranty_user_set
+        ) {
+          const match =
+            warrantyTemplates.find(
+              (t) =>
+                t.default_for_vendor &&
+                t.default_for_vendor.toLowerCase() === next.vendor.trim().toLowerCase() &&
+                (t.applies_to_condition === null || t.applies_to_condition === next.condition)
+            ) ?? null
+          if (match) next.warranty_term_code = match.code
+        }
+        return next
+      })
+    )
   }
 
   function removeDraft(index: number) {
@@ -142,6 +186,7 @@ export default function ProductForm({ productTypes, vendors, deliveryProfiles }:
       tags: d.tags.split(',').map((t) => t.trim()).filter(Boolean),
       shopify_delivery_profile_id: d.shopify_delivery_profile_id || null,
       free_delivery_included: d.free_delivery_included,
+      warranty_term_code: d.warranty_term_code || null,
     }))
 
     try {
@@ -194,6 +239,7 @@ export default function ProductForm({ productTypes, vendors, deliveryProfiles }:
           productTypes={productTypes}
           vendors={vendors}
           deliveryProfiles={deliveryProfiles}
+          warrantyTemplates={warrantyTemplates}
           onChange={(patch) => { updateDraft(idx, patch); setFieldErrors((prev) => { const next = { ...prev }; delete next[idx]; return next }) }}
           onRemove={() => removeDraft(idx)}
         />
@@ -252,11 +298,15 @@ interface CardProps {
   productTypes: string[]
   vendors: string[]
   deliveryProfiles: DeliveryProfile[]
+  warrantyTemplates: WarrantyTemplate[]
   onChange: (patch: Partial<ProductDraft>) => void
   onRemove: () => void
 }
 
-function ProductCard({ draft, index, total, error, missingFields, productTypes, vendors, deliveryProfiles, onChange, onRemove }: CardProps) {
+function ProductCard({ draft, index, total, error, missingFields, productTypes, vendors, deliveryProfiles, warrantyTemplates, onChange, onRemove }: CardProps) {
+  const eligibleWarranties = warrantyTemplates.filter(
+    (t) => t.applies_to_condition === null || t.applies_to_condition === draft.condition
+  )
   const shippingTier = useMemo(() => {
     const w = parseFloat(draft.width_cm)
     const h = parseFloat(draft.height_cm)
@@ -469,6 +519,21 @@ function ProductCard({ draft, index, total, error, missingFields, productTypes, 
         <div>
           <label className={labelCls}>Tags</label>
           <input className={inputCls} placeholder="Comma-separated, e.g. Foster, Used, Fridge" value={draft.tags} onChange={(e) => onChange({ tags: e.target.value })} />
+        </div>
+        <div>
+          <label className={labelCls}>Warranty</label>
+          <select
+            className={inputCls}
+            value={draft.warranty_term_code}
+            onChange={(e) => onChange({ warranty_term_code: e.target.value, warranty_user_set: true })}
+          >
+            <option value="">— None —</option>
+            {eligibleWarranties.map((t) => (
+              <option key={t.code} value={t.code}>
+                {t.label}{t.default_for_vendor ? ` (default for ${t.default_for_vendor})` : ''}
+              </option>
+            ))}
+          </select>
         </div>
       </fieldset>
 
