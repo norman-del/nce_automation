@@ -76,3 +76,22 @@ No automated fix has been applied. This is a recon report only.
 - **Outstanding:** the remaining 53 NULL-handle rows (recommendations 2–4
   above) are still pending owner decision.
 
+## Shopify + QBO cleanup — 2026-04-28
+
+The two external-system orphans referenced above have now been cleaned up via
+`scripts/cleanup-claude-test-orphans.mjs` (one-shot, kept in repo for audit
+trail). Run output:
+
+- **Shopify product `10636859900237`** — `DELETE /admin/api/2024-10/products/10636859900237.json`
+  returned `200 OK`. Status: **deleted**.
+- **QBO item `6537`** — fetched current SyncToken via `getItem`, then issued a
+  sparse `updateItem` with `Active: false`. Status: **deactivated**. The item
+  was not hard-deleted because Stripe payout reconciliation may have referenced
+  it via journal entries; QBO will hide deactivated items from new transactions
+  but preserve historical data.
+- **sync_log** — one row inserted with `action='cleanup_orphan_test_data'`,
+  `status='success'`, and the per-system result captured in `details`.
+
+Both operations are idempotent: a 404 from Shopify or `Active=false` already
+set on QBO is treated as success, so re-running the script is safe.
+
