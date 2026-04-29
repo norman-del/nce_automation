@@ -338,10 +338,13 @@ export async function addProductToCollections(
 export async function uploadProductImage(
   productId: number,
   imageBase64: string,
-  filename: string,
-  position: number
+  filename: string
 ): Promise<{ shopifyImageId: number }> {
-  console.log(`[shopify] Uploading image to product ${productId}: ${filename} (pos ${position}, ${(imageBase64.length / 1024).toFixed(0)}KB base64)`)
+  console.log(`[shopify] Uploading image to product ${productId}: ${filename} (${(imageBase64.length / 1024).toFixed(0)}KB base64)`)
+  // No position — Shopify appends to the end. With sequential client uploads
+  // that gives upload order; the gallery's drag-reorder handles fine-tuning.
+  // Sending position with every parallel upload previously made every image
+  // claim position=1, which caused non-deterministic ordering.
   const result = await shopifyFetch<{ image: ShopifyImage }>(
     `/products/${productId}/images.json`,
     {
@@ -350,7 +353,6 @@ export async function uploadProductImage(
         image: {
           attachment: imageBase64,
           filename,
-          position,
         },
       }),
     }

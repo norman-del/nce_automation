@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface Props {
   productId: string
@@ -36,12 +37,13 @@ async function downscaleToJpeg(file: File): Promise<Blob> {
 }
 
 export default function PhotoUpload({ productId, hasShopifyId, onActivated }: Props) {
+  const router = useRouter()
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [result, setResult] = useState<{ uploaded: number; errors: string[]; activated: boolean } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  async function uploadOne(file: File): Promise<{ uploaded: number; errors: string[]; activated: boolean }> {
+  async function uploadOne(file: File): Promise<{ uploaded: number; errors: string[] }> {
     const blob = await downscaleToJpeg(file)
     const baseName = file.name.replace(/\.[^.]+$/, '') + '.jpg'
     const formData = new FormData()
@@ -64,6 +66,11 @@ export default function PhotoUpload({ productId, hasShopifyId, onActivated }: Pr
     }
   }
 
+  async function activate(): Promise<boolean> {
+    const res = await fetch(`/api/products/${productId}/activate`, { method: 'POST' })
+    return res.ok
+  }
+
   async function handleUpload() {
     const files = fileRef.current?.files
     if (!files || files.length === 0) return
@@ -74,29 +81,35 @@ export default function PhotoUpload({ productId, hasShopifyId, onActivated }: Pr
     const totals = { uploaded: 0, errors: [] as string[], activated: false }
     setProgress({ done: 0, total: files.length })
 
-    // Concurrency pool: upload N files in parallel. 6 is the sweet spot —
-    // Shopify's per-image endpoint tolerates it fine and the browser-side
-    // resize keeps each request small enough.
-    const CONCURRENCY = 6
+    // Sequential uploads. Shopify locks per-product on writes, so parallel
+    // POSTs against the same product return 409 Conflict. One file at a
+    // time keeps throughput predictable and ordering deterministic.
     const queue = Array.from(files)
     let done = 0
-    const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
-      while (queue.length > 0) {
-        const file = queue.shift()
-        if (!file) return
-        try {
-          const r = await uploadOne(file)
-          totals.uploaded += r.uploaded
-          totals.errors.push(...r.errors)
-          if (r.activated) totals.activated = true
-        } catch (e) {
-          totals.errors.push(`${file.name}: ${String(e instanceof Error ? e.message : e)}`)
-        }
-        done += 1
-        setProgress({ done, total: files.length })
+    for (const file of queue) {
+      try {
+        const r = await uploadOne(file)
+        totals.uploaded += r.uploaded
+        totals.errors.push(...r.errors)
+        // Refresh the gallery after each successful upload so thumbnails
+        // appear progressively rather than all at the end.
+        if (r.uploaded > 0) router.refresh()
+      } catch (e) {
+        totals.errors.push(`${file.name}: ${String(e instanceof Error ? e.message : e)}`)
       }
-    })
-    await Promise.all(workers)
+      done += 1
+      setProgress({ done, total: files.length })
+    }
+
+    // One activation call at the end, only if at least one image landed.
+    if (totals.uploaded > 0) {
+      try {
+        totals.activated = await activate()
+        if (!totals.activated) totals.errors.push('Activation failed')
+      } catch (e) {
+        totals.errors.push(`Activation failed: ${String(e instanceof Error ? e.message : e)}`)
+      }
+    }
 
     setResult(totals)
     if (totals.activated) onActivated()

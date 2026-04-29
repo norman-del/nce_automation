@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/client'
-import { uploadProductImage, updateProductStatus } from '@/lib/shopify/products'
+import { uploadProductImage } from '@/lib/shopify/products'
 import { isShopifySyncEnabled } from '@/lib/shopify/config'
 
-// POST /api/products/[id]/images — upload photos and auto-activate
+// POST /api/products/[id]/images — upload photos. Activation is a separate
+// call (POST /api/products/[id]/activate) so concurrent image uploads don't
+// race on Shopify's per-product write lock.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -62,8 +64,7 @@ export async function POST(
           const { shopifyImageId } = await uploadProductImage(
             product.shopify_product_id,
             base64,
-            file.name,
-            i + 1
+            file.name
           )
 
           await db.from('product_images').insert({
@@ -112,44 +113,11 @@ export async function POST(
       }
     }
 
-    // If at least one image uploaded, activate the product
-    if (uploaded.length > 0) {
-      try {
-        if (shopifyEnabled && product.shopify_product_id) {
-          console.log(`[images/POST] ${product.sku} — activating product in Shopify`)
-          await updateProductStatus(product.shopify_product_id, 'active')
-          await db
-            .from('products')
-            .update({
-              status: 'active',
-              shopify_status: 'active',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', id)
-        } else {
-          // Shopify disabled — just activate in Supabase
-          console.log(`[images/POST] ${product.sku} — activating product in Supabase only`)
-          await db
-            .from('products')
-            .update({
-              status: 'active',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', id)
-        }
-        console.log(`[images/POST] ${product.sku} — activated ok`)
-      } catch (activateErr) {
-        errors.push(`Activation failed: ${String(activateErr)}`)
-        console.error(`[images/POST] ${product.sku} — activation FAILED:`, String(activateErr))
-      }
-    }
-
     console.log('[images/POST] done', { sku: product.sku, uploaded: uploaded.length, errors: errors.length, ms: Date.now() - t0 })
 
     return NextResponse.json({
       uploaded: uploaded.length,
       errors,
-      activated: uploaded.length > 0 && errors.every((e) => !e.includes('Activation')),
     })
   } catch (e) {
     console.error('[images/POST] failed:', String(e), { ms: Date.now() - t0 })
