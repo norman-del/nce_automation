@@ -4,10 +4,10 @@
 -- Background: the 2026-04-27 collision-safe migration auto-advanced the SKU
 -- sequence to one above the highest NCE-prefixed SKU in Shopify. That produced
 -- non-sequential, random-looking numbers when Rich added products. Owner
--- corrected by hand and asked us to start from 6728.
+-- corrected by hand and asked us to start from 6428.
 
--- Reset the sequence so the next nextval() returns 6728.
-SELECT setval('product_sku_seq', 6727, true);
+-- Reset the sequence so the next nextval() returns 6428.
+SELECT setval('product_sku_seq', 6427, true);
 
 -- Bare integer generator. No prefix, no MAX-of-table fallback — the unique
 -- constraint on products.sku still protects against duplicate inserts.
