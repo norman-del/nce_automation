@@ -4,8 +4,6 @@ import { calculateShippingTier } from '@/lib/products/shipping'
 import {
   createShopifyProduct,
   addProductToCollections,
-  skuExistsInShopify,
-  findMaxShopifySkuNumber,
   assignVariantToDeliveryProfile,
 } from '@/lib/shopify/products'
 import { createQboItem } from '@/lib/qbo/items'
@@ -54,53 +52,12 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// One-time-per-process flag: have we already fast-advanced the SKU sequence
-// past the highest known Shopify SKU? This protects against the cold-start
-// case where our products table is far behind Shopify (5,000+ legacy products
-// exist that we haven't imported yet).
-let shopifyWatermarkChecked = false
-
 type DbClient = ReturnType<typeof createServiceClient>
 
-async function advanceSkuSequencePastShopify(db: DbClient): Promise<void> {
-  if (shopifyWatermarkChecked) return
-  shopifyWatermarkChecked = true
-  if (!isShopifySyncEnabled()) return
-  try {
-    const max = await findMaxShopifySkuNumber()
-    if (max > 0) {
-      const { error } = await db.rpc('bump_sku_sequence_to', { target: max })
-      if (error) throw new Error(error.message)
-      console.log(`[products/POST] advanced SKU sequence past Shopify max: NCE${max}`)
-    }
-  } catch (e) {
-    console.warn('[products/POST] advanceSkuSequencePastShopify failed (non-fatal):', String(e))
-  }
-}
-
 async function generateUniqueSku(db: DbClient): Promise<string> {
-  await advanceSkuSequencePastShopify(db)
-
-  // Generate, then verify against Shopify (in case a race or manual creation
-  // produced a Shopify SKU above our watermark). Retry up to 25 times.
-  for (let attempt = 0; attempt < 25; attempt++) {
-    const { data: skuRow, error: skuError } = await db.rpc('generate_product_sku')
-    if (skuError) throw new Error(`SKU generation failed: ${skuError.message}`)
-    const candidate = skuRow as string
-
-    if (!isShopifySyncEnabled()) return candidate
-    try {
-      const exists = await skuExistsInShopify(candidate)
-      if (!exists) return candidate
-      console.warn(`[products/POST] SKU ${candidate} already in Shopify, regenerating`)
-    } catch (e) {
-      // If the lookup itself fails, accept the candidate rather than blocking
-      // creation. The DB unique constraint still protects our table.
-      console.warn(`[products/POST] skuExistsInShopify failed for ${candidate}, accepting:`, String(e))
-      return candidate
-    }
-  }
-  throw new Error('Could not generate a unique SKU after 25 attempts')
+  const { data: skuRow, error: skuError } = await db.rpc('generate_product_sku')
+  if (skuError) throw new Error(`SKU generation failed: ${skuError.message}`)
+  return skuRow as string
 }
 
 interface ProductInput {
