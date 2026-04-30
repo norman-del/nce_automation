@@ -29,6 +29,8 @@ Known bugs (see plan doc §5): QBO VAT codes not applied, Shopify multi-channel 
 - Shipping labels (APC + Pallettrack), draft orders, returns, B2B pricing, rewards, CMS, staff invite UI
 
 ### Rules
+- **Strategic builds are read-only against prod Shopify and QBO until cutover.** No Shopify mutations, no QBO Bill/Invoice/Sales Receipt/Item writes. Strategic writes go to Supabase only, gated behind `SHOPIFY_SYNC_ENABLED=false` or a dormant cron. The bridge flows (product ingestion + payout sync) handle all live writes today and will be reconfigured **after** cutover, not modified during Strategic work.
+- Do not edit `app/products/new/`, `lib/shopify/products.ts`, `lib/qbo/items.ts`, `lib/sync/payouts.ts`, or `app/api/cron/sync/` as part of Strategic work — those are bridge code. Bug fixes to them are Now/bridge work and live in their own commits.
 - UI ribbon on every page ("Bridge mode" amber / "Strategic" blue) — not yet built, tracked in plan doc §9 step 6.
 - No role-based hiding (Norman and Rich must be able to QA Strategic features as they ship).
 - No duplicate Now/Strategic versions of the same screen. Single switch at cutover is `SHOPIFY_SYNC_ENABLED`.
