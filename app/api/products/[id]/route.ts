@@ -160,6 +160,12 @@ export async function PATCH(
       updates.shipping_tier = calculateShippingTier(w, h, d, wt)
     }
 
+    // shipping_tier_override comes through verbatim in `updates` from `...body`.
+    // Normalise: empty/undefined keeps existing; null clears override; 0/1/2 sets it.
+    if (body.shipping_tier_override === undefined) {
+      delete updates.shipping_tier_override
+    }
+
     // Save to Supabase
     const { data, error } = await db
       .from('products')
@@ -230,7 +236,7 @@ export async function PATCH(
           productType: product.product_type,
           vendor: product.vendor,
           tags: product.tags ?? [],
-          shippingTier: product.shipping_tier,
+          shippingTier: product.shipping_tier_override ?? product.shipping_tier,
           widthCm: product.width_cm,
           heightCm: product.height_cm,
           depthCm: product.depth_cm,

@@ -45,6 +45,7 @@ interface Product {
   shopify_delivery_profile_id: string | null
   free_delivery_included: boolean
   warranty_term_code: string | null
+  shipping_tier_override: number | null
 }
 
 interface DeliveryProfile {
@@ -92,6 +93,11 @@ export default function EditProductForm({ product, productTypes, vendors, initia
   const [deliveryProfileId, setDeliveryProfileId] = useState(product.shopify_delivery_profile_id || '')
   const [freeDeliveryIncluded, setFreeDeliveryIncluded] = useState(!!product.free_delivery_included)
   const [warrantyTermCode, setWarrantyTermCode] = useState(product.warranty_term_code ?? '')
+  const [shippingTierOverride, setShippingTierOverride] = useState<'' | '0' | '1' | '2'>(
+    product.shipping_tier_override === null || product.shipping_tier_override === undefined
+      ? ''
+      : (String(product.shipping_tier_override) as '0' | '1' | '2')
+  )
   const [warrantyTemplates, setWarrantyTemplates] = useState<WarrantyTemplate[]>([])
 
   useEffect(() => {
@@ -154,6 +160,7 @@ export default function EditProductForm({ product, productTypes, vendors, initia
           shopify_delivery_profile_id: deliveryProfileId || null,
           free_delivery_included: freeDeliveryIncluded,
           warranty_term_code: warrantyTermCode || null,
+          shipping_tier_override: shippingTierOverride === '' ? null : parseInt(shippingTierOverride, 10),
         }),
       })
 
@@ -271,12 +278,25 @@ export default function EditProductForm({ product, productTypes, vendors, initia
               <input className={inputCls} type="number" step="0.1" min="0" value={weightKg} onChange={e => setWeightKg(e.target.value)} />
             </div>
           </div>
-          {shippingTier !== null && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-secondary">Shipping tier:</span>
+          <div className="flex items-center gap-3 text-sm flex-wrap">
+            <span className="text-secondary">Shipping tier:</span>
+            <select
+              className={inputCls + ' max-w-xs'}
+              value={shippingTierOverride}
+              onChange={(e) => setShippingTierOverride(e.target.value as '' | '0' | '1' | '2')}
+            >
+              <option value="">Auto{shippingTier !== null ? ` (${SHIPPING_LABELS[shippingTier]})` : ''}</option>
+              <option value="0">Parcel (override)</option>
+              <option value="1">Single Pallet (override)</option>
+              <option value="2">Double Pallet (override)</option>
+            </select>
+            {shippingTierOverride === '' && shippingTier !== null && (
               <span className={`font-medium ${SHIPPING_COLORS[shippingTier]}`}>{SHIPPING_LABELS[shippingTier]}</span>
-            </div>
-          )}
+            )}
+            {shippingTierOverride !== '' && (
+              <span className="text-xs text-secondary">(overriding auto)</span>
+            )}
+          </div>
           {deliveryProfiles.length > 0 && (
             <div>
               <label className={labelCls}>Shopify Delivery Profile</label>

@@ -75,6 +75,7 @@ interface ProductInput {
   width_cm: number
   height_cm: number
   depth_cm: number
+  shipping_tier_override?: 0 | 1 | 2 | null
   weight_kg?: number | null
   supplier_id?: string
   qbo_vendor_id?: string | null
@@ -134,13 +135,15 @@ export async function POST(req: NextRequest) {
           sku = await generateUniqueSku(db)
         }
 
-        // Calculate shipping tier
-        const shippingTier = calculateShippingTier(
+        // Calculate shipping tier (auto), then apply override if provided.
+        const autoShippingTier = calculateShippingTier(
           input.width_cm,
           input.height_cm,
           input.depth_cm,
           input.weight_kg ?? null
         )
+        const overrideTier = input.shipping_tier_override ?? null
+        const shippingTier = overrideTier ?? autoShippingTier
 
         const { data, error } = await db
           .from('products')
@@ -160,7 +163,8 @@ export async function POST(req: NextRequest) {
             height_cm: input.height_cm,
             depth_cm: input.depth_cm,
             weight_kg: input.weight_kg ?? null,
-            shipping_tier: shippingTier,
+            shipping_tier: autoShippingTier,
+            shipping_tier_override: overrideTier,
             supplier_id: input.supplier_id || null,
             qbo_vendor_id: input.qbo_vendor_id || null,
             qbo_vendor_name: input.qbo_vendor_name || null,
