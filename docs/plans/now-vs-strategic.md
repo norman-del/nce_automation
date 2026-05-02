@@ -362,15 +362,18 @@ Each bullet is a self-contained chat session. Deliver in order.
 4. **Bugs 2 + 3** — Shopify GraphQL multi-channel publish + plain-text-to-HTML description helper + remediation script for existing descriptions.
 5. **Drop-ship support** — migration + form toggle + QBO non-inventory branch.
 6. ~~**UI segregation banners** — Now / Strategic ribbons on every page.~~ Done 2026-05-02. `ScopeBanner` component on `/products/new`, `/products/[id]/edit`, `/finance`. Sidebar grouped (Current Solution at top, Strategic below) with amber/green outlines. `+ New Product` button on `/products` carries the amber ring as a bridge action.
-7. **Collection CRUD admin UI** — Strategic, already in progress per PRD §3.4.
-8. **Metafield / specs editor** — Strategic, already in progress per PRD §3.4.
-9. **eBay E1** — OAuth + connection + webhook stub.
-10. **Cross-channel stock sync foundation** — fan-out service, Website + Shopify adapters.
-11. **eBay E2/E3/E4** — listing, inbound orders, outbound tracking. Plug into stock-sync.
-12. **Image hosting migration** — Vercel Blob (blocked on Vercel Pro per PRD §3.4).
-13. **Shipping labels** — APC + Pallettrack (PRD §3.7).
-14. **Remaining Tier 1/2** — draft orders, returns, B2B pricing, CMS, rewards (PRD §3.8).
-15. **Cutover** — flip `SHOPIFY_SYNC_ENABLED=false`, monitor 3 months, delete Now code.
+7. **Strategic product ingestion — Phase 1 (create-only)** _(in progress 2026-05-02)_. Parallel form at `/products/new-strategic` + `app/api/products-strategic/` + `lib/strategic/products/`. Writes to Supabase + QBO; photos go to Supabase Storage `product-images` bucket; product status `active` on create. Gated by env `STRATEGIC_INGESTION_ENABLED` (default false). Bridge form untouched.
+8. **Strategic product ingestion — Phase 2 (edit + list awareness)**. Parallel `/products/[id]/edit-strategic`, product list page routes Edit links to bridge or strategic based on `shopify_product_id IS NULL`, settings panel to flip the env var without redeploy.
+9. **Collection CRUD admin UI** — Strategic, already in progress per PRD §3.4.
+10. **Metafield / specs editor** — Strategic, already in progress per PRD §3.4.
+11. **Strategic finance page** — Stripe (or Dojo, if approved) payouts → QBO journal entries. Different shape from bridge Finance page. Blocked on Stripe-vs-Dojo decision and on `nce-site` payout-data being available in Supabase.
+12. **eBay E1** — OAuth + connection + webhook stub.
+13. **Cross-channel stock sync foundation** — fan-out service, Website + Shopify adapters.
+14. **eBay E2/E3/E4** — listing, inbound orders, outbound tracking. Plug into stock-sync.
+15. **Image hosting migration** — for legacy Shopify-CDN URLs (Vercel Blob, blocked on Vercel Pro per PRD §3.4). Strategic-created products already use Supabase Storage.
+16. **Shipping labels** — APC + Pallettrack (PRD §3.7).
+17. **Remaining Tier 1/2** — draft orders, returns, B2B pricing, CMS, rewards (PRD §3.8).
+18. **Cutover** — flip `SHOPIFY_SYNC_ENABLED=false`, swap sidebar `+ New product` to point at strategic route, monitor 3 months, delete bridge folders.
 
 ## 10. Testing-readiness gate
 
