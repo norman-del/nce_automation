@@ -354,26 +354,34 @@ Currently missing. `lib/qbo/items.ts:121` hard-codes `Type: 'Inventory'` — fir
 
 ## 9. Execution order (fresh chats)
 
-Each bullet is a self-contained chat session. Deliver in order.
+Each numbered item is a self-contained chat session. **Build in this order — top to bottom.** Detailed specs for every cutover-blocker live in §12.
 
-1. **Doc updates** — this file + CLAUDE.md addition + memory note. _(This session.)_
-2. **Bug 1 diagnostic** — ship `GET /api/qbo/debug/tax-codes`, run it, capture output.
-3. **Bug 1 fix** — explicit tax code mappings in `qbo_connections` + Settings UI + audit/remediation script.
-4. **Bugs 2 + 3** — Shopify GraphQL multi-channel publish + plain-text-to-HTML description helper + remediation script for existing descriptions.
-5. **Drop-ship support** — migration + form toggle + QBO non-inventory branch.
-6. ~~**UI segregation banners** — Now / Strategic ribbons on every page.~~ Done 2026-05-02. `ScopeBanner` component on `/products/new`, `/products/[id]/edit`, `/finance`. Sidebar grouped (Current Solution at top, Strategic below) with amber/green outlines. `+ New Product` button on `/products` carries the amber ring as a bridge action.
-7. **Strategic product ingestion — Phase 1 (create-only)** _(shipped 2026-05-02)_. Parallel form at `/products/new-strategic` + `app/api/products-strategic/` + `lib/strategic/products/`. Writes to Supabase + QBO; photos go to Supabase Storage `product-images` bucket; product status `active` on create. Live in production — only Gus and the two owners have dashboard access, so test products write to real QBO directly (Gus instructs owners to delete after verification). Bridge form untouched.
-8. **Strategic product ingestion — Phase 2 (edit + list awareness)**. Parallel `/products/[id]/edit-strategic`, product list page routes Edit links to bridge or strategic based on `shopify_product_id IS NULL`, settings panel to flip the env var without redeploy.
-9. **Collection CRUD admin UI** — Strategic, already in progress per PRD §3.4.
-10. **Metafield / specs editor** — Strategic, already in progress per PRD §3.4.
-11. **Strategic finance page** — Stripe (or Dojo, if approved) payouts → QBO journal entries. Different shape from bridge Finance page. Blocked on Stripe-vs-Dojo decision and on `nce-site` payout-data being available in Supabase.
-12. **eBay E1** — OAuth + connection + webhook stub.
-13. **Cross-channel stock sync foundation** — fan-out service, Website + Shopify adapters.
-14. **eBay E2/E3/E4** — listing, inbound orders, outbound tracking. Plug into stock-sync.
-15. **Image hosting migration** — for legacy Shopify-CDN URLs (Vercel Blob, blocked on Vercel Pro per PRD §3.4). Strategic-created products already use Supabase Storage.
-16. **Shipping labels** — APC + Pallettrack (PRD §3.7).
-17. **Remaining Tier 1/2** — draft orders, returns, B2B pricing, CMS, rewards (PRD §3.8).
-18. **Cutover** — flip `SHOPIFY_SYNC_ENABLED=false`, swap sidebar `+ New product` to point at strategic route, monitor 3 months, delete bridge folders.
+### Done
+1. ~~Doc updates, bug fixes (1–4), drop-ship support carried forward~~ — completed pre-2026-05-02.
+2. ~~**UI segregation banners** — sidebar grouped (Current Solution / Strategic), `ScopeBanner` on bridge pages.~~ Done 2026-05-02.
+3. ~~**Strategic product ingestion — Phase 1 (create-only)**.~~ Done 2026-05-02. Form at `/products/new-strategic`, photos to Supabase Storage, no env-var gate, real QBO writes.
+
+### Cutover blockers — build in this order
+
+| # | Item | Spec | Why this position |
+|---|---|---|---|
+| 4 | **Strategic product edit (Phase 2)** | §12.1 | Small. Builds directly on Phase 1. Unblocks staff editing strategic-created products. ~1 session. |
+| 5 | **Inventory + sales sync — Phase 0 (shadow read)** | §12.2 / PRD §3.11 | Small. Kicks off the 1-week soak window that gates Phase 1. The earlier Phase 0 ships, the earlier Phase 1 unblocks. ~1 session. |
+| 6 | **Image hosting migration** | §12.3 | Independent. Bulk download from Shopify CDN → Supabase Storage + DB URL update. Has to land before cutover or every PDP goes blank-image. ~1–2 sessions. |
+| 7 | **Metafields / specs editor** | §12.4 | Long-tail spec data on PDPs has no admin UI today. Without this, post-cutover staff can't update detailed specs. ~1–2 sessions. |
+| 8 | **Inventory + sales sync — Phases 1+2** | §12.2 / PRD §3.11 | After Phase 0 soak shows clean drift data. Phase 1 = stock-in cron points at `stock_quantity`. Phase 2 = decrement on sale + post Sales Receipt to QBO. ~2 sessions. |
+| 9 | **Strategic finance** | §12.5 | Replaces bridge payout sync. Blocked on Stripe-vs-Dojo decision; can be deferred to a manual-reconciliation week if needed. ~1 session once unblocked. |
+| 10 | **Content management (CMS)** | §12.6 | Nav, hero, banners, blog, pages, policies admin UI. Biggest scope. Operationally painful without; not strictly cutover-blocking if owner accepts dev-task copy changes. ~3–4 sessions. |
+| 11 | **Draft orders / quotes** | §12.7 | Used by reps for negotiated B2B sales. Operationally painful without; not strictly cutover-blocking if reps fall back to manual quotes for a few weeks. ~1–2 sessions. |
+| 12 | **Inventory sync — Phase 3 (refunds + backfill)** | PRD §3.11 | Refund inverts both sides; one-shot backfill at cutover. Build right before cutover. ~1 session. |
+| 13 | **Cutover** | §13 | Flip `SHOPIFY_SYNC_ENABLED=false`, swap sidebar default route, monitor 3 months, delete bridge folders. |
+
+### Deferred (post-cutover, separate track)
+- eBay integration (E1–E4), cross-channel stock sync foundation, shipping labels (APC + Pallettrack)
+- Returns/RMA workflow, gift cards, B2B pricing, reports dashboard, staff invite UI
+- AI chatbot (WP-9), iwocaPay calculator (WP-8), brand refresh (WP-10) — owner-feedback items in PRD §3.10
+
+**Convention reminder:** every commit declares its bucket. Bridge folders (`app/products/new/`, `app/products/[id]/edit/`, `app/finance/`, `lib/shopify/`, `lib/sync/payouts.ts`, `lib/qbo/items.ts`, `app/api/cron/sync/`) are frozen — do not edit them as part of strategic work.
 
 ## 10. Testing-readiness gate
 
@@ -405,3 +413,286 @@ Also needs committing + deploying:
 - All code changes in `lib/qbo/items.ts`, `lib/shopify/products.ts`, `lib/shopify/client.ts`, `lib/shopify/format.ts`, `shopify.app.toml`
 - New scripts: `scripts/dump-qbo-tax-codes.mjs`, `scripts/audit-qbo-vat-codes.mjs`
 - New diagnostic route: `app/api/qbo/debug/tax-codes/route.ts`
+
+---
+
+## 12. Cutover-blocker specs
+
+Each subsection is a self-contained spec for a fresh chat session. Format:
+- **Scope** — what gets built
+- **Files** — paths to create/modify
+- **Phasing** — if multi-step
+- **Open decisions** — things to resolve before coding (or before merging)
+- **Definition of done** — how we know it's shipped
+
+### 12.1 Strategic product edit (Phase 2 of strategic ingestion)
+
+**Bucket:** Strategic. **Depends on:** §12 item §3 (Phase 1 create) — done.
+
+**Scope.** Parallel of `/products/[id]/edit` that doesn't touch Shopify. Edit existing strategic products (those with `shopify_product_id IS NULL`) by writing back to Supabase + updating the QBO Item if the SKU/title/price/VAT changed. Photo management (add/remove/reorder) on the same page using the same Supabase Storage bucket.
+
+**Files.**
+
+```
+app/products/[id]/edit-strategic/page.tsx             ← new
+app/products/[id]/edit-strategic/EditFormStrategic.tsx ← new (mirror of EditProductForm minus Shopify)
+app/products/[id]/edit-strategic/PhotosManagerStrategic.tsx ← new (or split out)
+app/api/products-strategic/[id]/route.ts              ← new (PATCH handler)
+app/api/products-strategic/[id]/photos/[imageId]/route.ts ← new (DELETE individual photo)
+app/api/products-strategic/[id]/photos/order/route.ts ← new (PATCH reorder)
+lib/strategic/products/update.ts                      ← new (orchestrator: Supabase update + optional QBO updateQboItem)
+app/products/page.tsx                                 ← modify: route Edit links to bridge or strategic based on shopify_product_id IS NULL
+app/products/[id]/page.tsx                            ← modify: Edit button picks the right route; gallery handles Supabase Storage src for strategic products
+app/components/SidebarNav.tsx                         ← already correct; isActive regex covers both edit routes
+docs/plans/now-vs-strategic.md                        ← mark §9 item 4 done
+```
+
+**Reused.** `lib/qbo/items.ts:updateQboItem` (call only — frozen file). `lib/strategic/products/photos.ts` for new uploads.
+
+**Open decisions.**
+- Should the product detail page (`/products/[id]`) merge strategic-photo URLs from `product_images.src` (column already exists, populated by Phase 1 photo upload) when `shopify_product_id IS NULL`? **Yes** — read straight from DB, skip Shopify image fetch in the existing branch.
+- What happens if a staff member tries to open `/products/[id]/edit` (bridge) on a strategic product? **Redirect to `/products/[id]/edit-strategic`** if `shopify_product_id IS NULL`. Belt-and-braces routing.
+
+**Definition of done.**
+- Create a strategic product → click Edit on the products list → lands on edit-strategic page → change title and price → save → Supabase row updated, QBO Item updated (verified in QBO admin), no Shopify call attempted (verify in network log).
+- Add a new photo via the edit page → file lands in `product-images` Supabase Storage bucket, `product_images` row inserted, gallery refreshes.
+- Delete a photo → file removed from Storage, `product_images` row deleted, gallery refreshes.
+- Reorder photos → `position` updates persist.
+- Open a bridge-created product (with `shopify_product_id`) → Edit link still routes to bridge `/products/[id]/edit` (untouched).
+
+---
+
+### 12.2 Inventory + sales sync — Phase 0 (shadow read)
+
+**Bucket:** Strategic. **Depends on:** nothing.
+
+**Authoritative spec lives at PRD §3.11.** Read that first; this is the implementation summary for Phase 0 only.
+
+**Scope.** Add `products.qbo_qty_on_hand` (nullable int). New cron `app/api/cron/qbo-inventory-pull` runs every 10 min, pulls `Item.QtyOnHand` from QBO for every product with `qbo_item_id`, writes to the shadow column. **No reads consume it yet** — the storefront still reads `stock_quantity`. Purpose: surface drift between QBO and Supabase before Phase 1 cuts the storefront over.
+
+**Files.**
+
+```
+supabase/migrations/<date>_qbo_qty_on_hand.sql        ← ALTER TABLE products ADD COLUMN qbo_qty_on_hand integer;
+lib/qbo/inventory.ts                                  ← new (paginated Item query, returns id → qty map)
+app/api/cron/qbo-inventory-pull/route.ts              ← new (every 10 min)
+vercel.json                                           ← add cron entry
+app/settings/SettingsTabs.tsx                         ← optional: surface latest pull timestamp + drift count
+```
+
+**Phasing.** This issue covers Phase 0 only. Phases 1–3 are item §8 / §12 in §9 above and PRD §3.11.
+
+**Definition of done.**
+- Cron runs every 10 min for ≥1 week.
+- `qbo_qty_on_hand` populated for ≥99% of products with `qbo_item_id`.
+- Drift query (`SELECT COUNT(*) FROM products WHERE qbo_qty_on_hand IS DISTINCT FROM stock_quantity`) shows <1% of catalogue. If higher, root-cause before promoting to Phase 1.
+
+---
+
+### 12.3 Image hosting migration
+
+**Bucket:** Strategic / Cutover. **Depends on:** decision on Vercel Blob vs Supabase Storage (recommend Supabase Storage — same bucket as Phase 1 ingestion uses; no extra cost; Vercel Blob is gated on Pro plan).
+
+**Scope.** Today every PDP image URL points at Shopify CDN. After cutover, those URLs stop working. We need a one-shot migration that:
+1. Lists every `product_images` row with a Shopify CDN URL (or fetches the current image set from Shopify per product).
+2. Downloads each image.
+3. Uploads to Supabase Storage `product-images` bucket using the same path convention as Phase 1 (`<sku>/<position>-<filename>`).
+4. Updates `product_images.src` to the new public URL.
+5. Logs every step to `sync_log` for resumability.
+
+**Files.**
+
+```
+scripts/migrate-images-to-storage.mjs                 ← new (Node script, dry-run by default, --apply to write)
+lib/strategic/images/migrate.ts                       ← new (per-product migration helper, callable from script and from a future on-demand admin button)
+docs/plans/image-migration-runbook.md                 ← new (operator runbook: how to run, how to recover)
+```
+
+**Phasing.**
+- **Run 1 — dry-run.** Counts only; no downloads. Reports total images to migrate + estimated bandwidth + estimated bucket size. Owner reviews.
+- **Run 2 — small batch (`--apply --limit 50`).** Migrates 50 products. Spot-check 10 PDPs on staging — confirm new URLs work and original Shopify URLs are not the source of truth anymore.
+- **Run 3 — full (`--apply`).** Resumable — skips products whose `product_images.src` already starts with the Supabase Storage public URL prefix.
+- **Run 4 — verify.** A SELECT that asserts every active product has ≥1 `product_images` row with a Supabase Storage URL.
+
+**Open decisions.**
+- **Storage bucket size estimate.** ~2,700 products × avg 4 images × ~300 KB = ~3.2 GB. Supabase free tier is 1 GB, paid plan covers 100 GB. Confirm Supabase plan before Run 3.
+- **Image format.** Re-encode to WebP for size, or pass-through as-is? **Pass-through** for simplicity — re-encoding adds risk without clear benefit. nce-site can convert at render time if needed.
+- **Original alt-text and order.** Preserve exactly. The migration is structure-preserving.
+
+**Definition of done.**
+- Every active product has `product_images.src` URLs pointing at `daesvkeogxuqlrskuwpg.supabase.co/storage/v1/object/public/product-images/...`.
+- Spot-check on 50 random PDPs across the storefront: every image loads, no broken-image icons.
+- Migration is rerunnable safely (idempotent).
+
+---
+
+### 12.4 Metafields / specs editor
+
+**Bucket:** Strategic.
+
+**Scope.** Today `metafield_definitions` (per CLAUDE.md) holds ~40+ structured spec field definitions, and `product_metafields` holds per-product values. Some fields (the common ones) are surfaced in the ingestion form. The long tail has no admin UI — staff can't add or edit them post-cutover. This builds:
+1. A definitions admin (Settings → Specs Fields tab) — already exists per CLAUDE.md. Verify it covers full CRUD on `metafield_definitions`. If not, complete it.
+2. A per-product metafields editor — already on the product edit page (per `app/products/[id]/edit/MetafieldsEditor.tsx`). Mirror to the strategic edit page (item 12.1). Verify it handles all `field_type` values defined in the schema.
+
+**Files.**
+
+```
+app/settings/SettingsTabs.tsx                         ← verify Specs Fields tab is complete; add CRUD if missing
+app/settings/MetafieldDefinitionsEditor.tsx           ← may exist; verify or build
+app/products/[id]/edit-strategic/MetafieldsEditorStrategic.tsx ← new or symlink to existing component
+app/api/metafield-definitions/route.ts                ← may exist; verify CRUD
+app/api/products/[id]/metafields/route.ts             ← may exist; verify
+```
+
+**Open decisions.**
+- **Which `field_type` values are supported today?** Audit `metafield_definitions.field_type` distinct values. Common: text, number, boolean, select. Long-tail may include: rich text, date, multi-select, dimension, file. Build editors for each.
+- **Validation.** `metafield_definitions.required` exists — enforce on save.
+- **Reuse.** Don't fork the existing MetafieldsEditor for the strategic edit page — import it. It's not bridge code (no Shopify deps).
+
+**Definition of done.**
+- All 40+ `metafield_definitions` rows have a working editor input on the product edit page (strategic + bridge).
+- New definition can be added via Settings → Specs Fields and immediately appears in the ingestion form + edit pages.
+- Required fields block save when empty.
+- Storefront re-render: edited specs appear on the PDP within the next ISR window.
+
+---
+
+### 12.5 Strategic finance
+
+**Bucket:** Strategic. **Depends on:** Stripe-vs-Dojo decision (see `docs/plans/stripe-to-dojo-migration.md`); also depends on nce-site exposing payout-level data in Supabase (currently nce-site stores per-order Stripe payment intent IDs but not payout summaries).
+
+**Scope.** A new finance page for Stripe (or Dojo) payouts that mirrors what the bridge `/finance` page does for Shopify payouts: list payouts, show the orders inside each, post the fee deduction as a QBO journal entry, mark the payout as reconciled. Shopify-side bridge `/finance` keeps running until cutover; this is the parallel.
+
+**Files.**
+
+```
+supabase/migrations/<date>_strategic_payouts.sql      ← new tables: stripe_payouts, stripe_payout_transactions (mirror existing payouts/payout_transactions shape)
+lib/strategic/finance/stripe-payouts.ts               ← new (paginated list + transaction expansion via Stripe API)
+lib/strategic/finance/post-to-qbo.ts                  ← new (build a QBO journal entry for the payout fee total; idempotent on stripe_payout.journal_entry_id)
+app/api/cron/strategic-finance-sync/route.ts          ← new (daily; pull recent Stripe payouts, populate Supabase, optionally post to QBO)
+app/finance-strategic/page.tsx                        ← new (the actual UI — list payouts, status pills, manual sync button)
+app/finance-strategic/[id]/page.tsx                   ← new (per-payout detail with the transaction list)
+app/components/SidebarNav.tsx                         ← add "Finance" entry under Strategic group, alongside the bridge "Finance" under Current Solution
+vercel.json                                           ← register cron
+```
+
+**Phasing.**
+- **Phase A.** Stripe payouts pulled into Supabase, surfaced in UI, no QBO writes yet. Read-only review.
+- **Phase B.** Add the QBO journal-entry post (gated by reusing `SHOPIFY_SYNC_ENABLED=false` as the post-cutover signal — we don't want both bridge and strategic posting QBO journals during the bridge window).
+
+**Open decisions.**
+- **If Dojo migration approved**, add a parallel `lib/strategic/finance/dojo-payouts.ts` and switch the cron based on `PAYMENTS_PROVIDER` env var (see Dojo plan doc). For now, build for Stripe.
+- **QBO accounts.** The bridge sync uses `qbo_connections.shopify_fee_account_id` and `qbo_connections.bank_account_id`. Strategic should use `qbo_connections.stripe_receipt_account_id` (already added per PRD §3.4 QBO Sales Sync work) + a new `stripe_fee_account_id` column. Migration needed.
+- **Currency / date.** Stripe payouts are in pence GBP, dated by `arrival_date`. Match bridge convention.
+
+**Definition of done.**
+- Stripe payouts from the last 30 days appear in `/finance-strategic`. Manual sync button works.
+- For each payout, fee total matches Stripe dashboard.
+- Phase B: posting a payout creates exactly one QBO journal entry; rerunning is a no-op (idempotent on `journal_entry_id`).
+
+---
+
+### 12.6 Content management (CMS)
+
+**Bucket:** Strategic. **Largest scope of any blocker — split across multiple sessions.**
+
+**Scope.** Today every banner, nav item, hero slide, blog post, page, and policy is either hard-coded or sits in Supabase tables that have no admin UI. Staff need a way to edit:
+- **Top nav / mega menu structure** — categories, links, featured cards
+- **Homepage above-fold** — hero carousel slides (image + headline + CTA + link), Featured Deals tiles, NCE Rewards banner
+- **Homepage below-fold** — product rails (already config-driven via collection handles), category grid tiles (handle + image)
+- **Blog** — `blog_articles` already has CRUD-able schema; just no admin UI
+- **Pages** — `pages` table; same
+- **Policies** — `policies` table; same
+
+**Files (split per scope chunk).**
+
+Chunk 1 — pages + policies + blog (smallest, highest value-per-line):
+```
+app/settings/cms/pages/page.tsx                       ← list + create
+app/settings/cms/pages/[handle]/edit/page.tsx         ← rich-text editor (TipTap or similar; Lexical also fine)
+app/settings/cms/policies/...                         ← parallel
+app/settings/cms/blog/...                             ← parallel + cover image upload to Supabase Storage
+app/api/cms/{pages,policies,blog}/route.ts            ← CRUD endpoints
+```
+
+Chunk 2 — homepage hero + Featured Deals tiles:
+```
+supabase/migrations/<date>_homepage_blocks.sql        ← new: homepage_blocks table (kind=hero_slide|featured_deal, position, image_url, headline, subheading, cta_text, cta_href, active)
+app/settings/cms/homepage/page.tsx                    ← reorderable list per kind
+app/api/cms/homepage-blocks/route.ts                  ← CRUD
+nce-site: app/page.tsx + components — read homepage_blocks instead of hard-coded arrays
+```
+
+Chunk 3 — top nav / mega menu:
+```
+supabase/migrations/<date>_nav_structure.sql          ← new: nav_categories table (sort_order, label, href, parent_handle, featured_image_url)
+app/settings/cms/nav/page.tsx                         ← drag-reorder tree editor
+nce-site: components/shop/NavBar.tsx — read nav_categories instead of hard-coded
+```
+
+**Open decisions.**
+- **Rich-text editor choice.** TipTap (React-friendly, headless, mature) recommended. Lexical is heavier. Plain-Markdown also viable for blog/policies if rich formatting isn't needed.
+- **Image upload.** Reuse `product-images` bucket or a new `cms-images` bucket? **New `cms-images`** — different lifecycle (CMS images may be deleted/replaced often; product images shouldn't be).
+- **Preview.** Editor needs a preview-on-storefront button. Stretch goal — ship without first, add later.
+- **Sequence within the chunk.** Chunk 1 first (smallest, unblocks copy edits day one). Chunk 2 next. Chunk 3 last (most disruptive — touches nce-site nav).
+
+**Definition of done (per chunk).**
+- Staff can create / edit / delete the relevant content type from the dashboard.
+- Storefront re-renders within ISR window (or on next deploy if SSG).
+- No hard-coded copy remains in code for that content type.
+
+---
+
+### 12.7 Draft orders / quotes
+
+**Bucket:** Strategic.
+
+**Scope.** Used by reps for negotiated B2B sales. The flow:
+1. Rep builds a draft order in the dashboard — pick customer (or create new), add line items (search products), set custom prices/discounts, add notes.
+2. Rep generates a **payment link** for the customer (Stripe Checkout Session in invoice mode, or hosted invoice — decide).
+3. Customer clicks the link, pays via Stripe, the existing webhook converts the draft to a real order.
+4. Rep can also mark the draft as "won — paid offline" or "lost".
+
+**Files.**
+
+```
+supabase/migrations/<date>_draft_orders.sql           ← new: draft_orders + draft_order_items tables (status: open|sent|paid|cancelled, payment_link_url, customer_id nullable, custom_price_cents per item)
+app/quotes/page.tsx                                   ← list of draft orders
+app/quotes/new/page.tsx                               ← builder (customer typeahead, product line item picker, custom pricing, notes)
+app/quotes/[id]/page.tsx                              ← edit + send + status transitions
+app/api/quotes/route.ts                               ← CRUD
+app/api/quotes/[id]/payment-link/route.ts             ← creates Stripe Checkout Session in invoice/payment-link mode, persists URL
+nce-site: app/api/webhooks/stripe/route.ts            ← extend to recognise draft_order_id metadata and convert draft → order
+app/components/SidebarNav.tsx                         ← add "Quotes" entry to Strategic group
+```
+
+**Open decisions.**
+- **Stripe payment-link mode.** Stripe supports two patterns: a [Payment Link](https://stripe.com/docs/payment-links) (URL-only, no customer attached) or a [Checkout Session in `mode: 'payment'`](https://stripe.com/docs/api/checkout/sessions/create) (URL + customer attached). **Use Checkout Session** — it can carry our `draft_order_id` in metadata and pre-fill the customer.
+- **Email delivery.** Send the link via existing Resend transactional email (mirror the order-confirmation pattern), or expect rep to copy-paste into their own email? **Send via Resend** — looks professional, tracks open/click via Resend dashboard.
+- **Tax/VAT on draft.** Custom prices are entered ex-VAT (rep negotiates ex-VAT). Inc-VAT shown alongside. Same logic as PDP.
+- **Inventory reservation.** Don't reserve stock when a draft is created — too much complexity. Stock check at conversion time. If a line item is OOS at conversion, mark the draft as `failed_inventory` and notify rep. Document this clearly so reps know.
+
+**Definition of done.**
+- Rep creates a draft → adds 3 line items with custom prices → sends.
+- Customer receives email → clicks link → lands on Stripe Checkout pre-filled → pays.
+- Stripe webhook fires → draft is converted to real order in `orders` table → confirmation email goes out via existing flow.
+- Draft can be cancelled before payment.
+- Draft list page shows status filters (open / sent / paid / cancelled).
+
+---
+
+## 13. Cutover runbook (high level)
+
+When all §9 cutover-blocker items are checked off:
+
+1. **Pre-flight (24h before).** Final QA pass on the strategic ingestion + edit + finance + inventory sync end-to-end on production with a clearly-named test product. Owner sign-off.
+2. **DNS-day actions (in this exact order):**
+   1. Disable QuickBooks Online Global app's "Sync inventory" toggle in Shopify (already in PRD §8 urgent action — confirm done).
+   2. Disable QBO Global's "create QBO item from Shopify" toggle (PRD §8 — confirm done).
+   3. Run inventory backfill script (PRD §3.11 Phase 3) — copies QBO `QtyOnHand` → `products.stock_quantity` for every active product.
+   4. Set Vercel env: `SHOPIFY_SYNC_ENABLED=false` (both projects).
+   5. Update sidebar default route — change `+ New product` (Current Solution group) to point at `/products/new-strategic` and remove or hide the Current Solution group. (Or keep both visible for the soak window — owner call.)
+   6. Flip DNS from Shopify to Vercel for `nationwidecatering.co.uk`.
+   7. Put Shopify into maintenance/password mode.
+3. **Soak (3 months).** Monitor `sync_log` for errors, watch Stripe payouts reconcile, verify QBO inventory stays in sync. If anything breaks, flipping `SHOPIFY_SYNC_ENABLED` back to `true` is the rollback (DNS rollback is independent and slower).
+4. **Decommission (post-soak).** Delete bridge folders (listed in §2.2), drop `SHOPIFY_SYNC_ENABLED` env var, remove `lib/shopify/`, archive old migrations.
