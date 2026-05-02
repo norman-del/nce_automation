@@ -7,6 +7,7 @@ import { isShopifySyncEnabled } from '@/lib/shopify/config'
 import { notFound } from 'next/navigation'
 import EditProductForm from './EditProductForm'
 import MetafieldsEditor from './MetafieldsEditor'
+import ScopeBanner from '@/app/components/ScopeBanner'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -45,6 +46,7 @@ export default async function EditProductPage({ params }: Props) {
 
   return (
     <div>
+      <ScopeBanner mode="bridge" detail="Edits here sync to Shopify and QuickBooks. After Shopify cutover, edits will go to Supabase + QBO only." />
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-primary">Edit Product</h2>
         <p className="mt-1 text-sm text-secondary font-mono">{product.sku}</p>

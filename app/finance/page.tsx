@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase/client'
 import { getStaffUser } from '@/lib/auth/staff'
 import { redirect } from 'next/navigation'
 import SyncPayoutsButton from './SyncPayoutsButton'
+import ScopeBanner from '@/app/components/ScopeBanner'
 
 async function getPayouts(search?: string, filter?: string) {
   try {
@@ -63,6 +64,7 @@ export default async function PayoutsPage({
 
   return (
     <div>
+      <ScopeBanner mode="bridge" detail="Shopify payout fee reconciliation to QuickBooks. Retired at Shopify cutover — Stripe payouts will replace this." />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <div>
           <h2 className="text-2xl font-semibold text-primary">Finance</h2>

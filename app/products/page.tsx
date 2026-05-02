@@ -22,9 +22,10 @@ export default function ProductsPage() {
           </Link>
           <Link
             href="/products/new"
-            className="px-4 py-2 text-sm font-medium bg-accent text-white rounded-md hover:bg-accent-hi transition-colors"
+            className="px-4 py-2 text-sm font-medium bg-accent text-white rounded-md ring-1 ring-amber-500/60 hover:bg-accent-hi transition-colors"
+            title="Current solution — writes to Shopify + QBO"
           >
-            New Product
+            + New Product
           </Link>
         </div>
       </div>

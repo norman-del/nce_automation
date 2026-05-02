@@ -8,34 +8,54 @@ Current pipelines:
 1. **Payout Fee Sync** — Shopify payout fee reconciliation with QuickBooks Online
 2. **Product Ingestion** — Single-form entry that pushes to Supabase, Shopify (draft), and QBO simultaneously
 
-## Scope: Now (Bridge) vs Strategic (Post-Shopify)
+## Scope: Current Solution (Bridge) vs Strategic (Post-Shopify)
 
-**Before editing any product, inventory, order, or sync code, decide which bucket the change belongs in. Don't mix them in one commit.**
+**Authoritative plan: `docs/plans/now-vs-strategic.md`. Read §2 before editing any product, inventory, order, or sync code.** Don't duplicate the rules here — they live in the plan.
 
-Full plan, bug specs, and execution order: **`docs/plans/now-vs-strategic.md`**. Read it first.
+### Quick summary
 
-### "Now" (Bridge) — keeps the current Shopify/QBO business running
-Exists only because Shopify is still our storefront. Gated by `SHOPIFY_SYNC_ENABLED` where applicable. Decommissioned after DNS cutover + 3 months stability.
-- Product ingestion form + Shopify draft push + QBO item create — `app/products/new`, `lib/shopify/products.ts`, `lib/qbo/items.ts`
-- Product editing sync to Shopify + QBO — `updateShopifyProduct`, `updateQboItem`
-- Photo upload → Shopify CDN → draft→active flip
-- Shopify payout fee sync → QBO journal — `app/finance`, `lib/sync/payouts.ts`, `/api/cron/sync`
+- **Current solution (Bridge)** — only two features today: product ingestion (`app/products/new` + `app/products/[id]/edit`) and Shopify payout sync (`app/finance`). Retired at Shopify cutover.
+- **Strategic** — everything else: orders, customers, collections CRUD, metafields editor, supplier feed ingestion, QBO sales sync, eBay (planned), shipping labels (planned), etc.
 
-Known bugs (see plan doc §5): QBO VAT codes not applied, Shopify multi-channel publish broken, description paragraphs collapse. Fix these before owner QA.
+### Bridge folders — frozen during Strategic work
 
-### "Strategic" (Post-Shopify) — built Shopify-independent
-- Collection CRUD, metafield editor, supplier feed ingestion, QBO sales sync (dry-run), image hosting migration
-- eBay integration, cross-channel stock sync, drop-ship product support
-- Shipping labels (APC + Pallettrack), draft orders, returns, B2B pricing, rewards, CMS, staff invite UI
+Don't edit these as part of Strategic work. Bridge bug-fixes live in their own commits.
 
-### Rules
-- **Strategic builds are read-only against prod Shopify and QBO until cutover.** No Shopify mutations, no QBO Bill/Invoice/Sales Receipt/Item writes. Strategic writes go to Supabase only, gated behind `SHOPIFY_SYNC_ENABLED=false` or a dormant cron. The bridge flows (product ingestion + payout sync) handle all live writes today and will be reconfigured **after** cutover, not modified during Strategic work.
-- Do not edit `app/products/new/`, `lib/shopify/products.ts`, `lib/qbo/items.ts`, `lib/sync/payouts.ts`, or `app/api/cron/sync/` as part of Strategic work — those are bridge code. Bug fixes to them are Now/bridge work and live in their own commits.
-- UI ribbon on every page ("Bridge mode" amber / "Strategic" blue) — not yet built, tracked in plan doc §9 step 6.
-- No role-based hiding (Norman and Rich must be able to QA Strategic features as they ship).
-- No duplicate Now/Strategic versions of the same screen. Single switch at cutover is `SHOPIFY_SYNC_ENABLED`.
-- Every Shopify variant write **must** set `inventory_management: 'shopify'` AND `inventory_policy: 'deny'` explicitly (see `docs/lessons-learned.md`).
+```
+app/products/new/                  ← bridge ingestion form
+app/products/[id]/edit/            ← bridge edit form
+app/finance/                       ← bridge payout reconciliation
+app/api/cron/sync/                 ← bridge payout cron
+lib/shopify/                       ← bridge Shopify client
+lib/sync/payouts.ts                ← bridge payout sync
+lib/qbo/items.ts                   ← bridge QBO item create/update
+```
+
+### Strategic shared-domain features → parallel files
+
+Features that exist in both worlds (currently: product ingestion + edit) get **parallel implementations** so both flows can run simultaneously during the bridge:
+
+```
+app/products/new-strategic/        ← (when built) Supabase + QBO only, photos to Vercel Blob
+app/products/[id]/edit-strategic/  ← parallel edit
+lib/strategic/products/            ← strategic-only server logic
+```
+
+Net-new Strategic features (collections, metafields, supplier feeds, QBO sales sync, eBay, etc.) have no bridge equivalent — single implementation, no parallel.
+
+### Visual segregation (shipped 2026-05-02)
+
+- Sidebar groups: **Current solution** (amber outline, top) + **Strategic** (green outline, below).
+- Bridge pages render `<ScopeBanner mode="bridge" />` at the top — `app/components/ScopeBanner.tsx`.
+- Bridge action buttons on Strategic pages get an amber ring (`ring-1 ring-amber-500/60`).
+
+### Standing rules (carry over from `docs/lessons-learned.md`)
+
+- Strategic builds are read-only against prod Shopify and QBO until cutover. No Shopify mutations, no QBO Bill/Invoice/Sales Receipt/Item writes from Strategic code.
+- Every Shopify variant write **must** set `inventory_management: 'shopify'` AND `inventory_policy: 'deny'` explicitly.
 - Remediation scripts default to dry-run; `--apply` required to write.
+- No role-based hiding for Now-vs-Strategic — Norman and Rich (both admin) must QA both worlds.
+- Every PR/commit states its bucket. Never mix Bridge and Strategic in one commit.
 
 ## Tech Stack
 Next.js 16 (App Router), React 19, Supabase, Tailwind 4, node-quickbooks, intuit-oauth
@@ -279,35 +299,9 @@ Even when `.local\bin` is in the User PATH registry, the warning fires because `
 
 ## Shopify Replacement Strategy
 
-nce_automation must work with Shopify **today** (product sync to Shopify is live) and without Shopify **after migration**. This is controlled by a toggle.
+`SHOPIFY_SYNC_ENABLED` is the single env-var toggle. `true` today (bridge writes to Shopify), `false` post-cutover (Shopify calls become no-ops, photos go to Vercel Blob, products managed in Supabase). Helper: `lib/shopify/config.ts`.
 
-### SHOPIFY_SYNC_ENABLED env var
-- `true` (current default): product create/edit/activate push to Shopify, photos go to Shopify CDN, payout cron runs
-- `false` (post-migration): Shopify calls are skipped, photos go to Vercel Blob or Supabase Storage, products managed entirely in Supabase
-
-### What depends on Shopify today (must be toggle-aware)
-1. `fetchProductMetadata()` in `lib/shopify/products.ts` — populates form dropdowns. **Should always read from Supabase** (product types, vendors from `products` table; collections from `collections` table).
-2. `createShopifyProduct()` — pushes new product as draft. Skip when disabled.
-3. `updateShopifyProduct()` — syncs edits. Skip when disabled.
-4. `activateShopifyProduct()` — draft → active. When disabled, just set `products.status = 'active'` in Supabase.
-5. `uploadImageToShopify()` — photos to Shopify CDN. When disabled, upload to Vercel Blob or Supabase Storage.
-6. Payout cron (`/api/cron/sync`) — pulls from Shopify Payments. Disable when sync is off.
-
-### What's already Shopify-independent (no work needed)
-Orders, refunds, customers, inventory, shipping rates, promotions, email, search, auth, QBO item sync — all use Supabase/Stripe directly.
-
-### Gaps to build before migration
-1. **Shopify sync toggle** — `SHOPIFY_SYNC_ENABLED` env var + `lib/shopify/config.ts` helper
-2. **Supabase-sourced metadata** — replace `fetchProductMetadata()` Shopify calls with Supabase queries
-3. **Product description field** — `body_html` column exists (2,695 products have data), add textarea to create + edit forms
-4. **Collection management UI** — CRUD page for the 68 collections already in Supabase
-5. **Image hosting switch** — Vercel Blob or Supabase Storage when Shopify CDN is unavailable
-
-See `docs/handoffs/shopify-replacement-2026-04-10.md` for full audit including all 44 product types, 13 vendors, 68 collections, metafield definitions, and shipping zone configs from the live Shopify store.
+Full strategy, parallel-implementation rules, gaps to build, and feature inventory live in **`docs/plans/now-vs-strategic.md`**. Pre-cutover audit (44 product types, 13 vendors, 68 collections, metafield defs, shipping zones from live Shopify) is in `docs/handoffs/shopify-replacement-2026-04-10.md`.
 
 ## Next Steps
-- **Shopify replacement gaps** — build the 5 items listed above (see handoff doc for details)
-- **Test product ingestion end-to-end** — form → Supabase → Shopify draft → QBO item → photo upload → active
-- **Existing product migration** — strategy needed to import 5000+ existing products from spreadsheet into Supabase (not into Shopify/QBO — they already exist there)
-- **QBO sync app deactivation** — untick "create new item in QBO" in the QuickBooks Online Global app once our pipeline is validated
-- **Mobile frontend** — being rebuilt in a parallel session
+For active backlog and execution order see `docs/plans/now-vs-strategic.md` §9. The PRD (`../nce-site/docs/PRD.md` §3.4) tracks work-package status across both repos.

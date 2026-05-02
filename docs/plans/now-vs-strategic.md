@@ -1,11 +1,13 @@
 # Now vs Strategic — Scope, Bugs, Gap Analysis
 
-**Last updated:** 2026-04-22
-**Status:** Planning complete, ready for execution in fresh chats
+**Last updated:** 2026-05-02
+**Status:** Planning complete; segregation shipped (sidebar grouping + scope banners)
 
-This is the single source of truth for how nce_automation is split between:
-- **Now (Bridge)** — keeps the current Shopify/QBO business running until DNS cutover
+This is the **single source of truth** for how nce_automation is split between:
+- **Current solution (Bridge)** — keeps the current Shopify/QBO business running until DNS cutover
 - **Strategic (Post-Shopify)** — the stack that takes over at cutover
+
+Other docs reference this one. Don't duplicate the rules below — link to them.
 
 Related: `docs/handoffs/shopify-replacement-2026-04-10.md`, `docs/handoffs/shopify-admin-audit-2026-04-28.md`, `docs/lessons-learned.md`, `../nce-site/docs/PRD.md`.
 
@@ -20,35 +22,71 @@ Two risks drove this plan:
 
 ## 2. Segregation approach
 
-**Decision (2026-04-22, option A):** documentation-based segregation with a visible UI banner per feature. No code duplication. No role-based hiding yet.
+**Decision (revised 2026-05-02):** visual sidebar grouping + per-page scope banner + parallel implementations for shared-domain features. No role-based hiding. Single env-var cutover switch.
 
-### Doc-level rule (this file + CLAUDE.md)
+The earlier "no code duplication" rule (option A, 2026-04-22) was over-restrictive: features that exist in both worlds (notably product ingestion + product editing) need both implementations to run **simultaneously** during the bridge so Norman/Rich can QA the Strategic flow against real data without breaking the live Shopify pipeline. A single env flag can't do that. So shared-domain features get parallel files; net-new Strategic features (collections, metafields, supplier feed, QBO sales sync, eBay, etc.) have no parallel and don't need one.
 
-Every feature is tagged **Now** or **Strategic**. Future sessions must:
-- Read `CLAUDE.md` § "Scope: Now vs Strategic" before touching any product/inventory/order code.
-- If adding a feature: decide which bucket first, and say so in the PR/commit.
-- Never expand a Now bug-fix into Strategic work (or vice versa) in the same commit.
+### 2.1 Visual rules
 
-### UI-level rule (banner, not hiding)
+**Sidebar — grouped, Current at top.**
 
-Each page in the dashboard gets a small ribbon at the top:
-- **"Bridge mode — syncs to Shopify + QBO"** (amber) — on Now pages
-- **"Strategic — Supabase only"** (blue) — on Strategic pages
+```
+─── CURRENT SOLUTION (amber) ───  ← used most today; retired at cutover
+  + New product            → /products/new
+  Finance                  → /finance
 
-Purpose: a human eyeballing the screen can instantly tell whether the action they're about to take will hit Shopify. Prevents the worst-case mistake ("I thought this was the new form, not the old one").
+─── STRATEGIC (green) ──────────  ← post-Shopify stack
+  Dashboard
+  Orders
+  Products  (browse/view)
+  Customers
+  Settings
+```
 
-**Not doing yet:**
-- Role-based hiding (Norman/Rich need to test Strategic features as they ship)
-- Duplicate "Now" and "Strategic" versions of the same screen (doubles the code, doubles the bug surface)
-- Feature-flag / preview-access plumbing — defer until closer to cutover
+Implemented in `app/components/SidebarNav.tsx`. The Strategic Products entry is the read/browse view; the bridge "+ New product" entry is its own sidebar item so the active state is unambiguous. Edit (`/products/[id]/edit`) is reached from Products and is bridge — flagged via banner only, not the sidebar.
 
-### The single switch at cutover
+**Per-page scope banner.** Bridge pages render `<ScopeBanner mode="bridge" />` at the top. Strategic pages can render `mode="strategic"` if useful but it's optional — strategic is the default future state, banners aren't required. Component: `app/components/ScopeBanner.tsx`.
 
-`SHOPIFY_SYNC_ENABLED` env var already exists (per CLAUDE.md § "Shopify Replacement Strategy"). The cutover plan is:
-1. Every Now feature respects this env var at runtime.
+**Bridge action buttons on shared pages.** When a button on a Strategic page triggers a bridge action (the "+ New Product" button on `/products`, for example), give it an amber `ring-1 ring-amber-500/60` outline so the colour differentiation carries through.
+
+### 2.2 Code rules
+
+**Bridge folders are frozen.** Don't edit these as part of Strategic work; bridge bug-fixes go in their own commits:
+
+```
+app/products/new/                  ← bridge ingestion form
+app/products/[id]/edit/            ← bridge edit form
+app/finance/                       ← bridge payout reconciliation
+app/api/cron/sync/                 ← bridge payout cron
+lib/shopify/                       ← bridge Shopify client
+lib/sync/payouts.ts                ← bridge payout sync
+lib/qbo/items.ts                   ← bridge QBO item create/update (shared with Strategic but currently bridge-shaped)
+```
+
+**Strategic shared-domain features get parallel files.** When we build the post-Shopify product ingestion form, it goes in:
+
+```
+app/products/new-strategic/        ← Supabase + QBO only, photos to Vercel Blob
+app/products/[id]/edit-strategic/  ← parallel edit
+lib/strategic/products/            ← strategic-only server logic
+```
+
+(Final route names are a UX decision — `new-strategic` is fine for now; we may rename to `new-v2` or similar before cutover. Pick a convention and stick with it.)
+
+**Strategic-only features have no bridge equivalent.** Collections CRUD, metafields editor, supplier feeds, QBO sales sync, eBay, shipping labels, draft orders, etc. — single implementation, lives in normal folders, no parallel needed.
+
+**No role-based hiding.** Norman and Rich (both admin) must see everything so they can QA Strategic features.
+
+**Every PR/commit declares its bucket.** If adding or fixing a feature, say in the commit message which bucket it belongs to. Never mix in one commit.
+
+### 2.3 The single switch at cutover
+
+`SHOPIFY_SYNC_ENABLED` env var (per CLAUDE.md § "Shopify Replacement Strategy") is the only cutover toggle:
+
+1. Every Bridge feature respects this env var at runtime.
 2. Every Strategic feature ignores it (or explicitly requires it `false`).
-3. On cutover day, flip it to `false`. All Now code becomes no-ops. Strategic code takes over.
-4. After ~3 months of stable operation, delete the Now code paths entirely.
+3. On cutover day, flip to `false` in production. Bridge code becomes no-ops; sidebar swaps the "+ New product" entry to point at the strategic route.
+4. After ~3 months of stable operation, delete bridge folders + sidebar group entirely.
 
 ## 3. Feature inventory
 
@@ -323,7 +361,7 @@ Each bullet is a self-contained chat session. Deliver in order.
 3. **Bug 1 fix** — explicit tax code mappings in `qbo_connections` + Settings UI + audit/remediation script.
 4. **Bugs 2 + 3** — Shopify GraphQL multi-channel publish + plain-text-to-HTML description helper + remediation script for existing descriptions.
 5. **Drop-ship support** — migration + form toggle + QBO non-inventory branch.
-6. **UI segregation banners** — Now / Strategic ribbons on every page.
+6. ~~**UI segregation banners** — Now / Strategic ribbons on every page.~~ Done 2026-05-02. `ScopeBanner` component on `/products/new`, `/products/[id]/edit`, `/finance`. Sidebar grouped (Current Solution at top, Strategic below) with amber/green outlines. `+ New Product` button on `/products` carries the amber ring as a bridge action.
 7. **Collection CRUD admin UI** — Strategic, already in progress per PRD §3.4.
 8. **Metafield / specs editor** — Strategic, already in progress per PRD §3.4.
 9. **eBay E1** — OAuth + connection + webhook stub.
@@ -343,7 +381,7 @@ Before we ask Norman and Rich to QA product ingestion end-to-end (add test produ
 - [x] **Bug 3 fixed (2026-04-22).** `lib/shopify/format.ts` `plainTextToHtml()` wired into create + update. Existing descriptions will be reformatted on next staff edit (no mass-remediation script — natural drift is fine).
 - [x] **Bug 4 fixed (2026-04-22).** Root cause: `intuit-oauth` v4.2.2's `client.refresh()` rejects valid tokens — confirmed by diagnostic showing raw HTTP 200 vs library "invalid". Replaced with raw fetch in `lib/qbo/auth.ts`. Hardened: 3× retry on DB save, 15-min refresh threshold, daily keepalive cron at `/api/cron/qbo-refresh`, visibility on Settings → Connections. Verified end-to-end on prod.
 - [ ] Drop-ship toggle shipped (Norman has drop-ship products to add)
-- [ ] UI banner on product form clearly says "Bridge mode — syncs to Shopify + QBO"
+- [x] UI banner on product form clearly says "Current solution — writes to Shopify + QBO" (shipped 2026-05-02; sidebar also grouped Current at top, Strategic below)
 
 Only then hand over for owner testing.
 
