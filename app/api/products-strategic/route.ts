@@ -3,17 +3,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createStrategicProduct, type StrategicProductInput } from '@/lib/strategic/products/create'
-import { isStrategicIngestionEnabled } from '@/lib/strategic/config'
 
 export async function POST(req: NextRequest) {
   const t0 = Date.now()
-  if (!isStrategicIngestionEnabled()) {
-    return NextResponse.json(
-      { error: 'Strategic ingestion is disabled. Set STRATEGIC_INGESTION_ENABLED=true to enable.' },
-      { status: 503 }
-    )
-  }
-
   try {
     const body = await req.json()
     const inputs: StrategicProductInput[] = Array.isArray(body) ? body : [body]

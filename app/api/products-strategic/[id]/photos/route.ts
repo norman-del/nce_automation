@@ -4,17 +4,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/client'
 import { uploadStrategicProductPhoto } from '@/lib/strategic/products/photos'
-import { isStrategicIngestionEnabled } from '@/lib/strategic/config'
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const t0 = Date.now()
-  if (!isStrategicIngestionEnabled()) {
-    return NextResponse.json({ error: 'Strategic ingestion is disabled.' }, { status: 503 })
-  }
-
   try {
     const { id } = await params
     const db = createServiceClient()

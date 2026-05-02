@@ -75,10 +75,9 @@ function emptyDraft(): ProductDraft {
 interface Props {
   productTypes: string[]
   vendors: string[]
-  enabled: boolean
 }
 
-export default function ProductFormStrategic({ productTypes, vendors, enabled }: Props) {
+export default function ProductFormStrategic({ productTypes, vendors }: Props) {
   const router = useRouter()
   const [draft, setDraft] = useState<ProductDraft>(emptyDraft())
   const [saving, setSaving] = useState(false)
@@ -225,18 +224,6 @@ export default function ProductFormStrategic({ productTypes, vendors, enabled }:
   const inputCls = 'w-full bg-surface border border-edge rounded-md px-3 py-2 text-sm text-primary placeholder:text-secondary/50 focus:outline-none focus:border-accent'
   const inputErr = 'w-full bg-surface border border-fail rounded-md px-3 py-2 text-sm text-primary placeholder:text-secondary/50 focus:outline-none focus:border-fail'
   const labelCls = 'block text-xs font-medium text-secondary mb-1'
-
-  if (!enabled) {
-    return (
-      <div className="bg-surface border border-edge rounded-lg p-6">
-        <p className="text-sm text-secondary">
-          Strategic ingestion is currently <strong className="text-primary">disabled</strong>. Set
-          {' '}<code className="px-1.5 py-0.5 bg-overlay rounded text-accent">STRATEGIC_INGESTION_ENABLED=true</code>{' '}
-          on Vercel and redeploy to enable. Until then, this form is read-only and submissions return 503.
-        </p>
-      </div>
-    )
-  }
 
   if (success) {
     return (

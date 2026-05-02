@@ -2,12 +2,10 @@ export const dynamic = 'force-dynamic'
 
 import ProductFormStrategic from './ProductFormStrategic'
 import { fetchProductMetadataFromSupabase } from '@/lib/products/metadata'
-import { isStrategicIngestionEnabled } from '@/lib/strategic/config'
 import ScopeBanner from '@/app/components/ScopeBanner'
 
 export default async function NewProductStrategicPage() {
   const { productTypes, vendors } = await fetchProductMetadataFromSupabase()
-  const enabled = isStrategicIngestionEnabled()
 
   return (
     <div>
@@ -24,7 +22,6 @@ export default async function NewProductStrategicPage() {
       <ProductFormStrategic
         productTypes={productTypes}
         vendors={vendors}
-        enabled={enabled}
       />
     </div>
   )
