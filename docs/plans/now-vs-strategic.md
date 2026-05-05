@@ -718,4 +718,35 @@ When all §9 cutover-blocker items are checked off:
    7. **Lock Shopify.** Put the old Shopify store into maintenance/password mode so no one buys through the wrong system.
    8. **Smoke test.** Place a real test order on the live site (small SKU, full checkout). Verify within 5 minutes: Supabase order row created, `stock_quantity` decremented, QBO Sales Receipt posted, totals match. **If anything is off, set `SHOPIFY_SYNC_ENABLED=true` to roll the env switch back, investigate, and re-attempt.**
 3. **Soak (3 months).** Monitor `sync_log` for errors, watch Stripe payouts reconcile, verify QBO inventory stays in sync. If anything breaks, flipping `SHOPIFY_SYNC_ENABLED` back to `true` is the rollback (DNS rollback is independent and slower).
-4. **Decommission (post-soak).** Delete bridge folders (listed in §2.2), drop `SHOPIFY_SYNC_ENABLED` env var, remove `lib/shopify/`, archive old migrations.
+4. **Decommission bridge code (after week 1 of soak).** Delete bridge folders (listed in §2.2), drop `SHOPIFY_SYNC_ENABLED` env var, remove `lib/shopify/`, archive old migrations.
+
+### 13.5 Repo consolidation — merge `nce_automation` into `nce-site`
+
+**When:** after step 4 above (bridge code deleted), with a 1-week stable window confirmed in `sync_log`.
+
+**Why we waited:** moving OAuth callbacks (Shopify Custom App + Intuit Developer console) on a live bridge would risk a 3am payout failure. Post-cutover, Shopify OAuth is dead and the bridge is gone, so the merge moves only the strategic admin surface — small, clean, no production risk.
+
+**Owner sign-off required before kickoff.** This is a deploy-URL change for staff (the URL they bookmark for the dashboard moves), and a one-time QBO re-OAuth.
+
+**Sequence (drives a fresh chat session in the `nce-site` repo, with this one supplying the inventory):**
+
+1. **Migration inventory (this side, `nce_automation`).** Generate `docs/plans/repo-merge.md` listing every file in `nce_automation` with: source path, target path under `nce-site/app/(admin)/...` or `nce-site/lib/...`, conflicts with existing `nce-site` files, env-var dependencies, OAuth dependencies. Owner-readable.
+2. **New Vercel project, not a rename.** Stand up `nce-merged` (or chosen name) at a new URL. Both old projects stay deployed throughout. Owners keep using `nce-automation.vercel.app` until the merged app passes smoke tests.
+3. **Code moves (nce-site Claude executes).**
+    - `lib/qbo/*`, `lib/sync/order-to-qbo.ts`, `lib/strategic/*`, `lib/products/*` → `nce-site/lib/...`
+    - Strategic admin pages (`app/orders/*`, `app/products/*` minus storefront, `app/customers/*`, `app/finance-strategic/*`, `app/settings/*`) → `nce-site/app/(admin)/...`
+    - Strategic API routes (`app/api/products-strategic/*`, `app/api/orders/*`, `app/api/qbo/*`, etc.) → `nce-site/app/api/...`
+    - Cron routes (`app/api/cron/qbo-inventory-pull`, `app/api/cron/qbo-refresh`, etc.) move LAST, after web routes are validated.
+4. **Auth gating.** Extend `nce-site/proxy.ts` to gate `/admin/*` and `/api/qbo/*`, `/api/orders/*` etc. by `staff_users.role`. Customer routes stay unchanged.
+5. **Dual OAuth registration.**
+    - Intuit Developer console: add the merged app's `/api/qbo/auth` redirect URI alongside the existing one. Both work.
+    - Skip Shopify Custom App entirely — its callback is dead post-cutover.
+6. **Validate on the merged app.** Re-OAuth QBO from the new URL. Run a manual `qbo-inventory-pull` cron tick. Place a test order through the storefront → verify it lands in the merged admin's `/admin/orders`. Smoke-test product edit + photo upload from the merged admin. Owner does a full-flow QA.
+7. **Crons cut over.** Move all `vercel.json` cron entries from `nce_automation` into the merged project. Disable crons on the old `nce_automation` Vercel project (don't delete the project yet). Watch `sync_log` for one full cron cycle.
+8. **DNS / bookmark update for staff.** Email Norman + Rich the new admin URL. Optionally redirect `nce-automation.vercel.app/*` → merged app so old bookmarks don't 404.
+9. **Hold for 1 week.** `nce_automation` Vercel project stays deployed (crons disabled, web routes still respond) as a rollback path. If anything goes wrong, re-enable crons there and update Intuit redirect URI back.
+10. **Archive (week 2).** Delete the old Vercel project. Set `nce_automation` GitHub repo to read-only/archived. Remove its old QBO redirect URI from Intuit. Update CLAUDE.md (root + nce-site) to reflect single-repo reality.
+
+**Rollback at any step.** Until step 10, the old `nce_automation` deploy can be re-armed by re-enabling its crons and pointing Intuit back at it. After step 10 the merge is final.
+
+**What this consolidation does NOT change:** Supabase project (still `daesvkeogxuqlrskuwpg`), Stripe account, QBO realm, customer-facing URL (`nationwidecatering.co.uk`), staff auth pool (`staff_users`). Only the deployment topology and code organization change.
