@@ -91,6 +91,8 @@ If a change is testable in a browser (UI, OAuth flow, settings page, button clic
 - NEVER create duplicate QBO items — always check products.qbo_item_id first
 - ALL QBO API calls must check token expiry and refresh if needed
 - TypeScript strict mode. No `any` (except `node-quickbooks` client which has incomplete types — use `QboAny` cast pattern from `lib/qbo/items.ts`).
+- **Inventory sync Phase 2 (sale → QBO Sales Receipt) MUST be gated on `SHOPIFY_SYNC_ENABLED=false`.** The bridge payout sync books sales income via journal entries; Phase 2 booking Sales Receipts at the same time double-counts. Both the decrement endpoint and the Sales Receipt writer stay dormant until cutover. Full rules: `docs/plans/now-vs-strategic.md` §12.2 + §13.
+- **Inventory sync Phase 1 (cron → `stock_quantity`) requires owner sign-off before flipping on.** The 10-minute pull overwrites manual stock edits, so Norman/Rich must move stock management into QBO first (or we hide the in-app stock-adjust widget at the same time).
 
 ## Key Patterns
 - Shopify auth: Custom App access token (stored in env), not OAuth

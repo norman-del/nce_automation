@@ -468,6 +468,24 @@ docs/plans/now-vs-strategic.md                        ← mark §9 item 4 done
 
 **Authoritative spec lives at PRD §3.11.** Read that first; this is the implementation summary for Phase 0 only.
 
+> ### ⚠️ Production-safety rules — read before building Phase 1 or 2
+>
+> The inventory work ships in three phases with very different risk profiles. Get this wrong and you either blow away staff stock edits in production or double-book sales income in QuickBooks.
+>
+> **Phase 0 — always safe.** Writes to a shadow column (`qbo_qty_on_hand`); nothing reads it. Ship anytime.
+>
+> **Phase 1 — visible behaviour change, ship with a heads-up.** Once the cron points at `stock_quantity`, any stock edit a staff member makes in our UI gets overwritten on the next 10-minute pull. Before flipping Phase 1 on:
+> - Tell Norman and Rich that QBO is now the source of truth for stock — manual adjustments must happen in QBO.
+> - Hide or disable the "Adjust stock" widget on the product detail page (or leave it visible but read-only). Otherwise staff will keep editing it, see their change disappear, and lose trust.
+>
+> **Phase 2 — must be flag-gated and off by default until cutover.** While the bridge payout sync is still running, the bridge books sales income via journal entries on each Shopify payout. If Phase 2 also posts a Sales Receipt per order, **QBO double-counts the income**. So Phase 2 ships behind `SHOPIFY_SYNC_ENABLED=false` and stays dormant in production. Flipping that env var to `false` at cutover is the single switch that simultaneously kills the bridge payout sync and activates Phase 2 — they are exact opposites and must never run at the same time.
+>
+> **Don't forget at cutover (full checklist in §13).** Specifically for inventory:
+> 1. Run the Phase 3 backfill script — copies live QBO `QtyOnHand` into `stock_quantity` so the storefront starts from a clean number.
+> 2. Confirm the QBO Global Shopify connector's "Sync inventory" + "Create QBO item from Shopify" toggles are both OFF (PRD §8). Otherwise the connector fights our cron.
+> 3. Set `SHOPIFY_SYNC_ENABLED=false` on both Vercel projects (this one **and** nce-site).
+> 4. Place a test order on the live site before announcing cutover — verify Supabase decrements, QBO Sales Receipt posts, totals match.
+
 **Scope.** Add `products.qbo_qty_on_hand` (nullable int). New cron `app/api/cron/qbo-inventory-pull` runs every 10 min, pulls `Item.QtyOnHand` from QBO for every product with `qbo_item_id`, writes to the shadow column. **No reads consume it yet** — the storefront still reads `stock_quantity`. Purpose: surface drift between QBO and Supabase before Phase 1 cuts the storefront over.
 
 **Files.**
@@ -686,13 +704,18 @@ app/components/SidebarNav.tsx                         ← add "Quotes" entry to 
 When all §9 cutover-blocker items are checked off:
 
 1. **Pre-flight (24h before).** Final QA pass on the strategic ingestion + edit + finance + inventory sync end-to-end on production with a clearly-named test product. Owner sign-off.
-2. **DNS-day actions (in this exact order):**
-   1. Disable QuickBooks Online Global app's "Sync inventory" toggle in Shopify (already in PRD §8 urgent action — confirm done).
-   2. Disable QBO Global's "create QBO item from Shopify" toggle (PRD §8 — confirm done).
-   3. Run inventory backfill script (PRD §3.11 Phase 3) — copies QBO `QtyOnHand` → `products.stock_quantity` for every active product.
-   4. Set Vercel env: `SHOPIFY_SYNC_ENABLED=false` (both projects).
-   5. Update sidebar default route — change `+ New product` (Current Solution group) to point at `/products/new-strategic` and remove or hide the Current Solution group. (Or keep both visible for the soak window — owner call.)
-   6. Flip DNS from Shopify to Vercel for `nationwidecatering.co.uk`.
-   7. Put Shopify into maintenance/password mode.
+2. **DNS-day actions (in this exact order — every step matters; skipping causes double-billing or stock drift):**
+   1. **Shopify connector OFF, side A.** In Shopify admin → QuickBooks Online Global app → untick "Sync inventory". This stops the legacy connector from fighting our cron over `QtyOnHand`. (Confirm done — PRD §8.)
+   2. **Shopify connector OFF, side B.** Same app → untick "Create QBO item from Shopify". Stops auto-creating duplicate QBO items from Shopify side. (Confirm done — PRD §8.)
+   3. **Backfill stock.** Run the Phase 3 backfill script (PRD §3.11) — copies live QBO `QtyOnHand` → `products.stock_quantity` for every active product. Without this, the storefront either sees zero stock everywhere or stale numbers from before the freeze.
+   4. **The single switch.** Set Vercel env `SHOPIFY_SYNC_ENABLED=false` on **both** projects (`nce_automation` and `nce-site`). This one flag does four things at once:
+       - Bridge payout sync stops running (no more new Shopify journal entries in QBO).
+       - Phase 1 inventory cron starts writing to `stock_quantity` (QBO becomes the boss).
+       - Phase 2 sale → QBO Sales Receipt writer activates.
+       - Bridge product writes (create/edit on `/products/new` + `/products/[id]/edit`) become no-ops; ingestion routes through `/products/new-strategic` only.
+   5. **Sidebar.** Update the default route — change Current Solution `+ New product` to point at `/products/new-strategic`, and either hide the whole Current Solution group or leave it visible for the soak window (owner call).
+   6. **DNS.** Flip `nationwidecatering.co.uk` from Shopify to Vercel.
+   7. **Lock Shopify.** Put the old Shopify store into maintenance/password mode so no one buys through the wrong system.
+   8. **Smoke test.** Place a real test order on the live site (small SKU, full checkout). Verify within 5 minutes: Supabase order row created, `stock_quantity` decremented, QBO Sales Receipt posted, totals match. **If anything is off, set `SHOPIFY_SYNC_ENABLED=true` to roll the env switch back, investigate, and re-attempt.**
 3. **Soak (3 months).** Monitor `sync_log` for errors, watch Stripe payouts reconcile, verify QBO inventory stays in sync. If anything breaks, flipping `SHOPIFY_SYNC_ENABLED` back to `true` is the rollback (DNS rollback is independent and slower).
 4. **Decommission (post-soak).** Delete bridge folders (listed in §2.2), drop `SHOPIFY_SYNC_ENABLED` env var, remove `lib/shopify/`, archive old migrations.
