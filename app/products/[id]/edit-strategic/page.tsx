@@ -2,18 +2,16 @@ export const dynamic = 'force-dynamic'
 
 import { createServiceClient } from '@/lib/supabase/client'
 import { fetchProductMetadataFromSupabase } from '@/lib/products/metadata'
-import { fetchDeliveryProfiles } from '@/lib/shopify/products'
-import { isShopifySyncEnabled } from '@/lib/shopify/config'
 import { notFound, redirect } from 'next/navigation'
-import EditProductForm from './EditProductForm'
-import MetafieldsEditor from './MetafieldsEditor'
-import ScopeBanner from '@/app/components/ScopeBanner'
+import EditFormStrategic from './EditFormStrategic'
+import PhotosManagerStrategic, { type StrategicPhoto } from './PhotosManagerStrategic'
+import MetafieldsEditor from '../edit/MetafieldsEditor'
 
 interface Props {
   params: Promise<{ id: string }>
 }
 
-export default async function EditProductPage({ params }: Props) {
+export default async function EditStrategicPage({ params }: Props) {
   const { id } = await params
   const db = createServiceClient()
 
@@ -25,15 +23,12 @@ export default async function EditProductPage({ params }: Props) {
 
   if (error || !product) notFound()
 
-  // Belt-and-braces: strategic products belong on the strategic edit page.
-  if (!product.shopify_product_id) {
-    redirect(`/products/${id}/edit-strategic`)
+  // Belt-and-braces: bridge products belong on the bridge edit page.
+  if (product.shopify_product_id) {
+    redirect(`/products/${id}/edit`)
   }
 
-  const [{ productTypes, vendors }, deliveryProfiles] = await Promise.all([
-    fetchProductMetadataFromSupabase(),
-    isShopifySyncEnabled() ? fetchDeliveryProfiles() : Promise.resolve([]),
-  ])
+  const { productTypes, vendors } = await fetchProductMetadataFromSupabase()
 
   // Resolve collection IDs to { id, title } for the typeahead
   const collectionIds: string[] = product.collections || []
@@ -49,20 +44,42 @@ export default async function EditProductPage({ params }: Props) {
     }))
   }
 
+  // Photos for this product, from product_images (Supabase Storage URLs)
+  const { data: imageRows } = await db
+    .from('product_images')
+    .select('id, src, file_name, alt_text, position')
+    .eq('product_id', id)
+    .order('position')
+
+  const photos: StrategicPhoto[] = (imageRows ?? []).map((r) => ({
+    id: r.id as string,
+    src: (r.src as string) ?? '',
+    fileName: (r.file_name as string) ?? '',
+    altText: (r.alt_text as string | null) ?? null,
+    position: (r.position as number) ?? 0,
+  }))
+
   return (
     <div>
-      <ScopeBanner mode="bridge" detail="Edits here sync to Shopify and QuickBooks. After Shopify cutover, edits will go to Supabase + QBO only." />
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-primary">Edit Product</h2>
         <p className="mt-1 text-sm text-secondary font-mono">{product.sku}</p>
+        <p className="mt-2 text-xs text-emerald-300/80">
+          Strategic — writes to Supabase + QuickBooks. No Shopify call.
+        </p>
       </div>
-      <EditProductForm
+
+      <EditFormStrategic
         product={product}
         productTypes={productTypes}
         vendors={vendors}
         initialCollections={initialCollections}
-        deliveryProfiles={deliveryProfiles}
       />
+
+      <div className="mt-8 bg-surface border border-edge rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-primary mb-4">Photos</h3>
+        <PhotosManagerStrategic productId={product.id} sku={product.sku} initial={photos} />
+      </div>
 
       <div className="mt-8 bg-surface border border-edge rounded-lg p-6">
         <h3 className="text-lg font-semibold text-primary mb-4">Specs</h3>

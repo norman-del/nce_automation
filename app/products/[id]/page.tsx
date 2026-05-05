@@ -35,12 +35,22 @@ export default async function ProductDetailPage({ params }: Props) {
     .eq('product_id', id)
     .order('position')
 
-  // For the live thumbnail gallery we need URLs, which our product_images table
-  // doesn't store for Shopify-hosted images. Fetch the current image list from
-  // Shopify and merge with our DB rows so the file_name we recorded shows up
-  // alongside the CDN src.
+  // For the live thumbnail gallery we need URLs. For bridge products we fetch
+  // them from Shopify and merge with the DB rows. For strategic products
+  // (no shopify_product_id) the URLs are already on product_images.src
+  // (Supabase Storage public URL).
+  const isStrategic = !product.shopify_product_id
+  // Read-only thumbnails for strategic on the detail page; full management
+  // (upload/reorder/delete) lives on the edit-strategic page.
+  const strategicThumbnails = isStrategic
+    ? (images ?? []).map((i) => ({
+        id: i.id as string,
+        src: (i.src as string) ?? '',
+        fileName: (i.file_name as string) ?? '',
+      }))
+    : []
   let galleryImages: GalleryImage[] = []
-  if (isShopifySyncEnabled() && product.shopify_product_id) {
+  if (!isStrategic && isShopifySyncEnabled() && product.shopify_product_id) {
     try {
       const shopifyImages = await listProductImages(product.shopify_product_id)
       const dbByShopifyId = new Map(
@@ -89,7 +99,7 @@ export default async function ProductDetailPage({ params }: Props) {
             {product.status}
           </span>
           <Link
-            href={`/products/${product.id}/edit`}
+            href={`/products/${product.id}/${isStrategic ? 'edit-strategic' : 'edit'}`}
             className="px-3 py-1.5 text-xs font-medium text-accent border border-accent/25 rounded-md hover:bg-accent/10 transition-colors"
           >
             Edit
@@ -212,15 +222,43 @@ export default async function ProductDetailPage({ params }: Props) {
           <div className="bg-surface border border-edge rounded-lg p-5 space-y-3">
             <h3 className="text-xs font-semibold text-accent uppercase tracking-wide">Photos</h3>
 
-            <PhotoGallery productId={product.id} initial={galleryImages} />
-
-            <PhotoUploadWrapper
-              productId={product.id}
-              hasShopifyId={!!product.shopify_product_id}
-            />
-
-            {galleryImages.length === 0 && product.status === 'active' && (
-              <p className="text-xs text-secondary">No images recorded</p>
+            {isStrategic ? (
+              <>
+                {strategicThumbnails.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {strategicThumbnails.map((img, idx) => (
+                      <div key={img.id} className="relative bg-overlay border border-edge rounded-md overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img.src} alt={img.fileName} className="w-full aspect-square object-cover" />
+                        {idx === 0 && (
+                          <span className="absolute top-1 left-1 px-1.5 py-0.5 text-[10px] font-medium bg-accent text-white rounded">
+                            Cover
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-secondary">No images recorded</p>
+                )}
+                <Link
+                  href={`/products/${product.id}/edit-strategic`}
+                  className="inline-block text-xs text-accent hover:underline"
+                >
+                  Manage photos →
+                </Link>
+              </>
+            ) : (
+              <>
+                <PhotoGallery productId={product.id} initial={galleryImages} />
+                <PhotoUploadWrapper
+                  productId={product.id}
+                  hasShopifyId={!!product.shopify_product_id}
+                />
+                {galleryImages.length === 0 && product.status === 'active' && (
+                  <p className="text-xs text-secondary">No images recorded</p>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -18,7 +18,7 @@ const bridgeLinks: NavLink[] = [
     href: '/products/new',
     label: '+ New product',
     adminOnly: false,
-    isActive: (p) => p === '/products/new' || p.startsWith('/products/new/') || /^\/products\/[^/]+\/edit/.test(p),
+    isActive: (p) => p === '/products/new' || p.startsWith('/products/new/') || /^\/products\/[^/]+\/edit$/.test(p),
   },
   { href: '/finance', label: 'Finance', adminOnly: true },
 ]
@@ -31,15 +31,18 @@ const strategicLinks: NavLink[] = [
     href: '/products',
     label: 'Products',
     adminOnly: false,
-    // Active for /products list and /products/[id] detail, but NOT /products/new, /products/new-strategic, or /products/[id]/edit
+    // Active for /products list and /products/[id] detail, but NOT /products/new, /products/new-strategic, or any /products/[id]/edit* page
     isActive: (p) =>
-      (p === '/products' || (p.startsWith('/products/') && !p.startsWith('/products/new') && !/\/edit(?:$|\/)/.test(p))),
+      (p === '/products' || (p.startsWith('/products/') && !p.startsWith('/products/new') && !/^\/products\/[^/]+\/edit(?:-strategic)?$/.test(p))),
   },
   {
     href: '/products/new-strategic',
     label: '+ New product',
     adminOnly: false,
-    isActive: (p) => p === '/products/new-strategic' || p.startsWith('/products/new-strategic/'),
+    isActive: (p) =>
+      p === '/products/new-strategic' ||
+      p.startsWith('/products/new-strategic/') ||
+      /^\/products\/[^/]+\/edit-strategic$/.test(p),
   },
   { href: '/customers', label: 'Customers', adminOnly: true  },
   { href: '/settings',  label: 'Settings',  adminOnly: true  },

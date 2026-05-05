@@ -360,12 +360,12 @@ Each numbered item is a self-contained chat session. **Build in this order — t
 1. ~~Doc updates, bug fixes (1–4), drop-ship support carried forward~~ — completed pre-2026-05-02.
 2. ~~**UI segregation banners** — sidebar grouped (Current Solution / Strategic), `ScopeBanner` on bridge pages.~~ Done 2026-05-02.
 3. ~~**Strategic product ingestion — Phase 1 (create-only)**.~~ Done 2026-05-02. Form at `/products/new-strategic`, photos to Supabase Storage, no env-var gate, real QBO writes.
+4. ~~**Strategic product edit (Phase 2)**.~~ Done 2026-05-05. Form at `/products/[id]/edit-strategic`, PATCH to `/api/products-strategic/[id]` (Supabase + QBO only), photo manager with upload/reorder/delete against Supabase Storage. Bridge `/edit` redirects strategic products to `/edit-strategic` and vice versa. Sidebar regex tightened so each "+ New product" only highlights its own edit route.
 
 ### Cutover blockers — build in this order
 
 | # | Item | Spec | Why this position |
 |---|---|---|---|
-| 4 | **Strategic product edit (Phase 2)** | §12.1 | Small. Builds directly on Phase 1. Unblocks staff editing strategic-created products. ~1 session. |
 | 5 | **Inventory + sales sync — Phase 0 (shadow read)** | §12.2 / PRD §3.11 | Small. Kicks off the 1-week soak window that gates Phase 1. The earlier Phase 0 ships, the earlier Phase 1 unblocks. ~1 session. |
 | 6 | **Image hosting migration** | §12.3 | Independent. Bulk download from Shopify CDN → Supabase Storage + DB URL update. Has to land before cutover or every PDP goes blank-image. ~1–2 sessions. |
 | 7 | **Metafields / specs editor** | §12.4 | Long-tail spec data on PDPs has no admin UI today. Without this, post-cutover staff can't update detailed specs. ~1–2 sessions. |
