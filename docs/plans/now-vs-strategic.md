@@ -361,12 +361,12 @@ Each numbered item is a self-contained chat session. **Build in this order — t
 2. ~~**UI segregation banners** — sidebar grouped (Current Solution / Strategic), `ScopeBanner` on bridge pages.~~ Done 2026-05-02.
 3. ~~**Strategic product ingestion — Phase 1 (create-only)**.~~ Done 2026-05-02. Form at `/products/new-strategic`, photos to Supabase Storage, no env-var gate, real QBO writes.
 4. ~~**Strategic product edit (Phase 2)**.~~ Done 2026-05-05. Form at `/products/[id]/edit-strategic`, PATCH to `/api/products-strategic/[id]` (Supabase + QBO only), photo manager with upload/reorder/delete against Supabase Storage. Bridge `/edit` redirects strategic products to `/edit-strategic` and vice versa. Sidebar regex tightened so each "+ New product" only highlights its own edit route.
+5. ~~**Inventory + sales sync — Phase 0 (shadow read)**.~~ Done 2026-05-05. Migration adds `products.qbo_qty_on_hand` + `qbo_qty_pulled_at`. Cron at `/api/cron/qbo-inventory-pull` runs every 10 min (vercel.json), pulls every QBO Inventory item via paginated `findItems`, writes to the shadow column. Local smoke run: 2,929 items scanned in 7.8s, 60 of our products linked, 37 already showing drift vs `stock_quantity`. **1-week soak window starts now** — Phase 1 gated on `<1%` drift over the catalogue with `qbo_item_id`.
 
 ### Cutover blockers — build in this order
 
 | # | Item | Spec | Why this position |
 |---|---|---|---|
-| 5 | **Inventory + sales sync — Phase 0 (shadow read)** | §12.2 / PRD §3.11 | Small. Kicks off the 1-week soak window that gates Phase 1. The earlier Phase 0 ships, the earlier Phase 1 unblocks. ~1 session. |
 | 6 | **Image hosting migration** | §12.3 | Independent. Bulk download from Shopify CDN → Supabase Storage + DB URL update. Has to land before cutover or every PDP goes blank-image. ~1–2 sessions. |
 | 7 | **Metafields / specs editor** | §12.4 | Long-tail spec data on PDPs has no admin UI today. Without this, post-cutover staff can't update detailed specs. ~1–2 sessions. |
 | 8 | **Inventory + sales sync — Phases 1+2** | §12.2 / PRD §3.11 | After Phase 0 soak shows clean drift data. Phase 1 = stock-in cron points at `stock_quantity`. Phase 2 = decrement on sale + post Sales Receipt to QBO. ~2 sessions. |
