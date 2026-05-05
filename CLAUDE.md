@@ -85,6 +85,7 @@ Before touching production Shopify/QBO data or writing any remediation script, r
 If a change is testable in a browser (UI, OAuth flow, settings page, button click, form submit), drive it yourself with the playwright-cli skill before asking the user to test. Use Monitor on `vercel logs` in parallel to see exactly what happens server-side. Only ask the user to test things that genuinely require their account (e.g. third-party admin pages we can't auth into) or carry real-money / real-customer risk. Don't make the user click buttons you could click yourself.
 
 ## Hard Rules
+- **No production-affecting strategic migration runs until nce-site is proven working AND owners (Norman + Rich) have given explicit green light.** "Production-affecting" means anything that mutates shared Supabase data the live storefront reads (e.g. rewriting `product_images.src`, backfilling `stock_quantity`, posting to QBO), changes prod env vars, or flips `SHOPIFY_SYNC_ENABLED`. Dry-runs and shadow reads are fine. Building scripts is fine. Pressing `--apply` on those scripts is **not** fine without sign-off — it doesn't matter how small the batch. If in doubt, ask. Applies to image migration (§12.3), inventory Phases 1–3 (§12.2), strategic finance posting (§12.5), and anything else under `now-vs-strategic.md` §12.
 - NEVER store tokens in plaintext — always encrypt with AES-256-GCM
 - NEVER create duplicate journal entries — always check payout.journal_entry_id first
 - NEVER create duplicate payments — always check payout_transaction.qbo_payment_id first
