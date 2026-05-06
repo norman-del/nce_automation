@@ -10,10 +10,27 @@ import SupplierTypeahead, { type QboVendor } from '../../new/SupplierTypeahead'
 import CollectionTypeahead from '../../new/CollectionTypeahead'
 import { calculateShippingTier } from '@/lib/products/shipping'
 
+type Condition = 'new' | 'used' | 'b-grade' | 'clearance'
+
+const CONDITIONS: { value: Condition; label: string; pill: string; pillActive: string }[] = [
+  { value: 'new', label: 'New',
+    pill: 'border-emerald-700/40 text-emerald-700 hover:bg-emerald-700/5',
+    pillActive: 'border-emerald-700 bg-emerald-700 text-white' },
+  { value: 'used', label: 'Used',
+    pill: 'border-amber-600/40 text-amber-700 hover:bg-amber-600/5',
+    pillActive: 'border-amber-600 bg-amber-600 text-white' },
+  { value: 'b-grade', label: 'B-Grade',
+    pill: 'border-sky-600/40 text-sky-700 hover:bg-sky-600/5',
+    pillActive: 'border-sky-600 bg-sky-600 text-white' },
+  { value: 'clearance', label: 'Clearance',
+    pill: 'border-rose-700/40 text-rose-700 hover:bg-rose-700/5',
+    pillActive: 'border-rose-700 bg-rose-700 text-white' },
+]
+
 interface WarrantyTemplate {
   code: string
   label: string
-  applies_to_condition: 'new' | 'used' | null
+  applies_to_condition: Condition | null
   default_for_vendor: string | null
   active: boolean
   display_order: number
@@ -26,7 +43,7 @@ interface Product {
   id: string
   sku: string
   title: string
-  condition: 'new' | 'used'
+  condition: Condition
   vat_applicable: boolean
   cost_price: number
   selling_price: number
@@ -197,12 +214,28 @@ export default function EditFormStrategic({ product, productTypes, vendors, init
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div>
+            <div className="col-span-2 sm:col-span-2">
               <label className={labelCls}>Condition *</label>
-              <select className={inputCls} value={condition} onChange={(e) => setCondition(e.target.value as 'new' | 'used')}>
-                <option value="used">Used</option>
-                <option value="new">New</option>
-              </select>
+              <div className="flex flex-wrap gap-2">
+                {CONDITIONS.map((c) => {
+                  const active = condition === c.value
+                  return (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => {
+                        setCondition(c.value)
+                        // Default to margin-scheme for any non-'new' condition.
+                        if (c.value !== 'new') setVatApplicable(false)
+                      }}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${active ? c.pillActive : c.pill}`}
+                      aria-pressed={active}
+                    >
+                      {c.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
             <div>
               <label className={labelCls}>VAT Applicable</label>

@@ -16,7 +16,7 @@ type DbClient = ReturnType<typeof createServiceClient>
 export interface StrategicProductInput {
   sku_override?: string
   title: string
-  condition: 'new' | 'used'
+  condition: 'new' | 'used' | 'b-grade' | 'clearance'
   vat_applicable: boolean
   cost_price: number
   selling_price: number

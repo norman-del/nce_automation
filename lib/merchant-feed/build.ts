@@ -112,6 +112,7 @@ function mapCondition(c: string | null): string {
   const v = (c ?? '').toLowerCase()
   if (v === 'new') return 'new'
   if (v === 'refurbished') return 'refurbished'
+  // 'used', 'b-grade', 'clearance' all map to Google Shopping's "used".
   return 'used'
 }
 

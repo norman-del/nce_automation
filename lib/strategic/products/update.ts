@@ -13,7 +13,7 @@ import { updateQboItem } from '@/lib/qbo/items'
 export interface StrategicUpdateInput {
   sku?: string
   title?: string
-  condition?: 'new' | 'used'
+  condition?: 'new' | 'used' | 'b-grade' | 'clearance'
   vat_applicable?: boolean
   cost_price?: number
   selling_price?: number
