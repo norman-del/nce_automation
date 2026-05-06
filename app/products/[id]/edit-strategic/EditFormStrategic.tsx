@@ -39,12 +39,19 @@ interface WarrantyTemplate {
 const SHIPPING_LABELS: Record<number, string> = { 0: 'Parcel', 1: 'Single Pallet', 2: 'Double Pallet' }
 const SHIPPING_COLORS: Record<number, string> = { 0: 'text-ok', 1: 'text-warn', 2: 'text-fail' }
 
+interface VendorLogoMatch {
+  handle: string
+  name: string
+  logo_url: string | null
+}
+
 interface Product {
   id: string
   sku: string
   title: string
   condition: Condition
   vat_applicable: boolean
+  vendor_logo_url: string | null
   cost_price: number
   selling_price: number
   original_rrp: number | null
@@ -111,6 +118,9 @@ export default function EditFormStrategic({ product, productTypes, vendors, init
       : (String(product.shipping_tier_override) as '0' | '1' | '2')
   )
   const [warrantyTemplates, setWarrantyTemplates] = useState<WarrantyTemplate[]>([])
+  const [logoMatch, setLogoMatch] = useState<VendorLogoMatch | null>(null)
+  // null = no override (server uses auto-resolved or existing). { url } = explicit choice.
+  const [logoOverride, setLogoOverride] = useState<{ url: string | null } | null>(null)
 
   useEffect(() => {
     fetch('/api/warranty-templates')
@@ -118,6 +128,19 @@ export default function EditFormStrategic({ product, productTypes, vendors, init
       .then((data: WarrantyTemplate[]) => setWarrantyTemplates(data))
       .catch(() => setWarrantyTemplates([]))
   }, [])
+
+  useEffect(() => {
+    const v = vendor.trim()
+    if (!v) { setLogoMatch(null); return }
+    const ctrl = new AbortController()
+    const t = setTimeout(() => {
+      fetch(`/api/vendor-logos/match?vendor=${encodeURIComponent(v)}`, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { match: null }))
+        .then((data) => setLogoMatch(data.match))
+        .catch(() => {})
+    }, 300)
+    return () => { clearTimeout(t); ctrl.abort() }
+  }, [vendor])
 
   const eligibleWarranties = warrantyTemplates.filter(
     (t) =>
@@ -167,6 +190,7 @@ export default function EditFormStrategic({ product, productTypes, vendors, init
           free_delivery_included: freeDeliveryIncluded,
           warranty_term_code: warrantyTermCode || null,
           shipping_tier_override: shippingTierOverride === '' ? null : parseInt(shippingTierOverride, 10),
+          ...(logoOverride !== null ? { vendor_logo_url: logoOverride.url } : {}),
         }),
       })
 
@@ -353,10 +377,22 @@ export default function EditFormStrategic({ product, productTypes, vendors, init
             </div>
             <div>
               <label className={labelCls}>Vendor / Brand *</label>
-              <input className={inputCls} list="edit-strat-vendors" value={vendor} onChange={(e) => setVendor(e.target.value)} />
+              <input
+                className={inputCls}
+                list="edit-strat-vendors"
+                value={vendor}
+                onChange={(e) => { setVendor(e.target.value); setLogoOverride(null) }}
+              />
               <datalist id="edit-strat-vendors">
                 {vendors.map((v) => <option key={v} value={v} />)}
               </datalist>
+              <BrandLogoPreview
+                match={logoMatch}
+                currentSavedUrl={product.vendor_logo_url}
+                override={logoOverride}
+                onClear={() => setLogoOverride({ url: null })}
+                onUseMatch={() => setLogoOverride(null)}
+              />
             </div>
           </div>
           <div>
@@ -407,6 +443,54 @@ export default function EditFormStrategic({ product, productTypes, vendors, init
           Cancel
         </button>
       </div>
+    </div>
+  )
+}
+
+function BrandLogoPreview({
+  match,
+  currentSavedUrl,
+  override,
+  onClear,
+  onUseMatch,
+}: {
+  match: VendorLogoMatch | null
+  currentSavedUrl: string | null
+  override: { url: string | null } | null
+  onClear: () => void
+  onUseMatch: () => void
+}) {
+  const effectiveUrl = override !== null ? override.url : (match?.logo_url ?? currentSavedUrl)
+  const overridden = override !== null
+
+  if (!match && !currentSavedUrl && !overridden) {
+    return <p className="text-xs text-secondary mt-1">No brand logo on file. Upload one in Settings → Brand Logos.</p>
+  }
+  return (
+    <div className="mt-2 flex items-center gap-2 text-xs text-secondary">
+      <div className="w-12 h-8 bg-overlay rounded border border-edge flex items-center justify-center overflow-hidden">
+        {effectiveUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={effectiveUrl} alt="brand logo" className="max-h-7 max-w-[44px] object-contain" />
+        ) : (
+          <span className="text-[9px] font-semibold uppercase tracking-wide text-secondary">None</span>
+        )}
+      </div>
+      <span>
+        {overridden
+          ? (effectiveUrl ? 'Logo set' : 'No logo (overridden)')
+          : match?.logo_url
+            ? `Auto-matched: ${match.name}`
+            : match
+              ? `Matched ${match.name} — no logo file yet`
+              : 'Existing logo'}
+      </span>
+      {!overridden && (match?.logo_url || currentSavedUrl) && (
+        <button type="button" onClick={onClear} className="underline hover:text-primary">Don&apos;t use</button>
+      )}
+      {overridden && (
+        <button type="button" onClick={onUseMatch} className="underline hover:text-primary">Use auto-match</button>
+      )}
     </div>
   )
 }

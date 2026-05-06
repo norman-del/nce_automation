@@ -46,6 +46,12 @@ const SHIPPING_COLORS: Record<number, string> = {
   2: 'text-fail',
 }
 
+interface VendorLogoMatch {
+  handle: string
+  name: string
+  logo_url: string | null
+}
+
 interface ProductDraft {
   sku_override: string
   title: string
@@ -74,6 +80,9 @@ interface ProductDraft {
   warranty_user_set: boolean
   shipping_tier_override: '' | '0' | '1' | '2'
   photos: File[]
+  // null = no override (server will auto-resolve from bank)
+  // { url: string | null } = override (use the value as-is, including null = clear)
+  vendor_logo_override: { url: string | null } | null
 }
 
 function emptyDraft(): ProductDraft {
@@ -88,6 +97,7 @@ function emptyDraft(): ProductDraft {
     warranty_user_set: false,
     shipping_tier_override: '',
     photos: [],
+    vendor_logo_override: null,
   }
 }
 
@@ -104,6 +114,7 @@ export default function ProductFormStrategic({ productTypes, vendors }: Props) {
   const [missing, setMissing] = useState<string[]>([])
   const [success, setSuccess] = useState<{ sku: string; id: string; photoErrors: string[] } | null>(null)
   const [warrantyTemplates, setWarrantyTemplates] = useState<WarrantyTemplate[]>([])
+  const [logoMatch, setLogoMatch] = useState<VendorLogoMatch | null>(null)
 
   useEffect(() => {
     fetch('/api/warranty-templates')
@@ -111,6 +122,20 @@ export default function ProductFormStrategic({ productTypes, vendors }: Props) {
       .then((data: WarrantyTemplate[]) => setWarrantyTemplates(data.filter((t) => t.active)))
       .catch(() => setWarrantyTemplates([]))
   }, [])
+
+  // Look up the brand logo whenever vendor changes (debounced).
+  useEffect(() => {
+    const v = draft.vendor.trim()
+    if (!v) { setLogoMatch(null); return }
+    const ctrl = new AbortController()
+    const t = setTimeout(() => {
+      fetch(`/api/vendor-logos/match?vendor=${encodeURIComponent(v)}`, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { match: null }))
+        .then((data) => setLogoMatch(data.match))
+        .catch(() => {})
+    }, 300)
+    return () => { clearTimeout(t); ctrl.abort() }
+  }, [draft.vendor])
 
   function update(patch: Partial<ProductDraft>) {
     setDraft((d) => {
@@ -198,6 +223,8 @@ export default function ProductFormStrategic({ productTypes, vendors }: Props) {
       free_delivery_included: draft.free_delivery_included,
       warranty_term_code: draft.warranty_term_code || null,
       shipping_tier_override: draft.shipping_tier_override === '' ? null : (parseInt(draft.shipping_tier_override, 10) as 0 | 1 | 2),
+      // Only sent when staff manually overrides; otherwise server auto-resolves.
+      ...(draft.vendor_logo_override !== null ? { vendor_logo_url: draft.vendor_logo_override.url } : {}),
     }
 
     try {
@@ -445,10 +472,16 @@ export default function ProductFormStrategic({ productTypes, vendors }: Props) {
             </div>
             <div>
               <label className={labelCls}>Vendor / Brand *</label>
-              <input className={missingSet.has('Vendor / Brand') ? inputErr : inputCls} list="vendors-list" value={draft.vendor} onChange={(e) => update({ vendor: e.target.value })} />
+              <input className={missingSet.has('Vendor / Brand') ? inputErr : inputCls} list="vendors-list" value={draft.vendor} onChange={(e) => update({ vendor: e.target.value, vendor_logo_override: null })} />
               <datalist id="vendors-list">
                 {vendors.map((v) => <option key={v} value={v} />)}
               </datalist>
+              <BrandLogoPreview
+                match={logoMatch}
+                override={draft.vendor_logo_override}
+                onClear={() => update({ vendor_logo_override: { url: null } })}
+                onUseMatch={() => update({ vendor_logo_override: null })}
+              />
             </div>
           </div>
           <div>
@@ -517,6 +550,52 @@ export default function ProductFormStrategic({ productTypes, vendors }: Props) {
           Cancel
         </button>
       </div>
+    </div>
+  )
+}
+
+function BrandLogoPreview({
+  match,
+  override,
+  onClear,
+  onUseMatch,
+}: {
+  match: VendorLogoMatch | null
+  override: { url: string | null } | null
+  onClear: () => void
+  onUseMatch: () => void
+}) {
+  // What's actually going to be saved with the product:
+  //   - if override is set: the override URL (may be null = no logo)
+  //   - else: the match's logo_url (may be null if matched but no logo file uploaded yet)
+  //   - else: nothing (no match)
+  const effectiveUrl = override !== null ? override.url : match?.logo_url ?? null
+  const overridden = override !== null
+
+  if (!match && !overridden) {
+    return <p className="text-xs text-secondary mt-1">No brand logo on file. Upload one in Settings → Brand Logos.</p>
+  }
+  return (
+    <div className="mt-2 flex items-center gap-2 text-xs text-secondary">
+      <div className="w-12 h-8 bg-overlay rounded border border-edge flex items-center justify-center overflow-hidden">
+        {effectiveUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={effectiveUrl} alt="brand logo" className="max-h-7 max-w-[44px] object-contain" />
+        ) : (
+          <span className="text-[9px] font-semibold uppercase tracking-wide text-secondary">None</span>
+        )}
+      </div>
+      <span>
+        {overridden
+          ? (effectiveUrl ? 'Logo set' : 'No logo (overridden)')
+          : (match!.logo_url ? `Auto-matched: ${match!.name}` : `Matched ${match!.name} — no logo file yet`)}
+      </span>
+      {!overridden && match?.logo_url && (
+        <button type="button" onClick={onClear} className="underline hover:text-primary">Don&apos;t use</button>
+      )}
+      {overridden && (
+        <button type="button" onClick={onUseMatch} className="underline hover:text-primary">Use auto-match</button>
+      )}
     </div>
   )
 }

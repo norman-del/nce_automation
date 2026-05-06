@@ -9,6 +9,7 @@
 import { createServiceClient } from '@/lib/supabase/client'
 import { calculateShippingTier } from '@/lib/products/shipping'
 import { updateQboItem } from '@/lib/qbo/items'
+import { resolveVendorLogo } from '@/lib/strategic/brand-logos'
 
 export interface StrategicUpdateInput {
   sku?: string
@@ -36,6 +37,8 @@ export interface StrategicUpdateInput {
   free_delivery_included?: boolean
   warranty_term_code?: string | null
   shipping_tier_override?: 0 | 1 | 2 | null
+  // Optional override. When undefined and `vendor` changes, server auto-resolves.
+  vendor_logo_url?: string | null
 }
 
 export interface StrategicUpdateResult {
@@ -96,6 +99,17 @@ export async function updateStrategicProduct(
   // shipping_tier_override: undefined keeps existing, null clears, 0/1/2 sets
   if (input.shipping_tier_override === undefined) {
     delete updates.shipping_tier_override
+  }
+
+  // Vendor logo: explicit override wins. Otherwise, if the vendor changed,
+  // re-resolve from the bank. If neither, leave the column untouched.
+  if (input.vendor_logo_url === undefined) {
+    if (input.vendor != null && input.vendor !== current.vendor) {
+      const match = await resolveVendorLogo(db, input.vendor)
+      updates.vendor_logo_url = match?.logo_url ?? null
+    } else {
+      delete updates.vendor_logo_url
+    }
   }
 
   const { data: updated, error: updateError } = await db

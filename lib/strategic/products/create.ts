@@ -10,6 +10,7 @@
 import { createServiceClient } from '@/lib/supabase/client'
 import { calculateShippingTier } from '@/lib/products/shipping'
 import { createQboItem } from '@/lib/qbo/items'
+import { resolveVendorLogo } from '@/lib/strategic/brand-logos'
 
 type DbClient = ReturnType<typeof createServiceClient>
 
@@ -40,6 +41,9 @@ export interface StrategicProductInput {
   body_html?: string | null
   free_delivery_included?: boolean
   warranty_term_code?: string | null
+  // Optional override from the form — when present (string or null), used as-is.
+  // When undefined, server resolves from vendor_logos table.
+  vendor_logo_url?: string | null
 }
 
 export interface StrategicCreateResult {
@@ -87,6 +91,13 @@ export async function createStrategicProduct(
     sku = await generateUniqueSku(db)
   }
 
+  // Vendor logo: form may pass an explicit value (including null to clear);
+  // otherwise auto-resolve from the vendor_logos bank.
+  const vendorLogoUrl =
+    input.vendor_logo_url !== undefined
+      ? input.vendor_logo_url
+      : (await resolveVendorLogo(db, input.vendor))?.logo_url ?? null
+
   // Shipping tier (auto + override)
   const autoTier = calculateShippingTier(
     input.width_cm,
@@ -128,6 +139,7 @@ export async function createStrategicProduct(
       body_html: input.body_html?.trim() || null,
       free_delivery_included: input.free_delivery_included ?? false,
       warranty_term_code: input.warranty_term_code || null,
+      vendor_logo_url: vendorLogoUrl,
       status: 'active',
     })
     .select()
