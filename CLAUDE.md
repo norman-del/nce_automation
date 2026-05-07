@@ -4,6 +4,10 @@
 Internal operations dashboard for Nationwide Catering Equipment.
 See parent `../CLAUDE.md` for shared context, table ownership, and the migration master plan.
 
+## People
+- **Norm and Rich** — business owners and customers of this build. Non-technical. They sign off on policy, branding, and payment changes. Communications to them must be plain English.
+- **Gus** — son-in-law, the developer. The user in chat. Sign messages from Gus, not Norm. Git author "Norman Gomes" and the shared `info@nationwidecatering.co.uk` email do not change this.
+
 Current pipelines:
 1. **Payout Fee Sync** — Shopify payout fee reconciliation with QuickBooks Online
 2. **Product Ingestion** — Single-form entry that pushes to Supabase, Shopify (draft), and QBO simultaneously
@@ -86,6 +90,7 @@ If a change is testable in a browser (UI, OAuth flow, settings page, button clic
 
 ## Hard Rules
 - **No production-affecting strategic migration runs until nce-site is proven working AND owners (Norman + Rich) have given explicit green light.** "Production-affecting" means anything that mutates shared Supabase data the live storefront reads (e.g. rewriting `product_images.src`, backfilling `stock_quantity`, posting to QBO), changes prod env vars, or flips `SHOPIFY_SYNC_ENABLED`. Dry-runs and shadow reads are fine. Building scripts is fine. Pressing `--apply` on those scripts is **not** fine without sign-off — it doesn't matter how small the batch. If in doubt, ask. Applies to image migration (§12.3), inventory Phases 1–3 (§12.2), strategic finance posting (§12.5), and anything else under `now-vs-strategic.md` §12.
+- **Destructive UI actions and endpoints require owner-grade guards.** Any code path that deactivates, deletes, or otherwise tears down a record in QBO, Shopify, or Stripe must follow the pattern in `docs/audits/destructive-actions-2026-05-07.md` §"Patterns to standardise": plain-English consequence copy in a custom modal (no `window.confirm()`), typed-key match (SKU / order # / payout #) before the confirm enables, server-side precheck that refuses if state precludes a safe execution (e.g. `QtyOnHand > 0` for item recreation), and a `sync_log` row per run with `action: <verb>_destructive`. **Shipping a new destructive action — or modifying an existing one — needs the same level of pre-merge attention as a §12 migration**: read the audit, place the new action in the table in the same PR, and call it out explicitly in the commit message. Reference incident: Bill 818 / 2026-05-07 (the "Re-push to Shopify & QBO" button silently retired 7 inventory items).
 - NEVER store tokens in plaintext — always encrypt with AES-256-GCM
 - NEVER create duplicate journal entries — always check payout.journal_entry_id first
 - NEVER create duplicate payments — always check payout_transaction.qbo_payment_id first

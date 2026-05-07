@@ -212,6 +212,7 @@ export default async function ProductDetailPage({ params }: Props) {
               )}
               <RetrySyncButton
                 productId={product.id}
+                sku={product.sku}
                 hasShopify={!!product.shopify_product_id}
                 hasQbo={!!product.qbo_synced}
               />

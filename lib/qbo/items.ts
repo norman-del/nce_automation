@@ -262,9 +262,16 @@ export async function updateQboItem(params: {
   const saleTaxCodeId = vatApplicable ? taxCodes.standard : taxCodes.marginSale
   const purchaseTaxCodeId = vatApplicable ? taxCodes.standard : taxCodes.marginPurchase
 
+  // sparse: true tells QBO to preserve any field we don't include. Critical
+  // for Inventory items — without it QBO would treat omitted writable fields
+  // (TrackQtyOnHand, QtyOnHand, AssetAccountRef, IncomeAccountRef,
+  // ExpenseAccountRef) as null and reject the request. node-quickbooks adds
+  // sparse: true by default, but we set it explicitly so the contract is
+  // visible at the call site and survives any library swap.
   const itemUpdate: Record<string, unknown> = {
     Id: qboItemId,
     SyncToken: current.SyncToken,
+    sparse: true,
     Name: `${title} (NCE${sku})`.slice(0, 100),
     Sku: sku,
     Description: title,

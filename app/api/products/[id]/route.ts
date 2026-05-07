@@ -51,10 +51,17 @@ export async function DELETE(
       try {
         const { client: _client } = await getQboClient()
         const client = _client as QboAny
+        const current = await new Promise<{ Id: string; SyncToken: string }>((resolve, reject) => {
+          client.getItem(product.qbo_item_id, (err: unknown, result: { Id: string; SyncToken: string }) => {
+            if (err) reject(err)
+            else resolve(result)
+          })
+        })
         await new Promise<void>((resolve, reject) => {
           client.updateItem({
             Id: product.qbo_item_id,
-            SyncToken: '0',
+            SyncToken: current.SyncToken,
+            sparse: true,
             Active: false,
           }, (err: unknown) => {
             if (err) reject(err)
